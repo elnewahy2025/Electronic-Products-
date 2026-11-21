@@ -83,8 +83,10 @@
 - wallet.adjusted
 
 ## الإدارة والتشغيل
+- review.created
 - review.deleted
 - review.replied
+- review.reply_deleted
 - report.resolved
 - backup.started
 - backup.completed

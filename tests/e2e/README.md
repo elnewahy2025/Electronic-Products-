@@ -3,7 +3,7 @@
 ## Prerequisites
 1. A **dedicated test Supabase project** (never production).
 2. `.env.test` with the variables from `.env.test.example`.
-3. Migrations `001` → `027` applied to the test project.
+3. Migrations `001` → `028` applied to the test project.
 4. A running Next.js dev server pointing at the test project (`pnpm dev`).
 
 ## First-time setup

@@ -12,6 +12,8 @@ export type ReviewRow = {
   created_at: string;
   deleted_by: string | null;
   delete_reason: string | null;
+  seller_reply?: string | null;
+  seller_replied_at?: string | null;
 };
 
 export type ProductRating = { average: number; count: number };
@@ -34,7 +36,7 @@ export async function getProductReviews(productId: string, limit = 20): Promise<
   const db = await createClient();
   const { data } = await db
     .from('reviews')
-    .select('id, product_id, buyer_id, rating, body, status, created_at, deleted_by, delete_reason')
+    .select('id, product_id, buyer_id, rating, body, status, created_at, deleted_by, delete_reason, seller_reply, seller_replied_at')
     .eq('product_id', productId)
     .eq('status', 'published')
     .order('created_at', { ascending: false })

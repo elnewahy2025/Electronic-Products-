@@ -11,6 +11,7 @@ const ITEMS = [
   { href: '/seller/files', label: 'مكتبة الملفات' },
   { href: '/seller/upload', label: 'رفع ملف جديد' },
   { href: '/seller/drive-accounts', label: 'حسابات Drive' },
+  { href: '/seller/reviews', label: 'التقييمات' },
   { href: '/seller/wallet', label: 'المحفظة والمستحقات' },
   { href: '/account/notifications', label: 'الإشعارات' },
 ];

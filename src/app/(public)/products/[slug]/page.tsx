@@ -143,8 +143,8 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
         <div className="space-y-3">
           {reviews.map(r => (
-            <div key={r.id} className="border rounded p-4">
-              <div className="flex items-center justify-between mb-2">
+            <div key={r.id} className="border rounded p-4 space-y-2">
+              <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <span className="text-xs bg-muted px-2 py-0.5 rounded">مشتري موثّق</span>
                   <Stars value={r.rating} />
@@ -154,6 +154,13 @@ export default async function ProductPage({ params }: { params: { slug: string }
                 </span>
               </div>
               {r.body && <p className="text-sm whitespace-pre-wrap">{r.body}</p>}
+
+              {(r as any).seller_reply && (
+                <div className="bg-muted/40 border-r-2 border-primary rounded p-2 mt-2">
+                  <p className="text-xs font-medium text-primary mb-1">رد البائع:</p>
+                  <p className="text-sm whitespace-pre-wrap">{(r as any).seller_reply}</p>
+                </div>
+              )}
             </div>
           ))}
           {!reviews.length && (

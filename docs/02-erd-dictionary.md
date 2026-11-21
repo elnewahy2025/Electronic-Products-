@@ -1,5 +1,5 @@
 # ERD وقاموس البيانات — منصة المنتجات الرقمية
-الإصدار: 1.1 (النهائي المحدّث شاملاً الترحيلات `001` إلى `027`) — 21 نوفمبر 2026
+الإصدار: 1.2 (النهائي المحدّث شاملاً الترحيلات `001` إلى `028`) — 21 نوفمبر 2026
 
 ## 1. الاصطلاحات العامة
 - **المفاتيح الأساسية:** `UUID` مع `gen_random_uuid()` (باستثناء `audit_logs` و`security_events` و`redeem_attempts` من نوع `BIGSERIAL`، وجداول الإعدادات الأحد عشر من نوع `SMALLINT CHECK (id = 1)`).
@@ -283,7 +283,8 @@ erDiagram
 - `payments`: معطّل في المرحلة الأولى كبنية مستقبلية فقط.
 
 ### التقييمات والبلاغات والإشعارات
-- `reviews`: `id` UUID PK, `product_id` FK ON DELETE RESTRICT, `buyer_id` FK ON DELETE RESTRICT, `order_item_id` FK, `rating` SMALLINT CHECK(1..5), `body`, `admin_reply`, `admin_replied_by`, `admin_replied_at`, `status` ENUM(`published`, `deleted`), `deleted_by`, `delete_reason`, `deleted_at`, `created_at` — `UNIQUE(product_id, buyer_id)`
+- `reviews`: `id` UUID PK, `product_id` FK ON DELETE RESTRICT, `buyer_id` FK ON DELETE RESTRICT, `order_item_id` FK, `rating` SMALLINT CHECK(1..5), `body`, `seller_reply` TEXT, `seller_replied_at` TIMESTAMPTZ, `seller_replied_by` UUID FK→`profiles(id)` (`028_seller_reviews.sql`), `status` ENUM(`published`, `deleted`), `deleted_by`, `delete_reason`, `deleted_at`, `created_at` — `UNIQUE(product_id, buyer_id)` + فهرس `idx_reviews_product_published ON reviews(product_id, created_at DESC) WHERE status = 'published'`
+- `seller_reviews_view` (`SECURITY INVOKER` — `028_seller_reviews.sql`): يربط `reviews` مع `products` (`WHERE p.deleted_at IS NULL`) ليعرض للبائع تقييمات منتجاته وإحصاءاته عبر `seller_review_stats(p_seller_id)`
 - `favorites`: `(buyer_id, product_id)` PK مركّب
 - `content_reports`: `id`, `reporter_id`, `entity_type`, `entity_id`, `reason`, `status` ENUM(`open`, `resolved`, `dismissed`), `resolved_by`, `resolved_at`, `resolution_note`, `created_at`
 - `support_tickets` & `support_messages`: تذاكر الدعم ورسائلها

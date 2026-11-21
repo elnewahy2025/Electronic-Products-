@@ -1,6 +1,6 @@
 # مصفوفة RLS التفصيلية (Row-Level Security Matrix)
 
-توثّق هذه الوثيقة التصميم الكامل والنهائي لسياسات أمن الصفوف (`Row-Level Security - RLS`)، والدوال المساعدة (`SECURITY DEFINER`)، والعروض الآمنة (`Safe Views`)، ومشغلات الحماية الإلزامية (`Triggers`) عبر جميع جداول قاعدة البيانات، شاملةً كافة تحديثات التحصين الأمني في الترحيل `027_security_hardening.sql`.
+توثّق هذه الوثيقة التصميم الكامل والنهائي لسياسات أمن الصفوف (`Row-Level Security - RLS`)، والدوال المساعدة (`SECURITY DEFINER`)، والعروض الآمنة (`Safe Views`)، ومشغلات الحماية الإلزامية (`Triggers`) عبر جميع جداول قاعدة البيانات، شاملةً كافة تحديثات التحصين الأمني في الترحيلين `027_security_hardening.sql` و`028_seller_reviews.sql`.
 
 ---
 
@@ -284,10 +284,14 @@ session_has_started_delivery(p_session_id uuid) RETURNS boolean
 | **UPDATE (حذف ناعم فقط)** | `seller_owns_product(product_id)` **OR** `staff_has('review.delete')` **OR** `is_admin_or_above()` |
 | **DELETE** | لا أحد |
 
-**Trigger حماية الحقول على `reviews` (`trg_reviews_protect_fields` — `027_security_hardening.sql`):**
-- يمنع تعديل `rating`, `body`, `product_id`, `buyer_id`, `order_item_id` من أي دور غير `Super Admin`.
-- يمنع إعادة نشر تقييم محذوف (`OLD.status = 'deleted' AND NEW.status = 'published'`) إلا لـ `Super Admin`.
-- يفرض وجود `delete_reason` غير فارغ عند تحويل الحالة إلى `deleted`.
+**مشغلات حماية الحقول على `reviews` (`027_security_hardening.sql` و`028_seller_reviews.sql`):**
+1. **`trg_reviews_protect_fields` (`restrict_review_updates` — `027`)**:
+   - يمنع تعديل `rating`, `body`, `product_id`, `buyer_id`, `order_item_id` من أي دور غير `Super Admin`.
+   - يمنع إعادة نشر تقييم محذوف (`OLD.status = 'deleted' AND NEW.status = 'published'`) إلا لـ `Super Admin`.
+   - يفرض وجود `delete_reason` غير فارغ عند تحويل الحالة إلى `deleted`.
+2. **`trg_restrict_review_reply` (`restrict_review_reply` — `028`)**:
+   - يتحقق عند تعديل `seller_reply`, `seller_replied_at`, `seller_replied_by` من أن المستدعي هو البائع مالك المنتج (`p.seller_id = auth.uid()`) أو `is_admin_or_above()` أو يملك صلاحية `review.reply`.
+   - يفرض ألا يتجاوز طول `seller_reply` 2000 حرف (`reply_too_long`).
 
 ### `favorites`, `content_reports`, `support_tickets`, `support_messages`, `notifications`
 | الجدول | SELECT | INSERT | UPDATE | DELETE |
@@ -350,6 +354,7 @@ session_has_started_delivery(p_session_id uuid) RETURNS boolean
 | `buyer_compensation_view` | يكشف `admin_reason` فقط عندما تكون `status = 'rejected'` |
 | `my_permissions_view` | يعرض الصلاحيات الفعلية للمستخدم الحالي فقط |
 | `public_platform_settings_view` | يعرض إعدادات العرض العامة (`platform_name`, `default_currency`, `allowed_currencies`) للزوار |
+| `seller_reviews_view` (`028`) | عرض `SECURITY INVOKER` يربط `reviews` بـ `products` بحيث يرث سياسات `RLS` ويرى كل بائع تقييمات منتجاته فقط |
 
 ### ب) تحصين دوال `SECURITY DEFINER` (`027_security_hardening.sql`)
 1. **دوال مسموحة لـ `service_role` فقط (`REVOKE EXECUTE FROM PUBLIC, authenticated, anon`):**

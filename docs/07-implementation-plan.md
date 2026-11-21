@@ -1,6 +1,6 @@
 # خطة التنفيذ المرحلية المحدّثة وحالة الإنجاز
 
-توثّق هذه الخطة المراحل الخمس عشرة (0–14) المعتمدة لبناء منصة بيع المنتجات الرقمية، مع ربط كل مرحلة بما تم تنفيذه فعليًا في المستودع (ملفات الترحيل `001` إلى `027`، الخدمات الخادمية، الواجهات، واختبارات النهاية إلى النهاية)، إضافةً إلى النقاط التنفيذية المتبقية قبل الإطلاق الفعلي وخارطة طريق التحسينات الإضافية.
+توثّق هذه الخطة المراحل الخمس عشرة (0–14) المعتمدة لبناء منصة بيع المنتجات الرقمية، مع ربط كل مرحلة بما تم تنفيذه فعليًا في المستودع (ملفات الترحيل `001` إلى `028`، الخدمات الخادمية، الواجهات، واختبارات النهاية إلى النهاية)، إضافةً إلى النقاط التنفيذية المتبقية قبل الإطلاق الفعلي وخارطة طريق التحسينات الإضافية.
 
 ---
 
@@ -20,7 +20,7 @@
 | **9** | جلسات التنزيل + ZIP + الملفات المنفردة + عداد المحاولات الذرّي | 3 محاولات لا تُخترق بالتزامن (`FOR UPDATE`) + دعم الجلسة الجزئية `ExpiredPartial` | مكتمل (`006_downloads_and_compensation.sql`, `017_download_flow.sql`, `src/lib/server/services/download-service.ts`) |
 | **10** | التعويض (سقف 3 لكل كود منتج `code_id`) + طلبات الاستثناء | جلسة تعويضية للملفات المتبقية فقط + طلبات استثناء بقرار حصري من `Super Admin` | مكتمل (`006_downloads_and_compensation.sql`, `017_download_flow.sql`, `src/app/(admin)/admin/compensations/*`, `exceptions/*`) |
 | **11** | المالية: عملات + أسعار صرف لحظة الشراء + عمولات + محافظ ومستحقات | تثبيت سعر الصرف لحظة الشراء + محافظ البائعين + حد الصرف الأدنى (`100 USD`) | مكتمل (`007_finance.sql`, `018_finance_helpers.sql`, `src/lib/server/services/finance-service.ts`) |
-| **12** | التقييمات والبلاغات والإشعارات ولوحة الإدارة الشاملة | تقييم واحد لكل منتج بقيد `UNIQUE(product_id, buyer_id)` + حذف بسبب إلزامي + إشعارات فورية | مكتمل (`008_reviews_and_support.sql`, `019_reviews_and_admin.sql`, `025_seller_orders_and_stats.sql`, `026_notifications_system.sql`) |
+| **12** | التقييمات والبلاغات والإشعارات ولوحة الإدارة وتقييمات البائع | تقييم واحد لكل منتج بقيد `UNIQUE(product_id, buyer_id)` + رد البائع وإحصائياته + حذف بسبب إلزامي + إشعارات فورية | مكتمل (`008`, `019`, `025`, `026`, `028_seller_reviews.sql`, `/seller/reviews`) |
 | **13** | الإعدادات المنفصلة (11 جدولًا) + النسخ الاحتياطي + سجل التدقيق `Append-Only` | سجل تدقيق غير قابل للتعديل أو الحذف + إدارة الإعدادات والموظفين والصلاحيات | مكتمل (`009_settings_tables.sql`, `010_audit_and_backups.sql`, `020_settings_and_staff_helpers.sql`) |
 | **14** | المراجعة الأمنية الشاملة + تحصين دوال RPC وRLS + اختبارات Playwright E2E | إغلاق ثغرات RPC وRLS وتزوير الحقول + 4 حزم اختبارات E2E شاملة | مكتمل (`027_security_hardening.sql`, `tests/e2e/specs/01..04`, `docs/security-review.md`) |
 
@@ -28,7 +28,7 @@
 
 ## 2. خريطة التنفيذ الفعلي في المستودع (الترحيلات والوحدات)
 
-### 2.1 ترحيلات قاعدة البيانات (`supabase/migrations/001..027`)
+### 2.1 ترحيلات قاعدة البيانات (`supabase/migrations/001..028`)
 - **`001_extensions_and_helpers.sql`**: الإضافات (`pgcrypto`, `citext`)، الأنواع (`ENUMs`)، ودوال `updated_at`.
 - **`002_identity_and_roles.sql`**: جداول `profiles`, `seller_profiles`, `seller_applications`, `seller_agreements`, `seller_drive_accounts`, `roles`, `permissions`, `role_permissions`, `store_members`, `member_permissions`.
 - **`003_security_helper_functions.sql`**: دوال التحقق الأمني (`SECURITY DEFINER`) المستخدمة في سياسات `RLS`.
@@ -56,6 +56,7 @@
 - **`025_seller_orders_and_stats.sql`**: عروض ودوال إحصاءات ومبيعات البائع دون كشف بيانات المشترين الحساسة.
 - **`026_notifications_system.sql`**: توسيع جدول `notifications` مع triggers الإشعارات التلقائية ودالة `mark_all_notifications_read`.
 - **`027_security_hardening.sql`**: التحصين الأمني الشامل (فحص الصلاحيات داخل 24 دالة RPC إدارية، سحب 5 دوال خادمية من `authenticated`، إصلاح 4 سياسات RLS، وإضافة 4 triggers لحماية الحقول من التلاعب).
+- **`028_seller_reviews.sql`**: إدارة تقييمات البائع والرد عليها (`seller_reply`, `seller_replied_at`, `seller_replied_by`، مشغل `trg_restrict_review_reply`، العرض `seller_reviews_view` (`SECURITY INVOKER`)، ودالة الإحصائيات `seller_review_stats`).
 
 ---
 
@@ -72,7 +73,7 @@
 
 ## 4. قائمة التحقق قبل النشر (Pre-Deployment Checklist)
 
-1. تطبيق جميع الترحيلات `001` حتى `027` بالترتيب على قاعدة بيانات الاختبار ثم الإنتاج (`pnpm db:push`).
+1. تطبيق جميع الترحيلات `001` حتى `028` بالترتيب على قاعدة بيانات الاختبار ثم الإنتاج (`pnpm db:push`).
 2. إنشاء حاوية التخزين العامة للمعاينات `previews` في Supabase Storage وفق `docs/scan-preview-flow.md`.
 3. التأكد من ضبط جميع متغيرات البيئة في `.env.local` / Vercel (`ENCRYPTION_KEY`, `CODE_HASH_PEPPER`, `DOWNLOAD_SERVICE_TOKEN`, `WORKER_SECRET`, `GOOGLE_DRIVE_*`).
 4. التحقق من نجاح فحص الأنواع (`pnpm typecheck`) واجتياز اختبارات Playwright الأربع (`pnpm test:e2e`):
@@ -85,9 +86,11 @@
 
 ## 5. تحسينات المرحلة القادمة — خارطة الطريق الإضافية (Next Iteration Roadmap)
 
-البنود التالية مقترحة كتحسينات إضافية بعد إغلاق المراجعة الأمنية (`027_security_hardening.sql`):
-1. **صفحة تقييمات البائع (`/seller/reviews`)**: واجهة مخصصة للبائع لعرض تقييمات منتجاته وحذف التقييمات المخالفة مع إدخال السبب الإلزامي.
-2. **تحسينات تجربة المستخدم في المتجر (`Storefront UX`)**: معرض معاينات متعدد الصور/الصفحات، مسار التنقل (`Breadcrumbs`)، وقسم «منتجات مشابهة» في صفحة المنتج.
-3. **إشعارات فورية للإدارة**: إشعار تلقائي للأدمن و`Super Admin` عند إنشاء طلب تعويض جديد أو طلب استثناء محاولات جديد.
-4. **ترويسات الأمان في `next.config.mjs` (`CSP & HSTS Hardening`)**: إضافة `Content-Security-Policy` و`Strict-Transport-Security` و`X-Frame-Options` و`X-Content-Type-Options`.
-5. **مراجعة الأداء (`Performance & Caching`)**: تحسين استعلامات RSC وتخزين الإعدادات العامة والتصنيفات مؤقتًا مع إبطال فوري عند التحديث.
+- [x] **صفحة تقييمات البائع (`/seller/reviews`)**: مكتملة في الترحيل `028_seller_reviews.sql` و`src/app/(seller)/seller/reviews/*` و`docs/seller-reviews.md`.
+
+البنود التالية مقترحة للجولات القادمة:
+1. **تحسينات تجربة المستخدم في المتجر (`Storefront UX`)**: معرض معاينات متعدد الصور في صفحة المنتج، مسار التنقل (`Breadcrumbs`)، منتجات مشابهة، و`Skeleton Loading`.
+2. **إشعارات فورية للإدارة**: إشعار تلقائي للأدمن و`Super Admin` عند وصول طلب تعويض أو طلب استثناء محاولات أو طلب شراء جديد.
+3. **ترويسات الأمان في `next.config.mjs` (`CSP & Next.config Hardening`)**: إضافة `HSTS` و`Content-Security-Policy` و`X-Frame-Options` و`Permissions-Policy`.
+4. **مراجعة الأداء (`Performance Review`)**: فهارس إضافية، معالجة استعلامات `N+1` في لوحة الإدارة، واستراتيجيات تخزين `RSC Caching`.
+5. **صفحة مبيعات البائع (`/seller/orders`)**: عرض مبيعات البائع وحالاتها دون كشف هوية المشتري الكاملة (فقط «مشتري»).
