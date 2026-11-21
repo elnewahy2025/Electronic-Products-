@@ -1,49 +1,124 @@
-# مصفوفة الصلاحيات
+# مصفوفة الصلاحيات الكاملة
 
-## صلاحيات الإدارة
+تحدد هذه الوثيقة الصلاحيات المعتمدة نهائيًا في المنصة عبر جميع الأدوار، وتجمع بين:
+1. **مصفوفة صلاحيات الإدارة العامة**
+2. **مصفوفة صلاحيات مسار التنزيل والتعويض والاستثناء**
+3. **مصفوفة صلاحيات التقييمات**
+4. **القواعد الثابتة والمقيدة في الخادم وRLS**
+
+---
+
+## 1. مصفوفة صلاحيات الإدارة
+
 | الصلاحية | Super Admin | الأدمن | الموظف | البائع |
 |---|---|---|---|---|
-| settings.manage | ✔ | ✖ | ✖ | ✖ |
-| role.manage / permission.assign | ✔ | ✖ | ✖ | ✖ |
-| staff.manage | ✔ | ✖ | ✖ | ✖ |
-| seller.read | ✔ | ✔ | ✔ بصلاحية | — |
-| seller.approve / seller.reject | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
-| seller.suspend | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
-| product.read.any | ✔ | ✔ | ✔ بصلاحية | ✖ (منتجاته فقط) |
-| product.suspend / product.reject | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
-| product.delete.any | ✔ | ✔ بصلاحية | ✖ | منتجاته فقط |
-| category.manage | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
-| filetype.manage | ✔ | ✔ بصلاحية | ✖ | ✖ |
-| file.quarantine / file.delete | ✔ | ✔ بصلاحية | ✔ بصلاحية | ملفاته فقط |
-| file.preview.regenerate | ✔ | ✔ بصلاحية | ✔ بصلاحية | منتجاته فقط |
-| code.issue / code.revoke | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
-| code.confirm_delivery | ✔ | ✔ | ✔ بصلاحية | ✖ |
-| code.read.any | ✔ | ✔ | ✔ بصلاحية | ✖ |
-| download.session.revoke / extend | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
-| download.compensation.request | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
-| download.compensation.approve / reject | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
-| download.attempt.exception.decide | ✔ | ✖ | ✖ | ✖ |
-| commission.manage (عام) | ✔ | ✖ | ✖ | ✖ |
-| commission.seller.override | ✔ | ✔ بصلاحية | ✖ | ✖ |
-| exchange_rate.manage | ✔ | ✖ | ✖ | ✖ |
-| payout.read | ✔ | ✔ بصلاحية | ✔ بصلاحية | طلباته فقط |
-| payout.approve / reject | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
-| wallet.adjust | ✔ | ✖ | ✖ | ✖ |
-| review.delete | ✔ | ✔ | ✔ بصلاحية | ✔ على منتجاته |
-| review.reply | ✔ | ✔ | ✔ بصلاحية | ✖ |
-| report.read / report.resolve | ✔ | ✔ | ✔ بصلاحية | ✖ |
-| backup.run | ✔ | ✖ | ✖ | ✖ |
-| backup.read | ✔ | ✔ بصلاحية | ✖ | ✖ |
-| backup.restore | ✔ | ✖ | ✖ | ✖ |
-| retention.manage | ✔ | ✖ | ✖ | ✖ |
-| audit.read | ✔ | ✔ | ✔ بصلاحية | ✖ |
-| audit.export | ✔ | ✔ بصلاحية | ✖ | ✖ |
+| `settings.manage` | ✔ | ✖ | ✖ | ✖ |
+| `role.manage` / `permission.assign` | ✔ | ✖ | ✖ | ✖ |
+| `staff.manage` | ✔ | ✖ | ✖ | ✖ |
+| `staff.user.read` | ✔ | ✔ | ✔ بصلاحية | ✖ |
+| `seller.read` | ✔ | ✔ | ✔ بصلاحية | — |
+| `seller.approve` / `seller.reject` | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
+| `seller.suspend` | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
+| `product.read.any` | ✔ | ✔ | ✔ بصلاحية | ✖ (منتجاته فقط) |
+| `product.suspend` / `product.reject` | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
+| `product.delete.any` | ✔ | ✔ بصلاحية | ✖ | منتجاته فقط |
+| `category.manage` | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
+| `filetype.manage` | ✔ | ✔ بصلاحية | ✖ | ✖ |
+| `file.quarantine` / `file.delete` | ✔ | ✔ بصلاحية | ✔ بصلاحية | ملفاته فقط |
+| `file.preview.regenerate` | ✔ | ✔ بصلاحية | ✔ بصلاحية | منتجاته فقط |
+| `request.read.any` | ✔ | ✔ | ✔ بصلاحية | ✖ |
+| `code.issue` / `code.revoke` (قبل التسليم فقط) | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
+| `code.confirm_delivery` | ✔ | ✔ | ✔ بصلاحية | ✖ |
+| `code.read.any` | ✔ | ✔ | ✔ بصلاحية | ✖ |
+| `download.session.revoke` (قبل التسليم فقط) / `download.session.extend` | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
+| `download.compensation.request` | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
+| `download.compensation.approve` / `download.compensation.reject` | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
+| `download.attempt.exception.decide` | ✔ | ✖ | ✖ | ✖ |
+| `commission.manage` (عام) | ✔ | ✖ | ✖ | ✖ |
+| `commission.seller.override` | ✔ | ✔ بصلاحية | ✖ | ✖ |
+| `exchange_rate.manage` | ✔ | ✖ | ✖ | ✖ |
+| `payout.read` | ✔ | ✔ بصلاحية | ✔ بصلاحية | طلباته فقط |
+| `payout.approve` / `payout.reject` | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
+| `wallet.adjust` | ✔ | ✖ | ✖ | ✖ |
+| `review.delete` | ✔ | ✔ | ✔ بصلاحية | ✔ على منتجاته (بسبب إلزامي) |
+| `review.reply` | ✔ | ✔ | ✔ بصلاحية | ✖ |
+| `report.read` / `report.resolve` | ✔ | ✔ | ✔ بصلاحية | ✖ |
+| `backup.run` | ✔ | ✖ | ✖ | ✖ |
+| `backup.read` | ✔ | ✔ بصلاحية | ✖ | ✖ |
+| `backup.restore` | ✔ | ✖ | ✖ | ✖ |
+| `retention.manage` | ✔ | ✖ | ✖ | ✖ |
+| `audit.read` | ✔ | ✔ | ✔ بصلاحية | ✖ |
+| `audit.export` | ✔ | ✔ بصلاحية | ✖ | ✖ |
+| `security.read` | ✔ | ✔ | ✔ بصلاحية | ✖ |
 
-## قواعد ثابتة
-- كل صلاحية تُفرض مرتين: RLS + تحقق خادمي
-- البائع لا يملك أي صلاحية إدارية مهما مُنح
-- الموظف لا يصل إلى settings, roles, staff, backup.restore, exchange_rate, attempt.exception مطلقًا
-- كل عملية حساسة تُسجَّل في audit_logs قبل التنفيذ وبعده
-- المشتري لا يقرأ إلا جلساته وطلباته، ولا يرى admin_reason إلا عند الرفض
-- البائع لا يملك أي صلاحية على جلسات التنزيل أو المحاولات أو التعويض
-- الموظف لا يملك download.attempt.override مطلقًا
+---
+
+## 2. مصفوفة صلاحيات مسار التنزيل والتعويض والاستثناء
+
+### 2.1 القواعد الحاكمة لمسار التنزيل والتعويض
+
+| البند | الحكم النهائي المعتمد |
+|---|---|
+| الموافقة على التعويض | Super Admin + الأدمن/الموظف بصلاحية صريحة (`download.compensation.approve`)، وبحد أقصى **3 جلسات تعويضية لكل منتج منفرد (`code_id`)** |
+| تجاوز حد الـ3 محاولات / طلب استثناء | **لا يوجد تجاوز مفتوح (`override`).** بعد استنفاد الـ3 محاولات، المسار الوحيد هو **طلب استثناء (`attempt_exception_requests`)** يقرره **Super Admin فقط** (`download.attempt.exception.decide`) |
+| سبب طلب التعويض | **إلزامي** في كل طلب تعويض وفي كل قرار قبول أو رفض |
+| ما يراه المشتري | يرى حالة طلبه فقط، ويرى **سبب الإدارة (`admin_reason`) عند الرفض فقط** |
+| منع الإلغاء بعد التسليم | بمجرد تأكيد تسليم الكود أو بدء التسليم الفعلي في الجلسة، **يُمنع الإلغاء أو السحب منعًا باتًا من أي دور، بما فيهم Super Admin** |
+
+### 2.2 جدول صلاحيات مسار التنزيل والتعويض حسب الدور
+
+| الصلاحية | الزائر | المشتري | البائع | الموظف / الأدمن | Super Admin |
+|---|---|---|---|---|---|
+| `download.session.create` (بإدخال كود صالح بعد تسجيل الدخول) | ✖ | ✔ | ✖ | ✖ | ✔ |
+| `download.session.read.own` | ✖ | ✔ (جلساته فقط) | ✖ | ✖ | — |
+| `download.session.read.any` | ✖ | ✖ | ✖ | ✔ بصلاحية | ✔ |
+| `download.file.deliver` | ✖ | ✔ (ضمن جلسة نشطة) | ✖ | ✖ | ✖ |
+| `download.zip.create` | ✖ | ✔ (ضمن جلسة نشطة) | ✖ | ✖ | ✖ |
+| `download.attempt.consume` | ✖ | تلقائي عند اكتمال التسليم | ✖ | ✖ | ✖ |
+| `download.attempt.exception.decide` | ✖ | ✖ | ✖ | ✖ | ✔ (حصريًا عبر طلب استثناء بسبب إلزامي) |
+| `download.session.revoke` (قبل بدء التسليم فقط) | ✖ | ✖ | ✖ | ✔ بصلاحية + سبب | ✔ + سبب |
+| `download.session.extend` | ✖ | ✖ | ✖ | ✔ بصلاحية + سبب | ✔ + سبب |
+| `download.compensation.request` | ✖ | ✖ | ✖ | ✔ بصلاحية + سبب إلزامي | ✔ + سبب إلزامي |
+| `download.compensation.approve` | ✖ | ✖ | ✖ | ✔ بصلاحية (ضمن سقف 3 لكل كود منتج) | ✔ (ضمن سقف 3 لكل كود منتج) |
+| `download.compensation.reject` | ✖ | ✖ | ✖ | ✔ بصلاحية + سبب إلزامي يظهر للمشتري | ✔ + سبب إلزامي يظهر للمشتري |
+| `download.compensation.read` | ✖ | حالة طلبه + سبب الرفض فقط | ✖ | ✔ بصلاحية | ✔ |
+| `download.audit.read` | ✖ | ✖ | ✖ | ✔ بصلاحية `audit.read` | ✔ |
+
+### 2.3 مقارنة الآليات الثلاث (المحاولات العادية / التعويض / الاستثناء)
+
+| الآلية | العدد الأقصى | مَن يبدأ المسار | استهلاك المحاولة | صاحب القرار |
+|---|---|---|---|---|
+| **محاولات التنزيل العادية** | 3 محاولات مكتملة لكل منتج (`order_item_id`) | المشتري عبر تفعيل الكود | ZIP كامل = محاولة واحدة؛ الملفات المنفردة = محاولة واحدة عند اكتمال كل ملفات الإصدار | تلقائي |
+| **الجلسة التعويضية** | 3 جلسات كحد أقصى **لكل منتج منفرد (`code_id`)** | الإدارة فقط (أو اقتراح تلقائي عند انقطاع Drive أو `ExpiredPartial`) | **لا تستهلك محاولة** وتسلّم الملفات المتبقية فقط | Super Admin أو أدمن/موظف بصلاحية، بسبب إلزامي موثّق |
+| **طلب استثناء المحاولات** | متغيّر (`granted_attempts > 0`) بلا سقف عددي مع تحذير عند تجاوز `warning_threshold` | يُنشأ بعد استنفاد المحاولات الـ3 | يمنح محاولات إضافية جديدة بقرار موثّق | **Super Admin فقط** |
+
+### 2.4 قواعد مقيدة يجب فرضها في الخادم وRLS
+
+1. **المشتري** لا يقرأ من `download_sessions` و`compensation_requests` إلا السجلات المرتبطة بأكواده/طلباته، وحقل `admin_reason` يُحجب عنه برمجيًا وعبر `buyer_compensation_view` إذا لم تكن الحالة `rejected`.
+2. **البائع** لا يملك أي صلاحية قراءة أو كتابة على جلسات التنزيل أو المحاولات أو طلبات التعويض؛ يرى فقط إحصاءات مجمّعة لمنتجاته.
+3. **الموظف والأدمن** لا يملكان صلاحية تجاوز المحاولات أو البت في طلبات استثناء المحاولات (`attempt_exception_requests`) مطلقًا؛ هذه الصلاحية محصورة بـ `Super Admin` فقط.
+4. **سقف التعويض (3 جلسات لكل `code_id`)** مفروض بقيد قاعدة بيانات `UNIQUE(code_id, sequence_number)` مع `CHECK(sequence_number BETWEEN 1 AND 3)`، ولا يمكن تجاوزه حتى من `Super Admin` عبر مسار التعويض.
+5. **كل عملية استهلاك محاولة أو تسليم ملف أو موافقة على تعويض** تتم داخل معاملة قاعدة بيانات ذرّية (`SECURITY DEFINER` RPC مع `FOR UPDATE`) وتُسجَّل في `audit_logs` مع `actor_id`, `before_value`, `after_value`, `reason`, `ip`.
+
+---
+
+## 3. مصفوفة صلاحيات التقييمات
+
+| الدور | إنشاء التقييم | تعديل التقييم | حذف التقييم (حذف ناعم) | الرد على التقييم |
+|---|---|---|---|---|
+| **الزائر** | ✖ (يقرأ المنشور فقط) | ✖ | ✖ | ✖ |
+| **المشتري الموثّق** | ✔ (تقييم واحد فقط لكل منتج بقيد `UNIQUE(product_id, buyer_id)` بعد اكتمال تسليم المنتج) | ✖ | ✖ | ✖ |
+| **البائع (صاحب المنتج)** | ✖ | ✖ | ✔ **بسبب إلزامي مسجّل في `audit_logs`** (ومنعه من تعديل التقييم أو إعادة نشر تقييم محذوف) | ✖ |
+| **الأدمن / الموظف المفوّض** | ✖ | ✖ | ✔ بصلاحية `review.delete` **بسبب إلزامي مسجّل** | ✔ بصلاحية `review.reply` |
+| **Super Admin** | ✖ | ✔ | ✔ **بسبب إلزامي مسجّل** | ✔ |
+
+---
+
+## 4. قواعد ثابتة فوق المصفوفة
+
+- **التحقق المزدوج الإلزامي:** كل صلاحية تُفرض مرتين: عبر سياسات `RLS` + دوال `SECURITY DEFINER` داخل قاعدة البيانات، وعبر التحقق الخادمي (`requirePerm` / `requireRole`) في مسارات Next.js API.
+- **عزل البائع عن الإدارة:** البائع لا يملك أي صلاحية إدارية مهما مُنح، ولا يقرأ `code_hash` أو جلسات المشترين.
+- **المناطق المحظورة على الموظف:** الموظف لا يصل إلى `settings.manage`, `role.manage`, `staff.manage`, `backup.restore`, `exchange_rate.manage`, `wallet.adjust`, `download.attempt.exception.decide` مطلقًا.
+- **حجب 2FA الإلزامي:** الأدوار الإدارية (`Super Admin`, `Admin`, `Staff`) يُحجب وصولها بالكامل إلى لوحة الإدارة والعمليات الإدارية حتى تفعيل المصادقة الثنائية (`2FA / TOTP`).
+- **منع الإلغاء بعد التسليم:** لا يملك أي دور (بما فيهم `Super Admin`) صلاحية سحب الكود بعد تأكيد تسليمه (`delivered_at IS NOT NULL`) أو إبطال جلسة التنزيل بعد بدء التسليم الفعلي، وتُرفض أي محاولة برمجيًا وتُسجَّل كحدث `*_blocked_after_delivery` في `audit_logs`.
+- **حماية سجل التدقيق (`audit_logs`):** السجل `Append-Only` بالكامل؛ لا يملك أي دور (بما فيهم `Super Admin` و`service_role`) صلاحية `UPDATE` أو `DELETE` على أي صف في `audit_logs`.

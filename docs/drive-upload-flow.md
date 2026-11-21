@@ -5,8 +5,8 @@
 2. Clicks "ربط حساب جديد" → `POST /api/seller/drive/link`.
 3. Server builds Google OAuth URL with:
    - `scope=https://www.googleapis.com/auth/drive.file + userinfo.email`
-   - `access_type=offline` (to receive a refresh_token)
-   - `prompt=consent` (to force refresh_token on every re-link)
+   - `access_type=offline` (to receive a `refresh_token`)
+   - `prompt=consent` (to force `refresh_token` on every re-link)
    - `state` signed with HMAC (CSRF protection, expires in 10 min)
 4. Seller authenticates with Google → redirected to `/api/seller/drive/callback?code=...&state=...`.
 5. Callback verifies `state` (signature + timestamp + cookie match + user id).
@@ -14,11 +14,39 @@
 7. Initial quota fetched via `about.get` and stored.
 
 ## 2. Upload flow
-1. Seller selects file in `/seller/upload`.
-2. Client calls `POST /api/upload/init` with `{ original_name, mime, size, checksum, drive_account_id }`.
-3. Server validates extension against `allowed_file_types`, picks an active Drive account with sufficient quota, initiates a Google Drive resumable upload session, and returns `{ sessionId, uploadUrl }`.
-4. Client uploads file bytes directly to `uploadUrl` via `PUT`.
-5. On completion, client calls `POST /api/upload/complete` with `{ session_id, drive_file_id }`.
+```text
+Browser                    Next.js Server              Google Drive
+  │                              │                          │
+  │ POST /api/upload/init        │                          │
+  ├─────────────────────────────►│                          │
+  │ {name, size, mime, acc?}     │                          │
+  │                              │ 1. validate ext + size   │
+  │                              │ 2. pick drive account    │
+  │                              │ 3. decrypt refresh token │
+  │                              │ 4. POST resumable init   │
+  │                              ├─────────────────────────►│
+  │                              │◄─────────────────────────┤
+  │                              │ Location: uploadUrl      │
+  │◄─────────────────────────────┤                          │
+  │ {sessionId, uploadUrl}       │                          │
+  │                              │                          │
+  │ PUT uploadUrl (file bytes)   │                          │
+  ├─────────────────────────────────────────────────────────►
+  │                              │                          │
+  │◄─────────────────────────────────────────────────────────
+  │ 200 {id: driveFileId, ...}   │                          │
+  │                              │                          │
+  │ POST /api/upload/complete    │                          │
+  ├─────────────────────────────►│                          │
+  │ {sessionId, driveFileId}     │                          │
+  │                              │ 1. verify Drive metadata │
+  │                              ├─────────────────────────►│
+  │                              │ 2. create files/fv/stor. │
+  │                              │ 3. queue scan job        │
+  │                              │ 4. refresh quota         │
+  │◄─────────────────────────────┤                          │
+  │ {fileVersionId, fileId}      │                          │
+```
 
 **Key security property:** The file bytes never touch our server. Only Google sees them.
 
@@ -39,7 +67,7 @@
 |---|---|
 | No active Drive account | `init` returns 409 `NO_DRIVE_ACCOUNT` |
 | Quota insufficient | `init` returns 507 `DRIVE_QUOTA_EXCEEDED` |
-| Google token expired | Server auto-refreshes via refresh_token; if revoked, returns `DRIVE_NOT_LINKED` |
+| Google token expired | Server auto-refreshes via `refresh_token`; if revoked, returns `DRIVE_NOT_LINKED` |
 | Network drop mid-upload | Client resumes via status endpoint |
 | Drive file doesn't exist at complete | `complete` returns `DRIVE_FILE_NOT_FOUND` |
 | File rejected by scan later | `scan_jobs` status = `failed`, file moved to `quarantined` |

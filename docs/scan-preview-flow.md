@@ -8,7 +8,7 @@ When a seller completes an upload (`/api/upload/complete`), the server:
 Nothing is visible to visitors until `file_versions.scan_status = 'ready'`.
 
 ## 2. Scan worker (cron every 2 min)
-`POST /api/internal/worker/scan` (Bearer WORKER_SECRET) **or** Vercel cron
+`POST /api/internal/worker/scan` (Bearer `WORKER_SECRET`) **or** Vercel cron
 calls `/api/internal/worker/scan-cron` (checks `x-vercel-cron: 1`).
 
 For each claimed job (max 3):
@@ -60,7 +60,7 @@ Applied via `sharp` compositing an SVG text layer:
 - **Release** (requires `file.quarantine` permission): calls
   `release_from_quarantine(reason)` → status back to `processing` + preview job.
 - **Permanent delete** (requires `file.delete` permission): refuses if the file
-  is referenced by a product_version. Deletes from Drive (best-effort) and marks
+  is referenced by a `product_version`. Deletes from Drive (best-effort) and marks
   `scan_status='deleted'`.
 
 ## 6. Extending to external scanning (ClamAV, VirusTotal)
@@ -85,3 +85,21 @@ Set `scan_jobs.engine = 'clamav'` and add a new branch in `processScanJob`:
 
 ## 9. Supabase Storage setup
 Create the bucket once:
+```sql
+-- In Supabase Dashboard → Storage → New bucket: "previews" (public)
+-- Or via CLI:
+-- supabase storage create-bucket previews --public
+```
+
+RLS policy on the bucket:
+- **Public read** (anyone can view previews).
+- **No public write** (only `service_role` via worker).
+
+## 10. Cron scheduling
+`vercel.json`:
+- `scan-cron` every 2 minutes
+- `preview-cron` every 5 minutes
+
+On Hobby plan, cron runs once per day only — use a free external cron
+(cron-job.org) hitting the `/api/internal/worker/*` endpoints with the
+`Authorization: Bearer` header instead.
