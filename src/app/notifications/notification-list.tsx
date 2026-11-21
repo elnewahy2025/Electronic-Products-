@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -23,6 +23,7 @@ const CATEGORY_LABEL: Record<string, string> = {
   download: 'تنزيل',
   compensation: 'تعويض',
   system: 'نظام',
+  admin: 'إدارة',
 };
 
 const CATEGORY_COLOR: Record<string, string> = {
@@ -32,6 +33,7 @@ const CATEGORY_COLOR: Record<string, string> = {
   download: 'bg-purple-100 text-purple-800',
   compensation: 'bg-orange-100 text-orange-800',
   system: 'bg-red-100 text-red-800',
+  admin: 'bg-amber-100 text-amber-800',
 };
 
 export function NotificationList({ initial }: { initial: Notification[] }) {
@@ -45,10 +47,7 @@ export function NotificationList({ initial }: { initial: Notification[] }) {
   }
 
   function handleClick(n: Notification) {
-    if (!n.read_at) {
-      // fire-and-forget; don't await since we're navigating
-      void markRead(n.id);
-    }
+    if (!n.read_at) void markRead(n.id);
   }
 
   if (items.length === 0) {
@@ -70,51 +69,26 @@ export function NotificationList({ initial }: { initial: Notification[] }) {
         const content = (
           <div className={`p-4 flex items-start gap-3 transition ${unread ? 'bg-primary/5' : ''} ${n.link ? 'hover:bg-muted/40 cursor-pointer' : ''}`}>
             <div className="mt-1">
-              {unread ? (
-                <span className="inline-block w-2 h-2 bg-primary rounded-full" />
-              ) : (
-                <span className="inline-block w-2 h-2 bg-transparent" />
-              )}
+              {unread
+                ? <span className="inline-block w-2 h-2 bg-primary rounded-full" />
+                : <span className="inline-block w-2 h-2 bg-transparent" />}
             </div>
-
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2 mb-1">
                 <h3 className={`text-sm ${unread ? 'font-semibold' : ''}`}>{n.title}</h3>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap ${color}`}>
-                  {category}
-                </span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap ${color}`}>{category}</span>
               </div>
-              {n.body && (
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{n.body}</p>
-              )}
-              <p className="text-xs text-muted-foreground mt-2">
-                {formatRelative(n.created_at)}
-              </p>
+              {n.body && <p className="text-sm text-muted-foreground whitespace-pre-wrap">{n.body}</p>}
+              <p className="text-xs text-muted-foreground mt-2">{formatRelative(n.created_at)}</p>
             </div>
-
-            {n.link && (
-              <span className="text-muted-foreground text-sm shrink-0">←</span>
-            )}
+            {n.link && <span className="text-muted-foreground text-sm shrink-0">←</span>}
           </div>
         );
 
-        if (n.link) {
-          return (
-            <Link
-              key={n.id}
-              href={n.link}
-              onClick={() => handleClick(n)}
-              className="block"
-            >
-              {content}
-            </Link>
-          );
-        }
-
-        return (
-          <div key={n.id} onClick={() => handleClick(n)}>
-            {content}
-          </div>
+        return n.link ? (
+          <Link key={n.id} href={n.link} onClick={() => handleClick(n)} className="block">{content}</Link>
+        ) : (
+          <div key={n.id} onClick={() => handleClick(n)}>{content}</div>
         );
       })}
     </div>

@@ -30,6 +30,8 @@
 | [`docs/redeem-hardening.md`](docs/redeem-hardening.md) | تحصين نقطة تفعيل الأكواد (`/api/redeem`) وحدود المحاولات ونموذج التهديدات |
 | [`docs/categories-management.md`](docs/categories-management.md) | إدارة التصنيفات الهرمية والحماية من الحلقات |
 | [`docs/notifications.md`](docs/notifications.md) | نظام الإشعارات الفورية ومشغلات قاعدة البيانات التلقائية |
+| [`docs/admin-notifications.md`](docs/admin-notifications.md) | إشعارات الإدارة الموجهة حسب الصلاحية ومسار `/notifications` الموحّد (`030_admin_notifications.sql`) |
+| [`docs/storefront-ux.md`](docs/storefront-ux.md) | تحسينات المتجر: صور الغلاف ومعرض الصور، `Breadcrumbs`، المنتجات المشابهة، و`Skeletons` (`029_storefront_ux.sql`) |
 | [`docs/seller-reviews.md`](docs/seller-reviews.md) | إدارة تقييمات البائع (`/seller/reviews`)، الإحصائيات التجميعية، والرد على التقييمات (`028_seller_reviews.sql`) |
 | [`docs/seller-orders.md`](docs/seller-orders.md) | صفحة مبيعات البائع (`/seller/orders`)، تقنيع هوية المشتري، وحساب الصافي بعد العمولة (`032_seller_orders.sql`) |
 | [`docs/security-review.md`](docs/security-review.md) | المراجعة الأمنية الشاملة، الثغرات المكتشفة وإصلاحاتها في `027_security_hardening.sql` |

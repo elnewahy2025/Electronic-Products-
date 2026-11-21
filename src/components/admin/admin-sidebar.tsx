@@ -11,6 +11,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     title: 'الرئيسية',
     items: [
       { href: '/admin', label: 'لوحة التحكم' },
+      { href: '/notifications', label: 'الإشعارات' },
     ],
   },
   {

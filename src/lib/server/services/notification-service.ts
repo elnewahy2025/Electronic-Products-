@@ -7,7 +7,8 @@ export type NotificationCategory =
   | 'code'
   | 'download'
   | 'compensation'
-  | 'system';
+  | 'system'
+  | 'admin';
 
 export type NotificationRow = {
   id: string;
@@ -38,11 +39,8 @@ export async function listMyNotifications(
     .order('created_at', { ascending: false })
     .limit(limit);
 
-  if (filter === 'unread') {
-    q = q.is('read_at', null);
-  } else if (filter !== 'all') {
-    q = q.eq('category', filter);
-  }
+  if (filter === 'unread') q = q.is('read_at', null);
+  else if (filter !== 'all') q = q.eq('category', filter);
 
   const { data } = await q;
   return (data ?? []) as NotificationRow[];
@@ -84,15 +82,21 @@ export async function markAllMyNotificationsRead(): Promise<number> {
   return (data as number) ?? 0;
 }
 
-/**
- * Which categories the current user should see tabs for.
- * Buyers see most; sellers see a subset (they don't get purchase codes).
- */
 export function visibleCategoriesFor(accountType: string): Array<{ key: NotificationFilter; label: string }> {
   const common: Array<{ key: NotificationFilter; label: string }> = [
     { key: 'all', label: 'الكل' },
     { key: 'unread', label: 'غير مقروءة' },
   ];
+
+  if (accountType === 'staff') {
+    return [
+      ...common,
+      { key: 'admin', label: 'إدارة' },
+      { key: 'purchase', label: 'الطلبات' },
+      { key: 'compensation', label: 'التعويضات' },
+      { key: 'system', label: 'النظام' },
+    ];
+  }
 
   if (accountType === 'seller') {
     return [
@@ -102,7 +106,6 @@ export function visibleCategoriesFor(accountType: string): Array<{ key: Notifica
     ];
   }
 
-  // buyer / staff (staff sees their own notifications here too)
   return [
     ...common,
     { key: 'purchase', label: 'الطلبات' },
@@ -112,4 +115,37 @@ export function visibleCategoriesFor(accountType: string): Array<{ key: Notifica
     { key: 'general', label: 'عام' },
     { key: 'system', label: 'النظام' },
   ];
+}
+
+/**
+ * Live snapshot of pending items for the admin banner.
+ * Only queries tables the user can see via RLS.
+ */
+export async function getAdminPendingSummary(): Promise<{
+  purchase_requests: number;
+  seller_applications: number;
+  payouts: number;
+  quarantined: number;
+} | null> {
+  const db = await createClient();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return null;
+
+  const [pr, sa, po, q] = await Promise.all([
+    db.from('purchase_requests').select('*', { count: 'exact', head: true })
+      .in('status', ['created', 'pending']),
+    db.from('seller_profiles').select('*', { count: 'exact', head: true })
+      .eq('status', 'pending'),
+    db.from('seller_payouts').select('*', { count: 'exact', head: true })
+      .eq('status', 'requested'),
+    db.from('quarantine_records').select('*', { count: 'exact', head: true })
+      .is('released_at', null),
+  ]);
+
+  return {
+    purchase_requests: pr.count ?? 0,
+    seller_applications: sa.count ?? 0,
+    payouts: po.count ?? 0,
+    quarantined: q.count ?? 0,
+  };
 }

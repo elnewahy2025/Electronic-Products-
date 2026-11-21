@@ -10,7 +10,7 @@ const ITEMS = [
   { href: '/account/orders', label: 'طلباتي' },
   { href: '/account/codes', label: 'أكوادي' },
   { href: '/account/downloads', label: 'التنزيلات' },
-  { href: '/account/notifications', label: 'الإشعارات' },
+  { href: '/notifications', label: 'الإشعارات' },
   { href: '/account/profile', label: 'الملف الشخصي' },
 ];
 

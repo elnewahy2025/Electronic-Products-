@@ -138,6 +138,10 @@ erDiagram
 - `min_price_checked_at`, `published_at`, `deleted_at`, `created_at`, `updated_at`
 - INDEX `(status, published_at DESC)`, `(seller_id, status)`, `(category_id, published_at DESC) WHERE status = 'published'`، وفهرس `GIN (normalize_arabic(...) gin_trgm_ops)` للبحث السريع (`031_performance_indexes.sql`)
 
+### `product_gallery_images` (`029_storefront_ux.sql`)
+- `id` UUID PK, `product_id` UUID FK→`products(id)` ON DELETE CASCADE, `url` TEXT NOT NULL, `sort_order` INT DEFAULT 0, `created_at` TIMESTAMPTZ
+- فهرس `idx_gallery_product(product_id, sort_order)` + مشغل `trg_limit_gallery` يفرض حدًا أقصى **8 صور** لكل منتج.
+
 ### `product_rating_stats` (`031_performance_indexes.sql`)
 - `product_id` UUID PK FK→`products(id)` ON DELETE CASCADE
 - `avg_rating` NUMERIC(3,2) DEFAULT 0
@@ -295,7 +299,7 @@ erDiagram
 - `favorites`: `(buyer_id, product_id)` PK مركّب
 - `content_reports`: `id`, `reporter_id`, `entity_type`, `entity_id`, `reason`, `status` ENUM(`open`, `resolved`, `dismissed`), `resolved_by`, `resolved_at`, `resolution_note`, `created_at`
 - `support_tickets` & `support_messages`: تذاكر الدعم ورسائلها
-- `notifications` (موسّع في `026_notifications_system.sql`): `id`, `user_id` FK, `type`, `category` (`general`, `purchase`, `code`, `download`, `compensation`, `system`), `title`, `body`, `link`, `data` JSONB, `read_at`, `created_at`
+- `notifications` (موسّع في `026_notifications_system.sql` و`030_admin_notifications.sql`): `id`, `user_id` FK, `type`, `category` (`general`, `purchase`, `code`, `download`, `compensation`, `system`, `admin`), `title`, `body`, `link`, `data` JSONB, `read_at`, `created_at`
 
 ### سجل التدقيق والنسخ الاحتياطي
 - `audit_logs` (`Append-Only`): `id` BIGSERIAL PK, `actor_id`, `actor_role`, `action`, `entity_type`, `entity_id`, `before_value` JSONB, `after_value` JSONB, `reason`, `ip`, `user_agent`, `request_id`, `created_at`

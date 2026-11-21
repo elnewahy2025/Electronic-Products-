@@ -90,6 +90,7 @@ export async function createSellerProduct(input: {
   priceAmount: number;
   priceCurrency: string;
   categoryId?: string | null;
+  coverImageUrl?: string | null;
 }): Promise<{ id: string; slug: string }> {
   const db = await createClient();
 
@@ -122,6 +123,7 @@ export async function createSellerProduct(input: {
       price_amount: input.priceAmount,
       price_currency: input.priceCurrency,
       category_id: input.categoryId ?? null,
+      cover_image_url: input.coverImageUrl ?? null,
       status: 'draft',
     })
     .select('id, slug')
@@ -153,6 +155,7 @@ export async function updateSellerProduct(input: {
   priceAmount?: number;
   priceCurrency?: string;
   categoryId?: string | null;
+  coverImageUrl?: string | null;
 }): Promise<void> {
   const db = await createClient();
 
@@ -163,6 +166,7 @@ export async function updateSellerProduct(input: {
   if (input.priceAmount !== undefined) patch.price_amount = input.priceAmount;
   if (input.priceCurrency !== undefined) patch.price_currency = input.priceCurrency;
   if (input.categoryId !== undefined) patch.category_id = input.categoryId;
+  if (input.coverImageUrl !== undefined) patch.cover_image_url = input.coverImageUrl?.trim() || null;
 
   if (Object.keys(patch).length === 0) return;
 

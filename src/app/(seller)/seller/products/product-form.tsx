@@ -13,6 +13,7 @@ type Props = {
     price_amount: number;
     price_currency: string;
     category_id: string | null;
+    cover_image_url?: string | null;
   };
   categories: { id: string; name: string }[];
   minPrice: number;
@@ -28,6 +29,7 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
   const [price, setPrice] = useState(initial?.price_amount?.toString() ?? '');
   const [currency, setCurrency] = useState(initial?.price_currency ?? 'USD');
   const [categoryId, setCategoryId] = useState(initial?.category_id ?? '');
+  const [coverImageUrl, setCoverImageUrl] = useState(initial?.cover_image_url ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -43,6 +45,7 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
       price_amount: parseFloat(price),
       price_currency: currency,
       category_id: categoryId || null,
+      cover_image_url: coverImageUrl.trim() || null,
     };
 
     const url = mode === 'create'
@@ -111,6 +114,29 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
           className="w-full border rounded p-2 text-sm"
           placeholder="تفاصيل المنتج..."
         />
+      </div>
+
+      <div>
+        <label className="block text-sm mb-1">صورة الغلاف (اختياري)</label>
+        <input
+          type="url"
+          value={coverImageUrl}
+          onChange={e => setCoverImageUrl(e.target.value)}
+          placeholder="https://..."
+          dir="ltr"
+          className="w-full border rounded p-2 text-sm"
+        />
+        <p className="text-xs text-muted-foreground mt-1">
+          رابط صورة مباشر (JPG/PNG/WebP). تظهر في صفحة المنتج والبطاقات.
+        </p>
+        {coverImageUrl && (
+          <img
+            src={coverImageUrl}
+            alt="معاينة"
+            className="mt-2 max-h-32 rounded border"
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">

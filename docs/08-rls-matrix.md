@@ -1,6 +1,6 @@
 # مصفوفة RLS التفصيلية (Row-Level Security Matrix)
 
-توثّق هذه الوثيقة التصميم الكامل والنهائي لسياسات أمن الصفوف (`Row-Level Security - RLS`)، والدوال المساعدة (`SECURITY DEFINER`)، والعروض الآمنة (`Safe Views`)، ومشغلات الحماية الإلزامية (`Triggers`) عبر جميع جداول قاعدة البيانات، شاملةً كافة تحديثات التحصين الأمني والأداء في الترحيلات `027` و`028` و`031` و`032`.
+توثّق هذه الوثيقة التصميم الكامل والنهائي لسياسات أمن الصفوف (`Row-Level Security - RLS`)، والدوال المساعدة (`SECURITY DEFINER`)، والعروض الآمنة (`Safe Views`)، ومشغلات الحماية الإلزامية (`Triggers`) عبر جميع جداول قاعدة البيانات، شاملةً كافة تحديثات التحصين الأمني والأداء في الترحيلات `027` إلى `032`.
 
 ---
 
@@ -174,6 +174,7 @@ session_has_started_delivery(p_session_id uuid) RETURNS boolean
 | `allowed_file_types` | `is_admin_or_above()` **OR** `staff_has('filetype.manage')` (مقيّد في `027_security_hardening.sql`؛ والتحقق أثناء الرفع يتم خادميًا) | `is_admin_or_above()` **OR** `staff_has('filetype.manage')` |
 | `tags` | الكل يقرأ (`true`) | `staff_has('category.manage')` **OR** `is_admin_or_above()` |
 | `product_tags` | الكل يقرأ (`true`) | `seller_owns_product(product_id)` **OR** `is_admin_or_above()` |
+| `product_gallery_images` (`029`) | المنتج منشور (`status = 'published'`) **OR** مالك المنتج **OR** `is_admin_or_above()` | مالك المنتج (`products.seller_id = auth.uid()`) **OR** `is_admin_or_above()` (بحد أقصى 8 صور عبر `trg_limit_gallery`) |
 
 ---
 
@@ -363,6 +364,8 @@ session_has_started_delivery(p_session_id uuid) RETURNS boolean
    - `expire_partial_session`
    - `pick_drive_account`
    - `update_drive_quota`
+   - `notify_staff_with_permission` (`030_admin_notifications.sql`)
+   - `refresh_product_rating` (`031_performance_indexes.sql`)
 2. **دوال إدارية تتحقق داخليًا من صلاحية المستدعي قبل أي تنفيذ (`IF NOT (is_admin_or_above() OR staff_has(...)) THEN RAISE EXCEPTION 'not_authorized'`):**
    - `confirm_code_delivery`, `revoke_code_before_delivery`, `issue_replacement_code`
    - `create_compensation_session`, `reject_compensation`

@@ -57,6 +57,8 @@
 - **`026_notifications_system.sql`**: توسيع جدول `notifications` مع triggers الإشعارات التلقائية ودالة `mark_all_notifications_read`.
 - **`027_security_hardening.sql`**: التحصين الأمني الشامل (فحص الصلاحيات داخل 24 دالة RPC إدارية، سحب 5 دوال خادمية من `authenticated`، إصلاح 4 سياسات RLS، وإضافة 4 triggers لحماية الحقول من التلاعب).
 - **`028_seller_reviews.sql`**: إدارة تقييمات البائع والرد عليها (`seller_reply`, `seller_replied_at`, `seller_replied_by`، مشغل `trg_restrict_review_reply`، العرض `seller_reviews_view` (`SECURITY INVOKER`)، ودالة الإحصائيات `seller_review_stats`).
+- **`029_storefront_ux.sql`**: صورة غلاف المنتج (`cover_image_url`)، وجدول معرض الصور `product_gallery_images` (مع RLS وحد أقصى 8 صور لكل منتج)، وتحديث `storefront_products` و`search_storefront`، مع مكونات `Breadcrumbs`, `ProductGallery`, `SimilarProducts` وشاشات `loading.tsx`.
+- **`030_admin_notifications.sql`**: دالة `notify_staff_with_permission` (`SECURITY DEFINER`, `service_role` فقط) و5 مشغلات تلقائية لإشعار الموظفين حسب الصلاحية (بائع جديد، طلب سحب، ملف معزول، تعويض، استثناء)، ومسار الإشعارات الموحد `/notifications` مع بانر العناصر المعلّقة.
 - **`031_performance_indexes.sql`**: تفعيل `pg_trgm` وفهرس البحث العربي `idx_products_search_trgm`، و12 فهرسًا على المسارات الساخنة، وجدول `product_rating_stats` التجميعي، وإعادة كتابة `buyer_order_detail` و`buyer_orders_list` لحل مشاكل `N+1`.
 - **`032_seller_orders.sql`**: دوال `seller_orders` و`seller_sales_stats` (`SECURITY DEFINER`) لعرض مبيعات البائع وإحصائياته مع تقنيع هوية المشتري (`ab***@domain.com`) وحساب الصافي بعد العمولة.
 
@@ -89,6 +91,8 @@
 ## 5. تحسينات المرحلة القادمة — خارطة الطريق الإضافية (Next Iteration Roadmap)
 
 - [x] **صفحة تقييمات البائع (`/seller/reviews`)**: مكتملة في الترحيل `028_seller_reviews.sql` و`docs/seller-reviews.md`.
+- [x] **تحسينات UX للمتجر (`Storefront UX`)**: مكتملة في الترحيل `029_storefront_ux.sql` (`cover_image_url`, `product_gallery_images`, `Breadcrumbs`, `ProductGallery`, `SimilarProducts`, `loading.tsx`) و`docs/storefront-ux.md`.
+- [x] **إشعارات الإدارة ومسار `/notifications` الموحد**: مكتملة في الترحيل `030_admin_notifications.sql` و`src/app/notifications/*` و`docs/admin-notifications.md`.
 - [x] **ترويسات الأمان (`CSP + Nonce + HSTS + Permissions-Policy`)**: مكتملة في `middleware.ts`, `src/app/layout.tsx`, `next.config.mjs`, `/api/csp-report`, و`docs/security-headers.md`.
 - [x] **مراجعة الأداء (`Performance Review`)**: مكتملة في الترحيل `031_performance_indexes.sql` (`pg_trgm`, `product_rating_stats`, حل `N+1` في `buyer-service.ts`, `unstable_cache` + `revalidateTag`, `<Suspense>` streaming في `/products`) و`docs/performance.md`.
 - [x] **صفحة مبيعات البائع (`/seller/orders`)**: مكتملة في الترحيل `032_seller_orders.sql` و`src/app/(seller)/seller/orders/*` و`docs/seller-orders.md` مع تقنيع هوية المشتري.

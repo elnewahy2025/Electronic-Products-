@@ -33,7 +33,7 @@ export async function SiteHeader() {
           <InstantSearch />
         </div>
         <nav className="flex items-center gap-2 text-sm">
-          {user && <NotificationBell href={bellHref} />}
+          {user && <NotificationBell />}
           {!user && (
             <>
               <Link href="/login" className="hover:underline">دخول</Link>

@@ -10,6 +10,7 @@ const body = z.object({
   price_amount: z.number().positive().optional(),
   price_currency: z.enum(['USD', 'EGP', 'SAR', 'KWD']).optional(),
   category_id: z.string().uuid().nullable().optional(),
+  cover_image_url: z.string().url().max(1000).nullable().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -27,6 +28,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       priceAmount: parsed.data.price_amount,
       priceCurrency: parsed.data.price_currency,
       categoryId: parsed.data.category_id,
+      coverImageUrl: parsed.data.cover_image_url,
     });
     return NextResponse.json({ ok: true });
   } catch (e: any) {

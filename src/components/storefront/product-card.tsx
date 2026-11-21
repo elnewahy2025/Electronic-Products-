@@ -10,6 +10,7 @@ type ProductCardProps = {
   seller_display_name?: string;
   rating_avg?: number;
   rating_count?: number;
+  cover_image_url?: string | null;
 };
 
 export function ProductCard(p: ProductCardProps) {
@@ -18,8 +19,19 @@ export function ProductCard(p: ProductCardProps) {
       href={`/products/${p.slug}`}
       className="group border rounded-lg overflow-hidden hover:shadow-md transition flex flex-col"
     >
-      <div className="aspect-video bg-muted flex items-center justify-center text-muted-foreground text-sm">
-        <span>منتج رقمي</span>
+      <div className="aspect-video bg-muted relative overflow-hidden">
+        {p.cover_image_url ? (
+          <img
+            src={p.cover_image_url}
+            alt={p.title}
+            loading="lazy"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
+            منتج رقمي
+          </div>
+        )}
       </div>
       <div className="p-3 flex-1 flex flex-col">
         <h3 className="font-medium line-clamp-2 group-hover:text-primary transition">

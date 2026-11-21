@@ -17,7 +17,7 @@ export default async function EditProductPage({ params }: { params: { id: string
   const [categories, { data: pricing }, { data: full }] = await Promise.all([
     listCategoriesFlat(),
     db.from('pricing_settings').select('min_product_price, min_product_price_currency').eq('id', 1).single(),
-    db.from('products').select('description').eq('id', params.id).single(),
+    db.from('products').select('description, cover_image_url').eq('id', params.id).single(),
   ]);
 
   return (
@@ -35,12 +35,20 @@ export default async function EditProductPage({ params }: { params: { id: string
             {product.versions_count} إصدار — {product.status}
           </p>
         </div>
-        <Link
-          href={`/seller/products/${params.id}/versions`}
-          className="bg-primary text-primary-foreground rounded px-3 py-1.5 text-sm"
-        >
-          إدارة الإصدارات
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/seller/products/${params.id}/gallery`}
+            className="border rounded px-3 py-1.5 text-sm hover:bg-accent"
+          >
+            معرض الصور
+          </Link>
+          <Link
+            href={`/seller/products/${params.id}/versions`}
+            className="bg-primary text-primary-foreground rounded px-3 py-1.5 text-sm"
+          >
+            إدارة الإصدارات
+          </Link>
+        </div>
       </div>
 
       <ProductActions
@@ -59,6 +67,7 @@ export default async function EditProductPage({ params }: { params: { id: string
           price_amount: product.price_amount,
           price_currency: product.price_currency,
           category_id: product.category_id,
+          cover_image_url: (full as any)?.cover_image_url ?? null,
         }}
         categories={categories.filter(c => c.is_active)}
         minPrice={Number(pricing?.min_product_price ?? 0)}
