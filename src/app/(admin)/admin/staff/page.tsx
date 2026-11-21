@@ -6,7 +6,7 @@ export default async function StaffPage() {
   const db = await createClient();
   const { data: members } = await db
     .from('store_members')
-    .select('profile_id, status, granted_at, roles(code, name), profiles!inner(email, full_name)')
+    .select('profile_id, status, granted_at, roles(code, name), profiles:profiles!store_members_profile_id_fkey(email, full_name)')
     .order('granted_at', { ascending: false });
 
   return (
