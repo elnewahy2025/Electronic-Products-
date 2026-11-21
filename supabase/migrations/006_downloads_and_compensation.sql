@@ -62,28 +62,6 @@ $$;
 CREATE TRIGGER trg_download_sessions_expiry BEFORE INSERT ON download_sessions
   FOR EACH ROW EXECUTE FUNCTION set_download_session_expiry();
 
--- Helper: has any delivery been started?
-CREATE OR REPLACE FUNCTION session_has_started_delivery(p_session_id uuid) RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT EXISTS (SELECT 1 FROM download_deliveries WHERE session_id = p_session_id)
-$$;
-
--- Trigger: block revoke after delivery started
-CREATE OR REPLACE FUNCTION block_session_revoke_after_delivery() RETURNS trigger
-LANGUAGE plpgsql AS $$
-BEGIN
-  IF NEW.status = 'revoked' AND OLD.status <> 'revoked' THEN
-    IF session_has_started_delivery(OLD.id) THEN
-      RAISE EXCEPTION 'session_revocation_blocked_after_delivery';
-    END IF;
-  END IF;
-  RETURN NEW;
-END;
-$$;
-CREATE TRIGGER trg_download_sessions_block_revoke
-  BEFORE UPDATE ON download_sessions
-  FOR EACH ROW EXECUTE FUNCTION block_session_revoke_after_delivery();
-
 CREATE TABLE download_tokens (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id uuid NOT NULL REFERENCES download_sessions(id) ON DELETE CASCADE,
@@ -125,6 +103,28 @@ CREATE UNIQUE INDEX uq_download_deliveries_completed
   ON download_deliveries(session_id, file_version_id)
   WHERE completed = true;
 CREATE INDEX idx_download_deliveries_session ON download_deliveries(session_id);
+
+-- Helper: has any delivery been started?
+CREATE OR REPLACE FUNCTION session_has_started_delivery(p_session_id uuid) RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM download_deliveries WHERE session_id = p_session_id)
+$$;
+
+-- Trigger: block revoke after delivery started
+CREATE OR REPLACE FUNCTION block_session_revoke_after_delivery() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.status = 'revoked' AND OLD.status <> 'revoked' THEN
+    IF session_has_started_delivery(OLD.id) THEN
+      RAISE EXCEPTION 'session_revocation_blocked_after_delivery';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+CREATE TRIGGER trg_download_sessions_block_revoke
+  BEFORE UPDATE ON download_sessions
+  FOR EACH ROW EXECUTE FUNCTION block_session_revoke_after_delivery();
 
 CREATE TABLE compensation_requests (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

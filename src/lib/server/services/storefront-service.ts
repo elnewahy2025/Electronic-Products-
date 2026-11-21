@@ -1,6 +1,15 @@
 import 'server-only';
 import { unstable_cache } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/lib/supabase/types';
+
+function createPublicClient() {
+  return createSupabaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  );
+}
 
 export type StorefrontProduct = {
   id: string;
@@ -48,7 +57,7 @@ export async function searchStorefront(params: SearchParams): Promise<SearchResu
 
   const cached = unstable_cache(
     async () => {
-      const db = await createClient();
+      const db = createPublicClient();
       const { data, error } = await db.rpc('search_storefront', {
         p_query: params.query ?? null,
         p_category_slug: params.categorySlug ?? null,
@@ -86,7 +95,7 @@ export async function getTopCategories(): Promise<Array<{
 }>> {
   const cached = unstable_cache(
     async () => {
-      const db = await createClient();
+      const db = createPublicClient();
       const { data } = await db
         .from('storefront_top_categories')
         .select('id, name, slug, product_count');
@@ -104,7 +113,7 @@ export async function getAllCategories(): Promise<Array<{
 }>> {
   const cached = unstable_cache(
     async () => {
-      const db = await createClient();
+      const db = createPublicClient();
       const { data } = await db
         .from('storefront_categories')
         .select('id, name, slug, parent_id, product_count, sort_order')
