@@ -22,7 +22,7 @@
 | [`docs/04-permissions-matrix.md`](docs/04-permissions-matrix.md) | مصفوفة الصلاحيات الكاملة (الإدارة + **مصفوفة صلاحيات مسار التنزيل والتعويض والاستثناء** + التقييمات) |
 | [`docs/05-audit-events.md`](docs/05-audit-events.md) | قاموس أحداث سجل التدقيق (`audit_logs`) وقواعد الحماية والأرشفة |
 | [`docs/06-testing-checklist.md`](docs/06-testing-checklist.md) | قائمة الاختبارات الإلزامية قبل الإطلاق |
-| [`docs/07-implementation-plan.md`](docs/07-implementation-plan.md) | خطة التنفيذ المرحلية المحدّثة (0–14) وخريطة الترحيلات (`001`–`028`) والنقاط المتبقية |
+| [`docs/07-implementation-plan.md`](docs/07-implementation-plan.md) | خطة التنفيذ المرحلية المحدّثة (0–14) وخريطة الترحيلات (`001`–`032`) والنقاط المتبقية |
 | [`docs/08-rls-matrix.md`](docs/08-rls-matrix.md) | مصفوفة `RLS` التفصيلية لكل جدول، العروض الآمنة، المشغلات، وتحصين دوال `SECURITY DEFINER` |
 | [`docs/drive-upload-flow.md`](docs/drive-upload-flow.md) | تدفق ربط Google Drive والرفع المباشر القابل للاستئناف وإدارة الحصص |
 | [`docs/scan-preview-flow.md`](docs/scan-preview-flow.md) | خط أنابيب الفحص التلقائي، العزل، وتوليد المعاينات الموسومة بالعلامة المائية |
@@ -31,14 +31,17 @@
 | [`docs/categories-management.md`](docs/categories-management.md) | إدارة التصنيفات الهرمية والحماية من الحلقات |
 | [`docs/notifications.md`](docs/notifications.md) | نظام الإشعارات الفورية ومشغلات قاعدة البيانات التلقائية |
 | [`docs/seller-reviews.md`](docs/seller-reviews.md) | إدارة تقييمات البائع (`/seller/reviews`)، الإحصائيات التجميعية، والرد على التقييمات (`028_seller_reviews.sql`) |
+| [`docs/seller-orders.md`](docs/seller-orders.md) | صفحة مبيعات البائع (`/seller/orders`)، تقنيع هوية المشتري، وحساب الصافي بعد العمولة (`032_seller_orders.sql`) |
 | [`docs/security-review.md`](docs/security-review.md) | المراجعة الأمنية الشاملة، الثغرات المكتشفة وإصلاحاتها في `027_security_hardening.sql` |
+| [`docs/security-headers.md`](docs/security-headers.md) | ترويسات الأمان على مستوى المتصفح (`CSP + Nonce`, `HSTS`, `Permissions-Policy`, `/api/csp-report`) |
+| [`docs/performance.md`](docs/performance.md) | مراجعة الأداء: الفهارس (`pg_trgm`)، حل `N+1`، `unstable_cache`، و`Suspense` streaming (`031_performance_indexes.sql`) |
 
 ## هيكل المشروع
 ```text
-├── docs/                     # وثائق المتطلبات، ERD، مصفوفة الصلاحيات وRLS، العقود، والأمان
+├── docs/                     # وثائق المتطلبات، ERD، مصفوفة الصلاحيات وRLS، العقود، والأمان والأداء
 ├── supabase/
 │   ├── config.toml           # إعدادات Supabase المحلية
-│   └── migrations/           # ملفات قاعدة البيانات (001 إلى 028)
+│   └── migrations/           # ملفات قاعدة البيانات (001 إلى 032)
 ├── src/
 │   ├── app/                  # صفحات ومسارات Next.js App Router و API Routes
 │   ├── components/           # مكونات الواجهة (Storefront, Buyer, Seller, Admin)

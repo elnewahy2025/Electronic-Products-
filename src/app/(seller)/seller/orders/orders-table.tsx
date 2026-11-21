@@ -1,0 +1,84 @@
+import Link from 'next/link';
+import {
+  getDisplayStatus,
+  type SellerOrderRow,
+} from '@/lib/server/services/seller-order-service';
+
+const VARIANT_CLASSES: Record<string, string> = {
+  gray: 'bg-gray-100 text-gray-800',
+  yellow: 'bg-yellow-100 text-yellow-800',
+  blue: 'bg-blue-100 text-blue-800',
+  green: 'bg-green-100 text-green-800',
+  orange: 'bg-orange-100 text-orange-800',
+  red: 'bg-red-100 text-red-800',
+};
+
+export function OrdersTable({ orders }: { orders: SellerOrderRow[] }) {
+  if (orders.length === 0) {
+    return (
+      <div className="border rounded-lg p-10 text-center text-muted-foreground">
+        <p>لا توجد مبيعات مطابقة للفلاتر.</p>
+        <Link href="/seller/orders" className="text-primary text-sm mt-2 inline-block">
+          مسح الفلاتر
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <table className="w-full text-sm">
+        <thead className="bg-muted">
+          <tr>
+            <th className="text-right p-3">المنتج</th>
+            <th className="text-right p-3">المشتري</th>
+            <th className="text-right p-3">المبلغ</th>
+            <th className="text-right p-3">الصافي</th>
+            <th className="text-right p-3">الحالة</th>
+            <th className="text-right p-3">المحاولات</th>
+            <th className="text-right p-3">التاريخ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map(o => {
+            const status = getDisplayStatus(o);
+            const badge = VARIANT_CLASSES[status.variant] ?? VARIANT_CLASSES.gray;
+
+            return (
+              <tr key={o.order_item_id} className="border-t hover:bg-muted/20">
+                <td className="p-3">
+                  <Link
+                    href={`/products/${o.product_slug}`}
+                    className="font-medium hover:underline"
+                  >
+                    {o.product_title}
+                  </Link>
+                </td>
+                <td className="p-3 text-xs text-muted-foreground" dir="ltr">
+                  {o.buyer_masked}
+                </td>
+                <td className="p-3 text-xs">
+                  {o.price.toFixed(2)} {o.currency}
+                </td>
+                <td className="p-3 text-xs text-green-700">
+                  {o.net_amount.toFixed(2)} {o.currency}
+                </td>
+                <td className="p-3">
+                  <span className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${badge}`}>
+                    {status.label}
+                  </span>
+                </td>
+                <td className="p-3 text-xs text-muted-foreground">
+                  {o.attempts_used}/{o.attempts_max}
+                </td>
+                <td className="p-3 text-xs text-muted-foreground">
+                  {new Date(o.ordered_at).toLocaleDateString('ar')}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}

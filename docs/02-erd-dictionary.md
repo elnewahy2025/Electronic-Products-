@@ -1,5 +1,5 @@
 # ERD وقاموس البيانات — منصة المنتجات الرقمية
-الإصدار: 1.2 (النهائي المحدّث شاملاً الترحيلات `001` إلى `028`) — 21 نوفمبر 2026
+الإصدار: 1.3 (النهائي المحدّث شاملاً الترحيلات حتى `032`) — 21 نوفمبر 2026
 
 ## 1. الاصطلاحات العامة
 - **المفاتيح الأساسية:** `UUID` مع `gen_random_uuid()` (باستثناء `audit_logs` و`security_events` و`redeem_attempts` من نوع `BIGSERIAL`، وجداول الإعدادات الأحد عشر من نوع `SMALLINT CHECK (id = 1)`).
@@ -130,13 +130,20 @@ erDiagram
 - `id` UUID PK
 - `seller_id` UUID FK→`seller_profiles(profile_id)` ON DELETE RESTRICT
 - `category_id` UUID FK→`categories(id)` ON DELETE SET NULL
-- `title`, `slug` UNIQUE, `short_description`, `description`
+- `title`, `slug` UNIQUE, `short_description`, `description`, `cover_image_url`
 - `price_amount` NUMERIC(18,4)
 - `price_currency` CHAR(3)
 - `status` ENUM(`draft`, `published`, `paused`, `suspended`, `rejected`, `deleted`, `archived`)
 - `rejection_reason`, `suspension_reason`
 - `min_price_checked_at`, `published_at`, `deleted_at`, `created_at`, `updated_at`
-- INDEX `(status, published_at DESC)`, `(seller_id, status)`, `GIN(to_tsvector('simple', coalesce(title,'') || ' ' || coalesce(description,'')))`
+- INDEX `(status, published_at DESC)`, `(seller_id, status)`, `(category_id, published_at DESC) WHERE status = 'published'`، وفهرس `GIN (normalize_arabic(...) gin_trgm_ops)` للبحث السريع (`031_performance_indexes.sql`)
+
+### `product_rating_stats` (`031_performance_indexes.sql`)
+- `product_id` UUID PK FK→`products(id)` ON DELETE CASCADE
+- `avg_rating` NUMERIC(3,2) DEFAULT 0
+- `review_count` INT DEFAULT 0
+- `updated_at` TIMESTAMPTZ
+- يُحدَّث تلقائيًا عبر triggers على `reviews` (`trg_reviews_refresh_rating_*`) ويُستخدم داخل `storefront_products` لتجنب استعلامات `AVG()` الفرعية المتكررة.
 
 ### `product_versions`
 - `id` UUID PK

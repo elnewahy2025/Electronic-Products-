@@ -1,4 +1,5 @@
 import 'server-only';
+import { revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { logAudit } from '@/lib/audit/logger';
 
@@ -165,6 +166,7 @@ export async function createCategory(input: {
     after: { name, slug, parent_id: input.parentId ?? null },
   });
 
+  revalidateTag('storefront-categories');
   return data;
 }
 
@@ -242,6 +244,7 @@ export async function updateCategory(input: {
     before: current,
     after: patch,
   });
+  revalidateTag('storefront-categories');
 }
 
 export async function deleteCategory(input: {
@@ -268,6 +271,8 @@ export async function deleteCategory(input: {
   }
 
   const row = data as { reassigned_children: number; reassigned_products: number };
+  revalidateTag('storefront-categories');
+  revalidateTag('storefront-products');
   return {
     reassignedChildren: row.reassigned_children ?? 0,
     reassignedProducts: row.reassigned_products ?? 0,
@@ -282,4 +287,5 @@ export async function reorderCategories(
     p_order: order,
   });
   if (error) throw new Error(error.message);
+  revalidateTag('storefront-categories');
 }

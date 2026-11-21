@@ -8,6 +8,7 @@ import { useState } from 'react';
 const ITEMS = [
   { href: '/seller', label: 'لوحة التحكم' },
   { href: '/seller/products', label: 'منتجاتي' },
+  { href: '/seller/orders', label: 'مبيعاتي' },
   { href: '/seller/files', label: 'مكتبة الملفات' },
   { href: '/seller/upload', label: 'رفع ملف جديد' },
   { href: '/seller/drive-accounts', label: 'حسابات Drive' },

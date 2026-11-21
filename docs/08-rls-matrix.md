@@ -1,6 +1,6 @@
 # مصفوفة RLS التفصيلية (Row-Level Security Matrix)
 
-توثّق هذه الوثيقة التصميم الكامل والنهائي لسياسات أمن الصفوف (`Row-Level Security - RLS`)، والدوال المساعدة (`SECURITY DEFINER`)، والعروض الآمنة (`Safe Views`)، ومشغلات الحماية الإلزامية (`Triggers`) عبر جميع جداول قاعدة البيانات، شاملةً كافة تحديثات التحصين الأمني في الترحيلين `027_security_hardening.sql` و`028_seller_reviews.sql`.
+توثّق هذه الوثيقة التصميم الكامل والنهائي لسياسات أمن الصفوف (`Row-Level Security - RLS`)، والدوال المساعدة (`SECURITY DEFINER`)، والعروض الآمنة (`Safe Views`)، ومشغلات الحماية الإلزامية (`Triggers`) عبر جميع جداول قاعدة البيانات، شاملةً كافة تحديثات التحصين الأمني والأداء في الترحيلات `027` و`028` و`031` و`032`.
 
 ---
 
@@ -373,6 +373,10 @@ session_has_started_delivery(p_session_id uuid) RETURNS boolean
    - `delete_review`, `resolve_report`
    - `set_category_parent`, `delete_category_safe`, `reorder_categories`
    - `issue_attempt_exception`, `adjust_wallet` (`is_super_admin()` حصريًا)
+3. **دوال `SECURITY DEFINER` مقيدة بملكية المستخدم الحالي (`auth.uid()`) (`031` و`032`):**
+   - `buyer_order_detail(p_request_id)` و`buyer_orders_list()`: تتحققان داخليًا من `buyer_id = auth.uid() OR customer_email = auth.email()` وتخفيان `admin_reason` إلا عند `status = 'rejected'`.
+   - `seller_orders(...)` و`seller_sales_stats()`: تفرضان `p.seller_id = auth.uid()` داخليًا وتقنّعان بريد المشتري (`ab***@domain.com`) لحماية خصوصية المشتري، وممنوحتان لـ `authenticated` فقط.
+   - `refresh_product_rating(p_product_id)`: محصورة بـ `service_role` فقط (تُستدعى عبر triggers).
 
 ---
 

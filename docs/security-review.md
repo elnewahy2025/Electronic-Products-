@@ -103,12 +103,12 @@ END IF;
 5. **Quarantined or deleted files remaining on Google Drive:** When a quarantined file is deleted, Drive deletion is best-effort. *Mitigation:* Periodic background reconciliation job.
 6. **Insider admin abuse:** Every admin action is logged in `audit_logs` (append-only), but an authorized admin could approve their own purchase request. *Mitigation:* Regular audit log review and future two-person approval rule for high-value actions.
 7. **`get_usd_rate` is public:** Anyone can query exchange rates, which are non-sensitive public storefront data.
-8. **Content-Security-Policy (CSP) headers:** Add strict `Content-Security-Policy` and `Strict-Transport-Security` headers in `next.config.mjs` to further mitigate XSS.
+8. **Content-Security-Policy (CSP) & HSTS headers:** **Implemented** in `middleware.ts` (per-request nonce + dynamic CSP + HSTS in production) and `next.config.mjs` (static security headers + `poweredByHeader: false`), with optional violation reporting at `/api/csp-report`. See [`docs/security-headers.md`](security-headers.md).
 
 ---
 
 ## 6. Recommendations for Next Iteration
-- Add `CSP`, `HSTS`, `X-Frame-Options`, and `X-Content-Type-Options` headers in `next.config.mjs`
+- Tighten `img-src` in CSP once product cover images are uploaded to Supabase Storage
 - Add 2FA backup/recovery codes for staff and admins
 - Add per-admin IP allowlisting for critical actions (`wallet.adjust`, `backup.restore`)
 - Add real-time security alerts (email/webhook on repeated `code_revocation_blocked_after_delivery` or brute-force spikes)

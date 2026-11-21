@@ -1,4 +1,5 @@
 import 'server-only';
+import { revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { logAudit } from '@/lib/audit/logger';
 
@@ -69,6 +70,7 @@ export async function createVersion(productId: string): Promise<{ id: string; ve
     .single();
 
   if (error) throw new Error(error.message);
+  revalidateTag('storefront-products');
   return data;
 }
 
@@ -113,6 +115,7 @@ export async function addFileToVersion(
     if (error.message.includes('file_not_owned')) throw new Error('file_not_owned');
     throw new Error(error.message);
   }
+  revalidateTag('storefront-products');
 }
 
 export async function removeFileFromVersion(
@@ -126,6 +129,7 @@ export async function removeFileFromVersion(
     .eq('id', pvfId)
     .eq('product_version_id', versionId);
   if (error) throw new Error(error.message);
+  revalidateTag('storefront-products');
 }
 
 export async function updateVersionFile(
@@ -138,6 +142,7 @@ export async function updateVersionFile(
     .update(patch)
     .eq('id', pvfId);
   if (error) throw new Error(error.message);
+  revalidateTag('storefront-products');
 }
 
 export async function publishVersion(versionId: string): Promise<void> {
@@ -150,4 +155,5 @@ export async function publishVersion(versionId: string): Promise<void> {
     if (error.message.includes('version_has_unready_files')) throw new Error('version_has_unready_files');
     throw new Error(error.message);
   }
+  revalidateTag('storefront-products');
 }

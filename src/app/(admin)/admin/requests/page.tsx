@@ -12,12 +12,13 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default async function RequestsPage({ searchParams }: { searchParams: { status?: string } }) {
   const db = await createClient();
+
   let q = db
     .from('purchase_requests')
     .select(`
       id, status, total_amount, currency, amount_in_usd,
       customer_email, customer_phone, created_at,
-      purchase_request_items(id, product_id, products!inner(title))
+      purchase_request_items(id, product_id, products(title))
     `)
     .order('created_at', { ascending: false })
     .limit(100);
@@ -53,11 +54,16 @@ export default async function RequestsPage({ searchParams }: { searchParams: { s
             {(data ?? []).map((row: any) => (
               <tr key={row.id} className="border-t">
                 <td className="p-3">
-                  {row.purchase_request_items?.map((i: any) => i.products.title).join(', ')}
+                  {row.purchase_request_items?.[0]?.products?.title ?? '—'}
+                  {row.purchase_request_items && row.purchase_request_items.length > 1 && (
+                    <span className="text-xs text-muted-foreground">
+                      {' '}+{row.purchase_request_items.length - 1}
+                    </span>
+                  )}
                 </td>
                 <td className="p-3 text-xs">{row.customer_email ?? row.customer_phone ?? '—'}</td>
                 <td className="p-3">{row.total_amount} {row.currency}</td>
-                <td className="p-3 text-xs">{STATUS_LABELS[row.status]}</td>
+                <td className="p-3 text-xs">{STATUS_LABELS[row.status] ?? row.status}</td>
                 <td className="p-3 text-xs text-muted-foreground">
                   {new Date(row.created_at).toLocaleDateString('ar')}
                 </td>
@@ -66,7 +72,9 @@ export default async function RequestsPage({ searchParams }: { searchParams: { s
                 </td>
               </tr>
             ))}
-            {!data?.length && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">لا توجد طلبات</td></tr>}
+            {!data?.length && (
+              <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">لا توجد طلبات</td></tr>
+            )}
           </tbody>
         </table>
       </div>

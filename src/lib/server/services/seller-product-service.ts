@@ -1,4 +1,5 @@
 import 'server-only';
+import { revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { logAudit } from '@/lib/audit/logger';
 
@@ -139,6 +140,7 @@ export async function createSellerProduct(input: {
     after: { title: input.title, price: input.priceAmount },
   });
 
+  revalidateTag('storefront-products');
   return data;
 }
 
@@ -181,6 +183,7 @@ export async function updateSellerProduct(input: {
     entityId: input.productId,
     after: patch,
   });
+  revalidateTag('storefront-products');
 }
 
 export async function deleteSellerProduct(sellerId: string, productId: string): Promise<void> {
@@ -211,20 +214,24 @@ export async function deleteSellerProduct(sellerId: string, productId: string): 
       entityId: productId,
       reason: 'soft_delete_has_orders',
     });
+    revalidateTag('storefront-products');
     return;
   }
 
   const { error } = await db.from('products').delete().eq('id', productId);
   if (error) {
     await db.from('products').update({ status: 'deleted', deleted_at: new Date().toISOString() }).eq('id', productId);
+    revalidateTag('storefront-products');
     throw new Error('soft_deleted');
   }
 
   await logAudit({ action: 'product.deleted', entityType: 'products', entityId: productId });
+  revalidateTag('storefront-products');
 }
 
 export async function unpublishSellerProduct(sellerId: string, productId: string): Promise<void> {
   const db = await createClient();
   const { error } = await db.rpc('unpublish_product', { p_product_id: productId });
   if (error) throw new Error(error.message);
+  revalidateTag('storefront-products');
 }
