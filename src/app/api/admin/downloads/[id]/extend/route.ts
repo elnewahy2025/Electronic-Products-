@@ -1,0 +1,28 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { createClient } from '@/lib/supabase/server';
+import { requirePerm } from '@/lib/auth/admin-guard';
+
+const body = z.object({
+  reason: z.string().min(3),
+  extra_hours: z.number().int().positive().max(168),
+});
+
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    await requirePerm('download.session.extend');
+    const parsed = body.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return NextResponse.json({ error: 'INVALID_BODY' }, { status: 400 });
+
+    const db = await createClient();
+    const { error } = await db.rpc('extend_session', {
+      p_session_id: params.id,
+      p_extra_hours: parsed.data.extra_hours,
+      p_reason: parsed.data.reason,
+    });
+    if (error) throw new Error(error.message);
+    return NextResponse.json({ ok: true });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 403 });
+  }
+}

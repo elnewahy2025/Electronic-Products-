@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/internal/worker/scan-cron", "schedule": "*/2 * * * *" },
+    { "path": "/api/internal/worker/preview-cron", "schedule": "*/5 * * * *" }
+  ]
+}

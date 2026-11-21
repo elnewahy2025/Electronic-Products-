@@ -1,0 +1,437 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+type FlatCategory = {
+  id: string;
+  parent_id: string | null;
+  name: string;
+  slug: string;
+  sort_order: number;
+  is_active: boolean;
+  product_count: number;
+  depth: number;
+};
+
+export function CategoryManager({ initial }: { initial: FlatCategory[] }) {
+  const router = useRouter();
+  const [showCreate, setShowCreate] = useState(false);
+  const [editing, setEditing] = useState<FlatCategory | null>(null);
+  const [deleting, setDeleting] = useState<FlatCategory | null>(null);
+
+  const list = initial;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">التصنيفات</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {list.length} تصنيف
+          </p>
+        </div>
+        <button
+          onClick={() => setShowCreate(true)}
+          className="bg-primary text-primary-foreground rounded px-4 py-2 text-sm"
+        >
+          + تصنيف جديد
+        </button>
+      </div>
+
+      <div className="border rounded overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted">
+            <tr>
+              <th className="text-right p-3">الاسم</th>
+              <th className="text-right p-3">الرابط</th>
+              <th className="text-right p-3">المنتجات</th>
+              <th className="text-right p-3">الحالة</th>
+              <th className="text-right p-3">الترتيب</th>
+              <th className="p-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.length === 0 && (
+              <tr>
+                <td colSpan={6} className="p-6 text-center text-muted-foreground">
+                  لا توجد تصنيفات بعد. أضف أول تصنيف.
+                </td>
+              </tr>
+            )}
+            {list.map(c => (
+              <tr key={c.id} className="border-t">
+                <td className="p-3">
+                  <div style={{ paddingRight: `${c.depth * 20}px` }} className="flex items-center gap-2">
+                    {c.depth > 0 && <span className="text-muted-foreground">└─</span>}
+                    <span className="font-medium">{c.name}</span>
+                  </div>
+                </td>
+                <td className="p-3 text-xs font-mono text-muted-foreground">{c.slug}</td>
+                <td className="p-3 text-xs">{c.product_count}</td>
+                <td className="p-3">
+                  <span className={`text-xs px-2 py-0.5 rounded ${
+                    c.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {c.is_active ? 'مفعّل' : 'معطّل'}
+                  </span>
+                </td>
+                <td className="p-3 text-xs text-muted-foreground">{c.sort_order}</td>
+                <td className="p-3">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setEditing(c)}
+                      className="text-primary text-xs"
+                    >
+                      تعديل
+                    </button>
+                    <button
+                      onClick={() => setDeleting(c)}
+                      className="text-red-600 text-xs"
+                    >
+                      حذف
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {showCreate && (
+        <CategoryDialog
+          mode="create"
+          categories={list}
+          onClose={() => setShowCreate(false)}
+          onDone={() => { setShowCreate(false); router.refresh(); }}
+        />
+      )}
+
+      {editing && (
+        <CategoryDialog
+          mode="edit"
+          categories={list}
+          editing={editing}
+          onClose={() => setEditing(null)}
+          onDone={() => { setEditing(null); router.refresh(); }}
+        />
+      )}
+
+      {deleting && (
+        <DeleteDialog
+          category={deleting}
+          categories={list.filter(c => c.id !== deleting.id && !isDescendant(list, deleting.id, c.id))}
+          onClose={() => setDeleting(null)}
+          onDone={() => { setDeleting(null); router.refresh(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function isDescendant(all: FlatCategory[], ancestorId: string, candidateId: string): boolean {
+  let current = all.find(c => c.id === candidateId);
+  let depth = 0;
+  while (current?.parent_id && depth < 100) {
+    if (current.parent_id === ancestorId) return true;
+    current = all.find(c => c.id === current!.parent_id);
+    depth++;
+  }
+  return false;
+}
+
+// ─── Create / Edit Dialog ─────────────────────────────────
+
+function CategoryDialog({
+  mode,
+  categories,
+  editing,
+  onClose,
+  onDone,
+}: {
+  mode: 'create' | 'edit';
+  categories: FlatCategory[];
+  editing?: FlatCategory;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [name, setName] = useState(editing?.name ?? '');
+  const [slug, setSlug] = useState(editing?.slug ?? '');
+  const [parentId, setParentId] = useState(editing?.parent_id ?? '');
+  const [isActive, setIsActive] = useState(editing?.is_active ?? true);
+  const [sortOrder, setSortOrder] = useState(String(editing?.sort_order ?? 0));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Exclude self + descendants from parent options (for edit)
+  const parentOptions = useMemo(() => {
+    if (mode === 'create' || !editing) return categories;
+    return categories.filter(c => c.id !== editing.id && !isDescendant(categories, editing.id, c.id));
+  }, [categories, editing, mode]);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true); setError(null);
+
+    const payload: Record<string, unknown> = {
+      name: name.trim(),
+      parent_id: parentId || null,
+      is_active: isActive,
+      sort_order: parseInt(sortOrder, 10) || 0,
+    };
+    if (mode === 'edit' && slug.trim() && slug.trim() !== editing?.slug) {
+      payload.slug = slug.trim();
+    }
+
+    const url = mode === 'create'
+      ? '/api/admin/categories'
+      : `/api/admin/categories/${editing!.id}`;
+    const method = mode === 'create' ? 'POST' : 'PATCH';
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    setBusy(false);
+
+    if (!res.ok) {
+      const map: Record<string, string> = {
+        name_too_short: 'الاسم قصير جدًا',
+        name_too_long: 'الاسم طويل جدًا',
+        slug_conflict: 'الرابط مستخدم بالفعل',
+        category_cycle_detected: 'لا يمكن جعل التصنيف تابعًا لنفسه أو لأحد أبنائه',
+        parent_not_found: 'التصنيف الأب غير موجود',
+      };
+      return setError(map[json.error] ?? json.error ?? 'حدث خطأ');
+    }
+
+    onDone();
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-background rounded-lg p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+        <h2 className="text-xl font-bold">
+          {mode === 'create' ? 'تصنيف جديد' : `تعديل: ${editing?.name}`}
+        </h2>
+
+        <form onSubmit={submit} className="space-y-3">
+          <div>
+            <label className="block text-xs mb-1">الاسم *</label>
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+              minLength={2}
+              maxLength={80}
+              autoFocus
+              className="w-full border rounded p-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs mb-1">الرابط (slug)</label>
+            <input
+              value={slug}
+              onChange={e => setSlug(e.target.value)}
+              placeholder="يُولّد تلقائيًا إذا تُرك فارغًا"
+              dir="ltr"
+              className="w-full border rounded p-2 text-sm font-mono"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs mb-1">التصنيف الأب</label>
+            <select
+              value={parentId}
+              onChange={e => setParentId(e.target.value)}
+              className="w-full border rounded p-2 text-sm"
+            >
+              <option value="">بدون أب (تصنيف رئيسي)</option>
+              {parentOptions.map(c => (
+                <option key={c.id} value={c.id}>
+                  {'  '.repeat(c.depth)}{c.depth > 0 ? '└ ' : ''}{c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs mb-1">الترتيب</label>
+              <input
+                type="number"
+                value={sortOrder}
+                onChange={e => setSortOrder(e.target.value)}
+                min="0"
+                className="w-full border rounded p-2 text-sm"
+              />
+            </div>
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={isActive}
+                  onChange={e => setIsActive(e.target.checked)}
+                />
+                مفعّل
+              </label>
+            </div>
+          </div>
+
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+
+          <div className="flex gap-2 justify-end pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={busy}
+              className="border rounded px-4 py-2 text-sm"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              disabled={busy || name.trim().length < 2}
+              className="bg-primary text-primary-foreground rounded px-4 py-2 text-sm disabled:opacity-50"
+            >
+              {busy ? '...' : (mode === 'create' ? 'إنشاء' : 'حفظ')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Delete Dialog ────────────────────────────────────────
+
+function DeleteDialog({
+  category,
+  categories,
+  onClose,
+  onDone,
+}: {
+  category: FlatCategory;
+  categories: FlatCategory[];
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [mode, setMode] = useState<'block' | 'reassign'>('block');
+  const [fallbackId, setFallbackId] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const hasDependents = category.product_count > 0;
+
+  async function submit() {
+    setBusy(true); setError(null);
+
+    const res = await fetch(`/api/admin/categories/${category.id}`, {
+      method: 'DELETE',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        mode,
+        fallback_category_id: mode === 'reassign' ? (fallbackId || null) : null,
+      }),
+    });
+    const json = await res.json();
+    setBusy(false);
+
+    if (!res.ok) {
+      const map: Record<string, string> = {
+        category_has_dependents: 'التصنيف مرتبط بمنتجات أو تصنيفات فرعية. اختر إعادة التعيين أو احذف التبعيات أولًا.',
+        invalid_fallback: 'التصنيف البديل غير صالح',
+        fallback_not_found: 'التصنيف البديل غير موجود',
+        fallback_inside_subtree: 'التصنيف البديل لا يمكن أن يكون داخل التصنيف المحذوف',
+      };
+      return setError(map[json.error] ?? json.error ?? 'حدث خطأ');
+    }
+
+    const msg = `تم الحذف.`;
+    if (json.reassigned_products > 0) {
+      alert(`${msg} أُعيد تعيين ${json.reassigned_products} منتج.`);
+    }
+    onDone();
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-background rounded-lg p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+        <h2 className="text-xl font-bold text-red-700">حذف التصنيف</h2>
+        <p className="text-sm">
+          هل تريد حذف «<b>{category.name}</b>»؟
+          {category.product_count > 0 && (
+            <span className="text-red-600"> ({category.product_count} منتج مرتبط)</span>
+          )}
+        </p>
+
+        {hasDependents && (
+          <div className="space-y-2">
+            <label className="flex items-start gap-2 text-sm cursor-pointer">
+              <input
+                type="radio"
+                checked={mode === 'block'}
+                onChange={() => setMode('block')}
+                className="mt-0.5"
+              />
+              <span>منع الحذف (سيفشل بسبب المنتجات المرتبطة)</span>
+            </label>
+            <label className="flex items-start gap-2 text-sm cursor-pointer">
+              <input
+                type="radio"
+                checked={mode === 'reassign'}
+                onChange={() => setMode('reassign')}
+                className="mt-0.5"
+              />
+              <span>إعادة تعيين المنتجات والتصنيفات الفرعية إلى تصنيف بديل</span>
+            </label>
+
+            {mode === 'reassign' && (
+              <select
+                value={fallbackId}
+                onChange={e => setFallbackId(e.target.value)}
+                className="w-full border rounded p-2 text-sm mt-1"
+              >
+                <option value="">بدون تصنيف (تفكيك الارتباط)</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {'  '.repeat(c.depth)}{c.depth > 0 ? '└ ' : ''}{c.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
+
+        {!hasDependents && (
+          <p className="text-xs text-muted-foreground">
+            التصنيف فارغ، سيُحذف مباشرة.
+          </p>
+        )}
+
+        {error && <p className="text-red-600 text-sm">{error}</p>}
+
+        <div className="flex gap-2 justify-end pt-2">
+          <button
+            onClick={onClose}
+            disabled={busy}
+            className="border rounded px-4 py-2 text-sm"
+          >
+            إلغاء
+          </button>
+          <button
+            onClick={submit}
+            disabled={busy}
+            className="bg-red-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50"
+          >
+            {busy ? '...' : 'تأكيد الحذف'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

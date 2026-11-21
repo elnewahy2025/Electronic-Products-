@@ -1,0 +1,43 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { exchangeDriveCode, fetchGoogleUserEmail, verifyState } from '@/lib/drive/oauth';
+import { linkDriveAccount } from '@/lib/server/services/drive-account-service';
+
+export async function GET(req: NextRequest) {
+  const { searchParams, origin } = new URL(req.url);
+  const code = searchParams.get('code');
+  const state = searchParams.get('state');
+  const cookieState = req.cookies.get('drive_oauth_state')?.value;
+
+  if (!code || !state || state !== cookieState) {
+    return NextResponse.redirect(`${origin}/seller/drive-accounts?error=state_mismatch`);
+  }
+
+  const verified = verifyState(state);
+  if (!verified) {
+    return NextResponse.redirect(`${origin}/seller/drive-accounts?error=state_invalid`);
+  }
+
+  const db = await createClient();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user || user.id !== verified.sellerId) {
+    return NextResponse.redirect(`${origin}/seller/drive-accounts?error=session_mismatch`);
+  }
+
+  try {
+    const tokens = await exchangeDriveCode(code);
+    const email = await fetchGoogleUserEmail(tokens.accessToken);
+    await linkDriveAccount({
+      sellerId: user.id,
+      googleEmail: email,
+      refreshToken: tokens.refreshToken,
+      scope: tokens.scope,
+    });
+    const res = NextResponse.redirect(`${origin}/seller/drive-accounts?success=linked`);
+    res.cookies.delete('drive_oauth_state');
+    return res;
+  } catch (e: any) {
+    const reason = encodeURIComponent(e.message ?? 'unknown');
+    return NextResponse.redirect(`${origin}/seller/drive-accounts?error=${reason}`);
+  }
+}
