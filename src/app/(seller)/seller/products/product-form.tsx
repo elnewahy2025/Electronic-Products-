@@ -32,9 +32,87 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
   const [coverImageUrl, setCoverImageUrl] = useState(initial?.cover_image_url ?? '');
   const [uploadingCover, setUploadingCover] = useState(false);
   const [coverInfo, setCoverInfo] = useState<string | null>(null);
+  const [autoPreview, setAutoPreview] = useState<{
+    dataUrl: string;
+    variant: number;
+    width: number;
+    height: number;
+    sizeBytes: number;
+  } | null>(null);
+  const [generatingAuto, setGeneratingAuto] = useState(false);
+  const [approvingAuto, setApprovingAuto] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  async function requestAutoCoverPreview(nextVariant?: number) {
+    const cleanTitle = title.trim();
+    if (cleanTitle.length < 3) {
+      setError('اكتب عنوان المنتج أولاً (3 أحرف على الأقل) لتوليد غلاف تلقائي.');
+      return;
+    }
+    setGeneratingAuto(true);
+    setError(null);
+    const catName = categories.find(c => c.id === categoryId)?.name ?? null;
+    const variant = nextVariant ?? (autoPreview ? (autoPreview.variant + 1) % 4 : 0);
+
+    try {
+      const res = await fetch('/api/seller/images/auto-cover', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          title: cleanTitle,
+          category_name: catName,
+          variant,
+          action: 'preview',
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error ?? 'تعذّر توليد معاينة الغلاف.');
+        return;
+      }
+      setAutoPreview({
+        dataUrl: json.previewDataUrl,
+        variant: json.variant,
+        width: json.width,
+        height: json.height,
+        sizeBytes: json.sizeBytes,
+      });
+    } finally {
+      setGeneratingAuto(false);
+    }
+  }
+
+  async function approveAutoCover() {
+    if (!autoPreview) return;
+    setApprovingAuto(true);
+    setError(null);
+    const catName = categories.find(c => c.id === categoryId)?.name ?? null;
+
+    try {
+      const res = await fetch('/api/seller/images/auto-cover', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          title: title.trim(),
+          category_name: catName,
+          variant: autoPreview.variant,
+          action: 'approve',
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error ?? 'فشل اعتماد ورفع الغلاف.');
+        return;
+      }
+      setCoverImageUrl(json.url);
+      setCoverInfo(`تم اعتماد ورفع الغلاف التلقائي (${json.width}×${json.height} — ${Math.round(json.sizeBytes / 1024)} KB)`);
+      setAutoPreview(null);
+    } finally {
+      setApprovingAuto(false);
+    }
+  }
 
   async function uploadCover(file: File | null) {
     if (!file) return;
@@ -161,6 +239,14 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
             />
             <span>{uploadingCover ? 'جارٍ المعالجة والرفع...' : coverImageUrl ? 'تغيير صورة الغلاف' : 'رفع صورة غلاف'}</span>
           </label>
+          <button
+            type="button"
+            onClick={() => requestAutoCoverPreview()}
+            disabled={generatingAuto || uploadingCover || approvingAuto}
+            className="inline-flex items-center gap-2 border border-primary/40 bg-accent text-accent-foreground rounded-xl px-4 py-2 text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
+          >
+            {generatingAuto ? 'جارٍ التوليد...' : 'توليد غلاف تلقائي'}
+          </button>
           {coverImageUrl && (
             <button
               type="button"
@@ -175,8 +261,52 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
           )}
         </div>
         <p className="text-xs text-muted-foreground">
-          تُرفع مباشرة إلى Supabase Storage وتُضغط تلقائيًا بصيغة WebP (الحد الأقصى 5 ميجابايت).
+          يمكنك رفع صورة بنفسك أو توليد غلاف تلقائي ومعاينته واعتماده قبل الحفظ (WebP، الحد الأقصى 5 ميجابايت).
         </p>
+
+        {autoPreview && (
+          <div className="rounded-xl border border-warning bg-warning-soft/50 p-4 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <p className="text-xs font-semibold text-foreground">
+                معاينة الغلاف المقترح — بانتظار موافقتك قبل الاعتماد
+              </p>
+              <span className="text-[11px] text-muted-foreground ui-num">
+                {autoPreview.width}×{autoPreview.height} · {Math.round(autoPreview.sizeBytes / 1024)} KB
+              </span>
+            </div>
+            <img
+              src={autoPreview.dataUrl}
+              alt="معاينة الغلاف التلقائي"
+              className="max-h-48 rounded-xl border border-border object-cover"
+            />
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={approveAutoCover}
+                disabled={approvingAuto}
+                className="rounded-lg bg-primary text-primary-foreground px-4 py-1.5 text-xs font-semibold hover:opacity-95 disabled:opacity-50"
+              >
+                {approvingAuto ? 'جارٍ الاعتماد والرفع...' : 'اعتماد هذا الغلاف'}
+              </button>
+              <button
+                type="button"
+                onClick={() => requestAutoCoverPreview((autoPreview.variant + 1) % 4)}
+                disabled={generatingAuto || approvingAuto}
+                className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
+              >
+                تجربة تصميم آخر
+              </button>
+              <button
+                type="button"
+                onClick={() => setAutoPreview(null)}
+                disabled={approvingAuto}
+                className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-destructive"
+              >
+                رفض وإلغاء
+              </button>
+            </div>
+          </div>
+        )}
         {coverInfo && <p className="text-xs text-emerald-700">{coverInfo}</p>}
         {coverImageUrl && (
           <img
