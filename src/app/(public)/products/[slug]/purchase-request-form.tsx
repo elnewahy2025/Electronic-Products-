@@ -137,7 +137,7 @@ export function PurchaseRequestForm(p: Props) {
         />
       </div>
 
-      <div className="bg-yellow-50 border border-yellow-200 rounded p-2 text-xs text-yellow-900 space-y-1">
+      <div className="bg-warning-soft/50 border border-warning/40 rounded-lg p-3 text-xs text-foreground space-y-1">
         <p className="font-medium">قبل الإرسال، يرجى العلم:</p>
         <ul className="list-disc pr-5 space-y-0.5">
           <li>الدفع يتم خارج المنصة بعد اعتماد الطلب.</li>

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { FileText, HardDrive, ShieldCheck, Layers } from 'lucide-react';
 import {
   getProductRating,
@@ -236,7 +237,28 @@ export default async function ProductPage({ params }: { params: { slug: string }
               </li>
             </ol>
 
-            {userProfile ? (
+            {dbAuth.data.user?.id === product.seller_id ? (
+              <div className="rounded-xl border border-primary/30 bg-primary/10 p-3.5 text-xs space-y-2.5">
+                <p className="font-semibold text-foreground">هذا منتجك الخاص (أنت البائع)</p>
+                <p className="text-muted-foreground">
+                  لا يمكن شراء منتجك الخاص. يمكنك تعديل بيانات المنتج أو إدارة ملفاته مباشرة:
+                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Link
+                    href={`/seller/products/${product.id}`}
+                    className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 font-semibold hover:opacity-95 transition"
+                  >
+                    تعديل المنتج
+                  </Link>
+                  <Link
+                    href={`/seller/products/${product.id}/versions`}
+                    className="rounded-lg border border-border bg-card px-3 py-1.5 font-medium hover:bg-muted transition"
+                  >
+                    إدارة الإصدارات
+                  </Link>
+                </div>
+              </div>
+            ) : userProfile ? (
               <PurchaseRequestForm
                 productId={product.id}
                 productTitle={product.title}
