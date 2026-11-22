@@ -212,7 +212,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
         </div>
 
         <aside className="space-y-4">
-          <div className="ui-box space-y-4 sticky top-20">
+          <div className="ui-box space-y-4">
             <div>
               <p className="text-2xl font-bold ui-num">
                 {product.price_amount} {product.price_currency}
