@@ -209,9 +209,61 @@ export default async function ProductPage({ params }: { params: { slug: string }
               <p className="whitespace-pre-wrap">{product.description}</p>
             </div>
           )}
+
+          <section className="space-y-4 pt-6 border-t border-border">
+            <h2 className="text-xl font-bold">التقييمات ({reviews.length})</h2>
+
+            {eligibility.canReview && <ReviewForm productId={product.id} />}
+            {!eligibility.canReview && eligibility.reason === 'already_reviewed' && myReview && (
+              <div className="border rounded p-3 bg-muted/30 text-sm">
+                <p className="text-xs text-muted-foreground">تقييمك لهذا المنتج:</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Stars value={myReview.rating} />
+                  {myReview.body && <span className="text-muted-foreground">{myReview.body}</span>}
+                </div>
+              </div>
+            )}
+            {!eligibility.canReview && eligibility.reason === 'not_purchased' && (
+              <p className="text-sm text-muted-foreground">
+                يمكن للمشترين الموثقين فقط إضافة تقييم.
+              </p>
+            )}
+
+            <div className="space-y-3">
+              {reviews.map(r => (
+                <div key={r.id} className="border rounded p-4 space-y-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-muted px-2 py-0.5 rounded">مشتري موثّق</span>
+                      <Stars value={r.rating} />
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(r.created_at).toLocaleDateString('ar')}
+                    </span>
+                  </div>
+                  {r.body && <p className="text-sm whitespace-pre-wrap">{r.body}</p>}
+                  {(r as any).seller_reply && (
+                    <div className="bg-muted/40 border-r-2 border-primary rounded p-2 mt-2">
+                      <p className="text-xs font-medium text-primary mb-1">رد البائع:</p>
+                      <p className="text-sm whitespace-pre-wrap">{(r as any).seller_reply}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {reviews.length === 0 && (
+                <p className="text-muted-foreground text-sm">لا توجد تقييمات بعد.</p>
+              )}
+            </div>
+          </section>
+
+          {similarFiltered.length > 0 && (
+            <div className="pt-4">
+              <SimilarProducts products={similarFiltered} />
+            </div>
+          )}
         </div>
 
-        <aside className="space-y-4 self-start">
+        <aside className="space-y-4 md:sticky md:top-20 md:self-start">
           <div className="ui-box space-y-4">
             <div>
               <p className="text-2xl font-bold ui-num">
@@ -289,56 +341,6 @@ export default async function ProductPage({ params }: { params: { slug: string }
           <ReportForm entityType="product" entityId={product.id} />
         </aside>
       </div>
-
-      <section className="space-y-4">
-        <h2 className="text-xl font-bold">التقييمات ({reviews.length})</h2>
-
-        {eligibility.canReview && <ReviewForm productId={product.id} />}
-        {!eligibility.canReview && eligibility.reason === 'already_reviewed' && myReview && (
-          <div className="border rounded p-3 bg-muted/30 text-sm">
-            <p className="text-xs text-muted-foreground">تقييمك لهذا المنتج:</p>
-            <div className="flex items-center gap-2 mt-1">
-              <Stars value={myReview.rating} />
-              {myReview.body && <span className="text-muted-foreground">{myReview.body}</span>}
-            </div>
-          </div>
-        )}
-        {!eligibility.canReview && eligibility.reason === 'not_purchased' && (
-          <p className="text-sm text-muted-foreground">
-            يمكن للمشترين الموثقين فقط إضافة تقييم.
-          </p>
-        )}
-
-        <div className="space-y-3">
-          {reviews.map(r => (
-            <div key={r.id} className="border rounded p-4 space-y-2">
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs bg-muted px-2 py-0.5 rounded">مشتري موثّق</span>
-                  <Stars value={r.rating} />
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(r.created_at).toLocaleDateString('ar')}
-                </span>
-              </div>
-              {r.body && <p className="text-sm whitespace-pre-wrap">{r.body}</p>}
-              {(r as any).seller_reply && (
-                <div className="bg-muted/40 border-r-2 border-primary rounded p-2 mt-2">
-                  <p className="text-xs font-medium text-primary mb-1">رد البائع:</p>
-                  <p className="text-sm whitespace-pre-wrap">{(r as any).seller_reply}</p>
-                </div>
-              )}
-            </div>
-          ))}
-          {reviews.length === 0 && (
-            <p className="text-muted-foreground text-sm">لا توجد تقييمات بعد.</p>
-          )}
-        </div>
-      </section>
-
-      {similarFiltered.length > 0 && (
-        <SimilarProducts products={similarFiltered} />
-      )}
     </main>
   );
 }
