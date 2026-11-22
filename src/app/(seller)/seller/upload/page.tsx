@@ -12,7 +12,15 @@ type Account = {
   id: string;
   google_account_email: string;
   status: string;
+  is_default?: boolean;
+  quota_used?: number | null;
+  quota_total?: number | null;
 };
+
+function formatGb(bytes?: number | null): string {
+  if (bytes === null || bytes === undefined) return '—';
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
 
 type InitResponse = {
   sessionId: string;
@@ -24,6 +32,7 @@ type Stage = 'idle' | 'initializing' | 'uploading' | 'finalizing' | 'done' | 'er
 
 export default function UploadPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
   const [stage, setStage] = useState<Stage>('idle');
@@ -39,12 +48,20 @@ export default function UploadPage() {
     fetch('/api/seller/drive/accounts')
       .then(r => r.json())
       .then(data => {
-        const active = (data.accounts ?? []).filter((a: Account) => a.status === 'active');
+        const active: Account[] = (data.accounts ?? []).filter(
+          (a: Account) => a.status === 'active',
+        );
         setAccounts(active);
-        if (active.length === 1) setSelectedAccountId(active[0].id);
+        if (active.length > 0) {
+          const def = active.find(a => a.is_default) ?? active[0];
+          setSelectedAccountId(def.id);
+        }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoadingAccounts(false));
   }, []);
+
+  const selectedAccount = accounts.find(a => a.id === selectedAccountId) ?? accounts[0] ?? null;
 
   async function handleUpload() {
     if (!file) return;
@@ -106,7 +123,7 @@ export default function UploadPage() {
         </p>
       </div>
 
-      {accounts.length === 0 && (
+      {!loadingAccounts && accounts.length === 0 && (
         <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
           لا توجد حسابات Drive نشطة. أضف حساباً أولاً من{' '}
           <Link href="/seller/drive-accounts" className="underline font-semibold">
@@ -116,20 +133,63 @@ export default function UploadPage() {
         </div>
       )}
 
-      {accounts.length > 1 && (
-        <div className="ui-box">
-          <label className="block text-sm font-medium mb-1.5">حساب Google Drive</label>
-          <select
-            value={selectedAccountId}
-            onChange={(e) => setSelectedAccountId(e.target.value)}
-            className="w-full border border-border rounded-lg p-2.5 text-sm"
-          >
-            <option value="">توزيع تلقائي / الحساب الافتراضي</option>
-            {accounts.map(a => (
-              <option key={a.id} value={a.id}>{a.google_account_email}</option>
-            ))}
-          </select>
-        </div>
+      {accounts.length > 0 && (
+        <section className="ui-box space-y-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h2 className="text-sm font-bold">حساب Google Drive المستخدم للاستيراد والرفع</h2>
+              <p className="text-xs text-muted-foreground">
+                {accounts.length > 1
+                  ? 'اختر الحساب الذي تريد الأخذ من مجلد Store فيه أو الرفع إليه:'
+                  : 'الحساب المرتبط حالياً بحساب البائع:'}
+              </p>
+            </div>
+            <Link
+              href="/seller/drive-accounts"
+              className="text-xs text-primary hover:underline font-medium"
+            >
+              إدارة / إضافة حساب Drive
+            </Link>
+          </div>
+
+          {accounts.length > 1 ? (
+            <div className="space-y-2">
+              <select
+                value={selectedAccountId}
+                onChange={(e) => {
+                  setSelectedAccountId(e.target.value);
+                  setStoreFolderNotice(null);
+                  setImportedResults(null);
+                }}
+                className="w-full border border-border rounded-lg p-2.5 text-sm"
+              >
+                {accounts.map(a => (
+                  <option key={a.id} value={a.id}>
+                    {a.google_account_email}
+                    {a.is_default ? ' (افتراضي)' : ''}
+                    {a.quota_total ? ` — ${formatGb(a.quota_used)} / ${formatGb(a.quota_total)}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            selectedAccount && (
+              <div className="flex items-center justify-between gap-3 flex-wrap rounded-xl border border-border bg-muted/40 px-3.5 py-2.5 text-sm">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold ui-num">{selectedAccount.google_account_email}</span>
+                  {selectedAccount.is_default && (
+                    <span className="ui-badge ui-badge-green">افتراضي</span>
+                  )}
+                </div>
+                {selectedAccount.quota_total ? (
+                  <span className="text-xs text-muted-foreground ui-num">
+                    المساحة المستخدمة: {formatGb(selectedAccount.quota_used)} / {formatGb(selectedAccount.quota_total)}
+                  </span>
+                ) : null}
+              </div>
+            )
+          )}
+        </section>
       )}
 
       {/* Option 1: Pick existing files from Google Drive Store folder */}
@@ -232,13 +292,16 @@ export default function UploadPage() {
 
         <button
           onClick={handleUpload}
-          disabled={!file || accounts.length === 0 || stage === 'uploading' || stage === 'initializing' || stage === 'finalizing'}
+          disabled={!file || !selectedAccount || stage === 'uploading' || stage === 'initializing' || stage === 'finalizing'}
           className="w-full bg-primary text-primary-foreground rounded-xl p-3 text-sm font-semibold hover:opacity-95 transition disabled:opacity-50"
         >
           {stage === 'initializing' && 'جارٍ التجهيز...'}
           {stage === 'uploading' && `جارٍ الرفع... ${progress}%`}
           {stage === 'finalizing' && 'جارٍ الإنهاء...'}
-          {(stage === 'idle' || stage === 'done' || stage === 'error') && 'رفع إلى Drive'}
+          {(stage === 'idle' || stage === 'done' || stage === 'error') &&
+            (selectedAccount
+              ? `رفع إلى Drive (${selectedAccount.google_account_email})`
+              : 'رفع إلى Drive')}
         </button>
 
         {stage === 'uploading' && (
