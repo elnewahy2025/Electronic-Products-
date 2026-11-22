@@ -30,9 +30,41 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
   const [currency, setCurrency] = useState(initial?.price_currency ?? 'USD');
   const [categoryId, setCategoryId] = useState(initial?.category_id ?? '');
   const [coverImageUrl, setCoverImageUrl] = useState(initial?.cover_image_url ?? '');
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverInfo, setCoverInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  async function uploadCover(file: File | null) {
+    if (!file) return;
+    setUploadingCover(true);
+    setError(null);
+    setCoverInfo(null);
+
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('kind', 'cover');
+
+    const res = await fetch('/api/seller/images/upload', {
+      method: 'POST',
+      body: fd,
+    });
+    const json = await res.json();
+    setUploadingCover(false);
+
+    if (!res.ok) {
+      const map: Record<string, string> = {
+        image_too_large: 'حجم صورة الغلاف يتجاوز 5 ميجابايت.',
+        invalid_image: 'الملف المرفوع ليس صورة صالحة.',
+        unsupported_image_format: 'صيغة غير مدعومة (JPG/PNG/WebP/AVIF).',
+      };
+      return setError(map[json.error] ?? json.error ?? 'فشل رفع صورة الغلاف.');
+    }
+
+    setCoverImageUrl(json.url);
+    setCoverInfo(`تم التحسين إلى WebP (${json.width}×${json.height} — ${Math.round(json.sizeBytes / 1024)} KB)`);
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -116,25 +148,41 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
         />
       </div>
 
-      <div>
-        <label className="block text-sm mb-1">صورة الغلاف (اختياري)</label>
-        <input
-          type="url"
-          value={coverImageUrl}
-          onChange={e => setCoverImageUrl(e.target.value)}
-          placeholder="https://..."
-          dir="ltr"
-          className="w-full border rounded p-2 text-sm"
-        />
-        <p className="text-xs text-muted-foreground mt-1">
-          رابط صورة مباشر (JPG/PNG/WebP). تظهر في صفحة المنتج والبطاقات.
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">صورة الغلاف (اختياري)</label>
+        <div className="flex items-center gap-3 flex-wrap">
+          <label className="inline-flex items-center gap-2 border border-border rounded-xl px-4 py-2 text-sm font-medium cursor-pointer hover:bg-muted transition">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/avif"
+              disabled={uploadingCover}
+              onChange={e => uploadCover(e.target.files?.[0] ?? null)}
+              className="hidden"
+            />
+            <span>{uploadingCover ? 'جارٍ المعالجة والرفع...' : coverImageUrl ? 'تغيير صورة الغلاف' : 'رفع صورة غلاف'}</span>
+          </label>
+          {coverImageUrl && (
+            <button
+              type="button"
+              onClick={() => {
+                setCoverImageUrl('');
+                setCoverInfo(null);
+              }}
+              className="text-xs text-red-600 hover:underline"
+            >
+              إزالة الغلاف
+            </button>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          تُرفع مباشرة إلى Supabase Storage وتُضغط تلقائيًا بصيغة WebP (الحد الأقصى 5 ميجابايت).
         </p>
+        {coverInfo && <p className="text-xs text-emerald-700">{coverInfo}</p>}
         {coverImageUrl && (
           <img
             src={coverImageUrl}
-            alt="معاينة"
-            className="mt-2 max-h-32 rounded border"
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            alt="معاينة الغلاف"
+            className="mt-2 max-h-40 rounded-xl border border-border object-cover"
           />
         )}
       </div>

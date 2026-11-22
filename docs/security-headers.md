@@ -38,15 +38,13 @@ Tailwind and Next.js inject inline `<style>` blocks. Removing `'unsafe-inline'`
 would require switching to CSS files + CSS modules, which breaks the current
 design system. This is the one accepted relaxation.
 
-### `img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://www.googleapis.com https:`
+### `img-src 'self' data: blob: {supabaseUrl} https://*.supabase.co https://*.googleusercontent.com https://www.googleapis.com`
 - `data:` — QR codes (MFA setup)
 - `blob:` — client-side image previews before upload
-- `https://*.supabase.co` — storage bucket previews
+- `{supabaseUrl}` / `https://*.supabase.co` — Supabase Storage buckets (`previews` and `product-images`)
 - `https://*.googleusercontent.com` — user avatars from Google
 - `https://www.googleapis.com` — Drive thumbnails (if used)
-- `https:` — product cover images (seller-provided URLs). **This is broad.**
-  Once sellers are forced to upload via our bucket (not external URLs), tighten
-  this to specific domains.
+- Broad `https:` wildcard has been **removed** (Migration `034_product_images_storage.sql`) now that sellers upload product cover & gallery images directly to Supabase Storage (`product-images`) with server-side `sharp` WebP conversion.
 
 ### `connect-src 'self' {supabase} wss://{supabase} ...Google OAuth... {download service}`
 Allows API calls to:

@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
+import { revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { requireUser } from '@/lib/auth/session';
-
-const body = z.object({ url: z.string().url().max(1000) });
+import {
+  processAndUploadProductImage,
+  deleteProductImageFromStorage,
+} from '@/lib/server/services/product-image-service';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const user = await requireUser();
     if (user.accountType !== 'seller') throw new Error('FORBIDDEN');
-
-    const parsed = body.safeParse(await req.json().catch(() => null));
-    if (!parsed.success) return NextResponse.json({ error: 'invalid_url' }, { status: 400 });
 
     const db = await createClient();
 
@@ -33,20 +32,44 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'gallery_limit_reached' }, { status: 409 });
     }
 
+    const formData = await req.formData().catch(() => null);
+    const file = formData?.get('file');
+    if (!(file instanceof File)) {
+      return NextResponse.json({ error: 'file_required' }, { status: 400 });
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const uploaded = await processAndUploadProductImage({
+      buffer,
+      sellerId: user.id,
+      kind: 'gallery',
+    });
+
     const { data, error } = await db
       .from('product_gallery_images')
       .insert({
         product_id: params.id,
-        url: parsed.data.url,
+        url: uploaded.url,
+        storage_path: uploaded.storagePath,
         sort_order: count ?? 0,
       })
       .select('id, url, sort_order')
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) {
+      await deleteProductImageFromStorage(uploaded.storagePath);
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    revalidateTag('storefront-products');
     return NextResponse.json(data);
   } catch (e: any) {
-    const status = e.message === 'UNAUTHENTICATED' ? 401 : e.message === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ error: e.message }, { status });
+    const msg = e.message ?? 'upload_failed';
+    const status =
+      msg === 'UNAUTHENTICATED' ? 401
+      : msg === 'FORBIDDEN' ? 403
+      : msg === 'image_too_large' ? 413
+      : 400;
+    return NextResponse.json({ error: msg }, { status });
   }
 }

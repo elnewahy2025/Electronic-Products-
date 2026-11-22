@@ -62,6 +62,7 @@
 - **`031_performance_indexes.sql`**: تفعيل `pg_trgm` وفهرس البحث العربي `idx_products_search_trgm`، و12 فهرسًا على المسارات الساخنة، وجدول `product_rating_stats` التجميعي، وإعادة كتابة `buyer_order_detail` و`buyer_orders_list` لحل مشاكل `N+1`.
 - **`032_seller_orders.sql`**: دوال `seller_orders` و`seller_sales_stats` (`SECURITY DEFINER`) لعرض مبيعات البائع وإحصائياته مع تقنيع هوية المشتري (`ab***@domain.com`) وحساب الصافي بعد العمولة.
 - **`033_commission_snapshot_and_wallet.sql`**: تثبيت نسبة العمولة لحظة البيع على `order_items` (`commission_rate_at_sale`, `commission_amount`, `net_seller_amount`)، والإيداع الذري الفوري في `seller_wallets.balance` و`financial_transactions` داخل `approve_purchase_request` (محمي بفهرس فريد ضد التكرار `uq_fin_tx_order_item_type`)، وعرض سجل الحركات المالية في `/seller/wallet`.
+- **`034_product_images_storage.sql`**: إنشاء حاوية `product-images` في Supabase Storage مع سياسات `RLS`، ومعالجة الصور خادميًا عبر `sharp` (تحويل إلى WebP + إزالة EXIF + تغيير الحجم)، وحذف فعلي من Storage عند الإزالة، وتضييق `img-src` في `middleware.ts` بإزالة `https:` المفتوحة.
 
 ---
 
@@ -98,9 +99,9 @@
 - [x] **مراجعة الأداء (`Performance Review`)**: مكتملة في الترحيل `031_performance_indexes.sql` (`pg_trgm`, `product_rating_stats`, حل `N+1` في `buyer-service.ts`, `unstable_cache` + `revalidateTag`, `<Suspense>` streaming في `/products`) و`docs/performance.md`.
 - [x] **صفحة مبيعات البائع (`/seller/orders`)**: مكتملة في الترحيل `032_seller_orders.sql` و`src/app/(seller)/seller/orders/*` و`docs/seller-orders.md` مع تقنيع هوية المشتري.
 - [x] **تثبيت العمولة لحظة البيع + إيداع المحفظة (`credit wallet`)**: مكتمل في الترحيل `033_commission_snapshot_and_wallet.sql` مع سجل الحركات المالية في `/seller/wallet`.
+- [x] **رفع صور المنتجات مباشرة إلى Supabase Storage + `sharp` + تضييق CSP**: مكتمل في الترحيل `034_product_images_storage.sql` و`product-image-service.ts` و`/api/seller/images/upload` وتضييق `img-src` في `middleware.ts`.
 
 البنود التالية مقترحة للجولات القادمة:
-1. **رفع الصور إلى Supabase Storage**: استبدال روابط `cover_image_url` برفع مباشر + معالجة عبر `sharp` (وتضييق `img-src` في CSP).
-2. **إشعارات بالبريد الإلكتروني**: ملخصات دورية (`Digests`) للموظفين وإشعارات فورية للأحداث الحرجة.
-3. **أتمتة النسخ الاحتياطي**: ربط جدولة `backup_settings` بـ Cron خارجي وتنفيذ اختبار استعادة تلقائي.
-4. **صفحة تفاصيل مبيعة البائع (`/seller/orders/[orderItemId]`)**: عرض تفاصيل كود المبيعة وحالة التسليمات للبائع دون كشف هوية المشتري.
+1. **إشعارات بالبريد الإلكتروني**: ملخصات دورية (`Digests`) للموظفين وإشعارات فورية للأحداث الحرجة.
+2. **أتمتة النسخ الاحتياطي**: ربط جدولة `backup_settings` بـ Cron خارجي وتنفيذ اختبار استعادة تلقائي.
+3. **صفحة تفاصيل مبيعة البائع (`/seller/orders/[orderItemId]`)**: عرض تفاصيل كود المبيعة وحالة التسليمات للبائع دون كشف هوية المشتري.

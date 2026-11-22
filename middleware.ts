@@ -40,13 +40,13 @@ function buildCsp(nonce: string, isDev: boolean): string {
     "'self'",
     'data:',
     'blob:',
+    supabaseUrl,
     'https://*.supabase.co',
     'https://*.googleusercontent.com',
     'https://www.googleapis.com',
-    // Cover images can point to arbitrary CDNs — this is intentionally broad.
-    // Tighten to specific domains if you restrict sellers to upload to your bucket.
-    'https:',
-  ].join(' ');
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const directives = [
     `default-src 'self'`,
