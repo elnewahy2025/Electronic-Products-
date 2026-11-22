@@ -74,7 +74,7 @@ function buildCsp(nonce: string, isDev: boolean): string {
     `object-src 'none'`,
     `worker-src 'self' blob:`,
     `manifest-src 'self'`,
-    `upgrade-insecure-requests`,
+    ...(isDev ? [] : [`upgrade-insecure-requests`]),
   ];
 
   if (process.env.CSP_REPORT_URI) {
@@ -179,7 +179,7 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    if (isSellerRoute) {
+    if (isSellerRoute && !pathname.startsWith('/seller/pending')) {
       const { data: seller } = await supabase
         .from('seller_profiles')
         .select('status')
@@ -188,8 +188,7 @@ export async function middleware(request: NextRequest) {
 
       if (!seller || seller.status !== 'approved') {
         const url = request.nextUrl.clone();
-        url.pathname = '/';
-        url.searchParams.set('reason', 'seller_pending');
+        url.pathname = seller ? '/seller/pending' : '/';
         return redirectWithCsp(url, csp);
       }
     }
