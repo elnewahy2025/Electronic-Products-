@@ -211,7 +211,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
           )}
         </div>
 
-        <aside className="space-y-4">
+        <aside className="space-y-4 md:sticky md:top-20 md:self-start">
           <div className="ui-box space-y-4">
             <div>
               <p className="text-2xl font-bold ui-num">
