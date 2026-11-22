@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    color-scheme: light;
     --background: 210 20% 96%;
     --foreground: 209 43% 10%;
     --card: 0 0% 100%;
@@ -26,6 +27,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     --background: 212 35% 7%;
     --foreground: 210 35% 93%;
     --card: 212 32% 12%;
@@ -59,6 +61,21 @@
     @apply bg-background text-foreground font-sans antialiased;
     font-size: 15px;
     line-height: 1.7;
+  }
+  input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='submit']):not([type='button']),
+  textarea,
+  select {
+    @apply bg-background text-foreground placeholder:text-muted-foreground;
+  }
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: hsl(var(--foreground));
+    -webkit-box-shadow: 0 0 0 1000px hsl(var(--background)) inset;
+    box-shadow: 0 0 0 1000px hsl(var(--background)) inset;
+    transition: background-color 9999s ease-in-out 0s;
   }
   :focus-visible {
     outline: 3px solid hsl(var(--primary));

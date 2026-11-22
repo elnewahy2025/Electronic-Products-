@@ -64,35 +64,43 @@ export default function LoginPage() {
         </div>
       )}
 
-      <form onSubmit={onSubmit} className="border rounded-lg p-6 space-y-4">
+      <form onSubmit={onSubmit} className="ui-box space-y-4">
         <div>
-          <label className="block text-xs mb-1">البريد الإلكتروني</label>
+          <label htmlFor="login-email" className="block text-xs font-medium text-muted-foreground mb-1">
+            البريد الإلكتروني
+          </label>
           <input
+            id="login-email"
             type="email"
             name="email"
+            autoComplete="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
             dir="ltr"
-            className="w-full border rounded p-2 text-sm"
+            className="w-full border border-border rounded-lg bg-background text-foreground p-2.5 text-sm"
             placeholder="you@example.com"
           />
         </div>
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="block text-xs">كلمة المرور</label>
+            <label htmlFor="login-password" className="block text-xs font-medium text-muted-foreground">
+              كلمة المرور
+            </label>
             <Link href="/forgot-password" className="text-xs text-primary hover:underline">
               نسيت كلمة المرور؟
             </Link>
           </div>
           <input
+            id="login-password"
             type="password"
             name="password"
+            autoComplete="current-password"
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
             dir="ltr"
-            className="w-full border rounded p-2 text-sm"
+            className="w-full border border-border rounded-lg bg-background text-foreground p-2.5 text-sm"
           />
         </div>
 

@@ -53,50 +53,71 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      <form onSubmit={onSubmit} className="border rounded-lg p-6 space-y-4">
+      <form onSubmit={onSubmit} className="ui-box space-y-4">
         <div>
-          <label className="block text-xs mb-1">الاسم الكامل</label>
+          <label htmlFor="reg-name" className="block text-xs font-medium text-muted-foreground mb-1">
+            الاسم الكامل
+          </label>
           <input
+            id="reg-name"
+            name="full_name"
             type="text"
+            autoComplete="name"
             value={fullName}
             onChange={e => setFullName(e.target.value)}
             required
-            className="w-full border rounded p-2 text-sm"
+            className="w-full border border-border rounded-lg bg-background text-foreground p-2.5 text-sm"
           />
         </div>
         <div>
-          <label className="block text-xs mb-1">البريد الإلكتروني</label>
+          <label htmlFor="reg-email" className="block text-xs font-medium text-muted-foreground mb-1">
+            البريد الإلكتروني
+          </label>
           <input
+            id="reg-email"
+            name="email"
             type="email"
+            autoComplete="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
             dir="ltr"
-            className="w-full border rounded p-2 text-sm"
+            className="w-full border border-border rounded-lg bg-background text-foreground p-2.5 text-sm"
             placeholder="you@example.com"
           />
         </div>
         <div>
-          <label className="block text-xs mb-1">رقم الهاتف</label>
+          <label htmlFor="reg-phone" className="block text-xs font-medium text-muted-foreground mb-1">
+            رقم الهاتف
+          </label>
           <input
+            id="reg-phone"
+            name="phone"
             type="tel"
+            inputMode="tel"
+            autoComplete="tel"
             value={phone}
             onChange={e => setPhone(e.target.value)}
             dir="ltr"
-            className="w-full border rounded p-2 text-sm"
+            className="w-full border border-border rounded-lg bg-background text-foreground p-2.5 text-sm"
             placeholder="+20 100 000 0000"
           />
         </div>
         <div>
-          <label className="block text-xs mb-1">كلمة المرور</label>
+          <label htmlFor="reg-password" className="block text-xs font-medium text-muted-foreground mb-1">
+            كلمة المرور
+          </label>
           <input
+            id="reg-password"
+            name="new-password"
             type="password"
+            autoComplete="new-password"
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
             minLength={8}
             dir="ltr"
-            className="w-full border rounded p-2 text-sm"
+            className="w-full border border-border rounded-lg bg-background text-foreground p-2.5 text-sm"
           />
         </div>
 
