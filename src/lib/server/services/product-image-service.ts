@@ -100,9 +100,10 @@ const STYLE_DIRECTIONS = [
 ];
 
 /**
- * Generates a real, expressive AI cover image using Gemini Image Generation
- * (`gemini-2.5-flash-image`) based on the product's title, description, and category,
- * then resizes & optimizes it to 1200x750 WebP via sharp for seller preview & approval.
+ * Generates a real, expressive AI cover image using Gemini:
+ * 1) Tries Gemini native image generation (`gemini-3.1-flash-lite-image`) first.
+ * 2) If quota-limited (free tier), uses `gemini-3.8-flash` to craft a bespoke,
+ *    subject-specific 1200x750 editorial SVG illustration and renders it to WebP via sharp.
  */
 export async function generateAiProductCover(input: {
   title: string;
@@ -125,34 +126,79 @@ export async function generateAiProductCover(input: {
     input.description ? `Details: ${input.description.trim().slice(0, 400)}` : null,
   ].filter(Boolean);
 
-  const prompt = [
-    'Create a professional, visually compelling 16:9 digital product cover artwork for an online marketplace.',
-    `Art direction: ${style}.`,
-    'The illustration MUST clearly and specifically express the real-world subject matter and contents described below:',
+  const ai = new GoogleGenAI({ apiKey });
+
+  // Tier 1: Native Gemini raster image generation
+  try {
+    const rasterPrompt = [
+      'Create a professional, visually compelling 16:9 digital product cover artwork for an online marketplace.',
+      `Art direction: ${style}.`,
+      'The illustration MUST clearly and specifically express the real-world subject matter and contents described below:',
+      ...contextParts,
+      'Strict rules: Do NOT include any text, letters, numbers, watermarks, or UI buttons inside the image. Fill the entire 16:9 frame edge-to-edge with balanced composition and high contrast.',
+    ].join('\n');
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-lite-image',
+      contents: rasterPrompt,
+      config: {
+        responseModalities: ['IMAGE'],
+        imageConfig: {
+          aspectRatio: '16:9',
+        },
+      },
+    });
+
+    const parts = response.candidates?.[0]?.content?.parts ?? [];
+    const imgPart = parts.find((p: any) => p.inlineData?.data);
+    if (imgPart?.inlineData?.data) {
+      const rawBuffer = Buffer.from(imgPart.inlineData.data, 'base64');
+      const { data: buffer, info } = await sharp(rawBuffer, { limitInputPixels: 64_000_000 })
+        .resize(1200, 750, { fit: 'cover', position: 'centre' })
+        .webp({ quality: 86 })
+        .toBuffer({ resolveWithObject: true });
+
+      return { buffer, width: info.width, height: info.height, sizeBytes: info.size, variant };
+    }
+  } catch {
+    // Fall through to Tier 2 (Gemini 3.8 Flash bespoke editorial SVG illustration)
+  }
+
+  // Tier 2: Bespoke subject-specific editorial vector illustration via gemini-3.8-flash
+  const svgPrompt = [
+    'You are an award-winning editorial illustrator creating a rich, expressive 1200x750 SVG cover illustration for a digital product.',
+    `Visual style: ${style}.`,
+    'Product details (draw recognizable, concrete visual scenes, objects, tools, diagrams, and metaphors that clearly express THIS exact topic):',
     ...contextParts,
-    'Strict rules: Do NOT include any text, letters, numbers, watermarks, or UI buttons inside the image. Fill the entire 16:9 frame edge-to-edge with balanced composition and high contrast.',
+    'Strict technical requirements:',
+    '1. Return ONLY a single valid standalone <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750">...</svg> with NO markdown fences and NO explanation.',
+    '2. Do NOT include ANY <text> elements, letters, words, or numbers (avoid font/RTL issues; express everything purely through rich visual illustration!).',
+    '3. Use rich layered shapes: linear/radial gradients, soft shadows, depth, lighting highlights, and concrete recognizable objects representing the exact subject matter (at least 25-45 well-composed SVG elements).',
+    '4. Do NOT use <script>, <foreignObject>, external URLs, or event attributes.',
   ].join('\n');
 
-  const ai = new GoogleGenAI({ apiKey });
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash-image',
-    contents: prompt,
-    config: {
-      responseModalities: ['IMAGE'],
-      imageConfig: {
-        aspectRatio: '16:9',
-      },
-    },
+  const svgRes = await ai.models.generateContent({
+    model: 'gemini-3.8-flash',
+    contents: svgPrompt,
   });
 
-  const parts = response.candidates?.[0]?.content?.parts ?? [];
-  const imgPart = parts.find((p: any) => p.inlineData?.data);
-  if (!imgPart?.inlineData?.data) {
+  const rawText = svgRes.text ?? '';
+  const svgMatch = rawText.match(/<svg[\s\S]*<\/svg>/i);
+  if (!svgMatch) {
     throw new Error('AI_COVER_EMPTY_RESPONSE');
   }
 
-  const rawBuffer = Buffer.from(imgPart.inlineData.data, 'base64');
-  const { data: buffer, info } = await sharp(rawBuffer, { limitInputPixels: 64_000_000 })
+  // Sanitize SVG before passing to sharp
+  const safeSvg = svgMatch[0]
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, '')
+    .replace(/<text[\s\S]*?<\/text>/gi, '')
+    .replace(/\son[a-z]+\s*=\s*(['"])[\s\S]*?\1/gi, '')
+    .replace(/(?:xlink:)?href\s*=\s*(['"])https?:[\s\S]*?\1/gi, '');
+
+  const { data: buffer, info } = await sharp(Buffer.from(safeSvg, 'utf8'), {
+    limitInputPixels: 64_000_000,
+  })
     .resize(1200, 750, { fit: 'cover', position: 'centre' })
     .webp({ quality: 86 })
     .toBuffer({ resolveWithObject: true });
