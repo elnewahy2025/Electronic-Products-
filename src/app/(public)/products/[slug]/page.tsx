@@ -23,7 +23,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
     .select(`
       id, title, slug, short_description, description, price_amount, price_currency,
       status, published_at, seller_id, category_id, cover_image_url,
-      product_versions!inner(id, version_number, status, file_previews(id, preview_type, status, public_url))
+      product_versions(id, version_number, status)
     `)
     .eq('slug', params.slug)
     .eq('status', 'published')
@@ -74,14 +74,9 @@ export default async function ProductPage({ params }: { params: { slug: string }
   }
 
   // Build gallery images array
-  const previewUrl = (product.product_versions as any)?.[0]?.file_previews?.find(
-    (p: any) => p.status === 'ready'
-  )?.public_url;
-
   const galleryImages: string[] = [
     ...(product.cover_image_url ? [product.cover_image_url] : []),
     ...(gallery.data ?? []).map((g: any) => g.url),
-    ...(galleryImagesEmpty(product.cover_image_url, gallery.data) && previewUrl ? [previewUrl] : []),
   ].filter(Boolean);
 
   // Similar products
