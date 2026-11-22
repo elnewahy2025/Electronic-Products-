@@ -11,95 +11,95 @@ export default async function AccountHome() {
   ]);
 
   const recent = orders.slice(0, 5);
+  const nextSession = sessions[0] ?? null;
 
   const cards = [
-    { label: 'طلباتي', value: stats.total_orders, href: '/account/orders' },
-    { label: 'قيد المراجعة', value: stats.pending_orders, href: '/account/orders', color: 'text-yellow-600' },
-    { label: 'أكواد نشطة', value: stats.active_codes, href: '/account/codes', color: 'text-blue-600' },
-    { label: 'جلسات تنزيل نشطة', value: stats.active_sessions, href: '/account/downloads', color: 'text-green-600' },
+    { label: 'أكواد نشطة', value: stats.active_codes, href: '/account/codes' },
+    { label: 'جلسات تنزيل نشطة', value: stats.active_sessions, href: '/account/downloads' },
+    { label: 'طلبات قيد المراجعة', value: stats.pending_orders, href: '/account/orders' },
+    { label: 'إجمالي الطلبات', value: stats.total_orders, href: '/account/orders' },
   ];
 
   return (
-    <main className="p-6 space-y-8 max-w-5xl">
+    <main className="p-6 space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-bold">حسابي</h1>
-        <p className="text-sm text-muted-foreground mt-1">مرحبًا بك</p>
+        <h1 className="text-[23px] font-bold text-foreground">حسابي</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          هذا ملخص طلباتك وأكوادك وجلسات التنزيل النشطة.
+        </p>
       </div>
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {cards.map(c => (
           <Link
             key={c.label}
             href={c.href}
-            className="border rounded-lg p-4 hover:shadow-sm transition"
+            className="ui-stat hover:border-primary block"
           >
-            <p className="text-xs text-muted-foreground">{c.label}</p>
-            <p className={`text-2xl font-bold mt-1 ${c.color ?? ''}`}>{c.value}</p>
+            <div className="text-[28px] font-bold leading-tight text-foreground ui-num">
+              {c.value}
+            </div>
+            <span className="text-[13.5px] text-muted-foreground mt-1 block">{c.label}</span>
           </Link>
         ))}
       </section>
 
-      {sessions.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold">تنزيلات نشطة</h2>
-            <Link href="/account/downloads?status=active" className="text-sm text-primary">
-              عرض الكل
-            </Link>
+      {/* Highlighted Next Action banner (.todo pattern) */}
+      {nextSession && (
+        <section className="rounded-[14px] border border-success bg-success-soft p-4 sm:p-5 flex items-center justify-between gap-4 flex-wrap">
+          <div className="min-w-0 space-y-0.5">
+            <p className="font-bold text-base text-foreground truncate">
+              {nextSession.product_title}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {nextSession.is_compensation ? 'جلسة تعويضية نشطة' : 'كودك فعّال وجاهز للتنزيل'} — ينتهي بعد{' '}
+              <Countdown to={nextSession.expires_at} />
+            </p>
           </div>
-          <div className="space-y-2">
-            {sessions.slice(0, 3).map(s => (
-              <div key={s.session_id} className="border rounded p-3 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-medium truncate">{s.product_title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {s.is_compensation ? 'جلسة تعويضية' : 'جلسة عادية'} • ينتهي بعد{' '}
-                    <Countdown to={s.expires_at} />
-                  </p>
-                </div>
-                <Link
-                  href={`/account/downloads/${s.session_id}`}
-                  className="bg-primary text-primary-foreground rounded px-3 py-1 text-xs whitespace-nowrap"
-                >
-                  تنزيل
-                </Link>
-              </div>
-            ))}
-          </div>
+          <Link
+            href={`/account/downloads/${nextSession.session_id}`}
+            className="rounded-[9px] bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-95 transition whitespace-nowrap"
+          >
+            نزّل ملفاتك الآن
+          </Link>
         </section>
       )}
 
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold">آخر الطلبات</h2>
-          <Link href="/account/orders" className="text-sm text-primary">
-            عرض الكل
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[17px] font-bold text-foreground">آخر الطلبات</h2>
+          <Link href="/account/orders" className="text-xs font-medium text-primary hover:underline">
+            عرض الكل ←
           </Link>
         </div>
+
         {recent.length === 0 ? (
-          <div className="border rounded p-6 text-center text-muted-foreground text-sm">
+          <div className="ui-box py-10 text-center text-muted-foreground text-sm">
             <p>لا توجد طلبات بعد.</p>
-            <Link href="/products" className="text-primary mt-2 inline-block">تصفح المنتجات ←</Link>
+            <Link href="/products" className="text-primary font-semibold mt-2 inline-block hover:underline">
+              تصفح المنتجات ←
+            </Link>
           </div>
         ) : (
-          <div className="border rounded divide-y">
+          <div className="ui-box p-2 sm:px-4 divide-y divide-border">
             {recent.map(o => (
               <Link
                 key={o.purchase_request_id}
                 href={`/account/orders/${o.purchase_request_id}`}
-                className="block p-3 hover:bg-muted/30"
+                className="flex items-center justify-between gap-3 py-3 px-1 hover:bg-muted/60 rounded-lg transition-colors"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {o.product_titles.join(', ') || 'طلب'}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {new Date(o.created_at).toLocaleDateString('ar')} — {o.total_amount} {o.currency}
-                    </p>
-                  </div>
-                  <StatusBadge status={o.status} />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {o.product_titles.join('، ') || 'طلب شراء'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {new Date(o.created_at).toLocaleDateString('ar')} —{' '}
+                    <span className="ui-num font-medium">
+                      {o.total_amount} {o.currency}
+                    </span>
+                  </p>
                 </div>
+                <StatusBadge status={o.status} />
               </Link>
             ))}
           </div>

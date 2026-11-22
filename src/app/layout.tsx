@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
-import { Noto_Kufi_Arabic } from 'next/font/google';
+import { IBM_Plex_Sans_Arabic } from 'next/font/google';
 import { ThemeProvider } from '@/components/shared/theme-provider';
 import { PwaRegister } from '@/components/shared/pwa-register';
 import './globals.css';
 
-const arabic = Noto_Kufi_Arabic({
+const arabic = IBM_Plex_Sans_Arabic({
   subsets: ['arabic'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-arabic',
   display: 'swap',
 });
@@ -35,8 +36,8 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#0F766E' },
-    { media: '(prefers-color-scheme: dark)', color: '#111114' },
+    { media: '(prefers-color-scheme: light)', color: '#0d3b32' },
+    { media: '(prefers-color-scheme: dark)', color: '#0c1219' },
   ],
 };
 

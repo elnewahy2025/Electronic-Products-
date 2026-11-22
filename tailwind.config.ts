@@ -4,10 +4,16 @@ const config: Config = {
   darkMode: ['class'],
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
-    container: { center: true, padding: '1rem' },
+    container: {
+      center: true,
+      padding: '1.25rem',
+      screens: {
+        '2xl': '1140px',
+      },
+    },
     extend: {
       fontFamily: {
-        sans: ['var(--font-arabic)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-arabic)', 'Tahoma', 'Segoe UI', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: 'hsl(var(--border))',
@@ -32,6 +38,18 @@ const config: Config = {
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
+        },
+        brand: {
+          DEFAULT: 'hsl(var(--brand-surface))',
+          foreground: 'hsl(var(--brand-surface-foreground))',
+        },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          soft: 'hsl(var(--success-soft))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          soft: 'hsl(var(--warning-soft))',
         },
       },
     },

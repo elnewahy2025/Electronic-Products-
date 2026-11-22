@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const MAX_LEN = 19; // ABCD-EFGH-JKLM-NPQR
 
@@ -15,7 +15,8 @@ function formatCode(raw: string): string {
 }
 
 export function RedeemForm() {
-  const [code, setCode] = useState('');
+  const searchParams = useSearchParams();
+  const [code, setCode] = useState(() => formatCode(searchParams.get('code') ?? ''));
   const [error, setError] = useState<string | null>(null);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);

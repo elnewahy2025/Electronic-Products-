@@ -4,58 +4,88 @@ import { InstantSearch } from './instant-search';
 import { NotificationBell } from '@/components/shared/notification-bell';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { LogoutButton } from '@/components/shared/logout-button';
+import { BrandLogo } from '@/components/shared/brand-logo';
 
 export async function SiteHeader() {
   const db = await createClient();
   const { data: { user } } = await db.auth.getUser();
 
   let accountType: string | null = null;
+  let favCount = 0;
   if (user) {
-    const { data: profile } = await db
-      .from('profiles')
-      .select('account_type')
-      .eq('id', user.id)
-      .single();
+    const [{ data: profile }, { count }] = await Promise.all([
+      db.from('profiles').select('account_type').eq('id', user.id).single(),
+      db.from('favorites').select('product_id', { count: 'exact', head: true }).eq('buyer_id', user.id),
+    ]);
     accountType = profile?.account_type ?? null;
+    favCount = count ?? 0;
   }
 
   return (
-    <header className="border-b border-border sticky top-0 bg-background/95 backdrop-blur z-40">
-      <div className="container flex items-center gap-3 py-3">
-        <Link href="/" className="text-xl font-bold whitespace-nowrap text-foreground">
-          {process.env.NEXT_PUBLIC_APP_NAME ?? 'المنصة'}
-        </Link>
-        <div className="flex-1">
+    <header className="border-b border-border sticky top-0 bg-card/95 backdrop-blur z-40">
+      <div className="container flex items-center gap-4 h-[60px]">
+        <BrandLogo href="/" />
+
+        <nav className="hidden lg:flex items-center gap-1 text-sm ms-1">
+          <Link href="/" className="px-3 py-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground font-medium transition-colors">
+            المتجر
+          </Link>
+          <Link href="/products" className="px-3 py-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground font-medium transition-colors">
+            كل المنتجات
+          </Link>
+          <Link href="/categories" className="px-3 py-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground font-medium transition-colors">
+            التصنيفات
+          </Link>
+          <Link href="/#how" className="px-3 py-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground font-medium transition-colors">
+            كيف أشتري؟
+          </Link>
+        </nav>
+
+        <div className="flex-1 max-w-md ms-auto">
           <InstantSearch />
         </div>
-        <nav className="flex items-center gap-2 text-sm">
+
+        <nav className="flex items-center gap-2 text-sm shrink-0">
           <ThemeToggle />
+          {user && (
+            <Link
+              href="/account/favorites"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-[9px] border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition"
+              title="المفضلة"
+            >
+              <span>المفضلة</span>
+              <span className="ui-num text-muted-foreground">{favCount}</span>
+            </Link>
+          )}
           {user && <NotificationBell />}
           {!user && (
             <>
-              <Link href="/login" className="px-2.5 py-1.5 rounded-lg hover:bg-muted/60">
+              <Link
+                href="/login"
+                className="rounded-[9px] border border-border px-3.5 py-1.5 text-sm font-semibold text-foreground hover:bg-muted transition"
+              >
                 دخول
               </Link>
               <Link
                 href="/register"
-                className="bg-primary text-primary-foreground rounded-lg px-3 py-1.5 font-medium hover:bg-primary/90"
+                className="rounded-[9px] bg-primary text-primary-foreground px-4 py-1.5 text-sm font-semibold hover:opacity-95 transition"
               >
-                إنشاء حساب
+                حساب جديد
               </Link>
             </>
           )}
           {user && accountType === 'buyer' && (
-            <Link href="/account" className="px-2.5 py-1.5 rounded-lg hover:bg-muted/60 font-medium">
+            <Link href="/account" className="rounded-[9px] border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted transition">
               حسابي
             </Link>
           )}
           {user && accountType === 'seller' && (
-            <Link href="/seller" className="px-2.5 py-1.5 rounded-lg hover:bg-muted/60 font-medium">
+            <Link href="/seller" className="rounded-[9px] border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted transition">
               لوحة البائع
             </Link>
           )}
           {user && accountType === 'staff' && (
-            <Link href="/admin" className="px-2.5 py-1.5 rounded-lg hover:bg-muted/60 font-medium">
+            <Link href="/admin" className="rounded-[9px] border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted transition">
               الإدارة
             </Link>
           )}

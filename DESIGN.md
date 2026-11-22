@@ -1,45 +1,29 @@
-# Design System: Electronic Products Platform (Arabic RTL Console)
+# Design System: Digital Products Marketplace (Arabic RTL)
 
-## 1. Visual Theme & Atmosphere
-A restrained, architectural Arabic RTL SaaS interface with balanced density (5/10), clear asymmetric workspace splits, and tactile micro-transitions. The atmosphere is clinical yet warm — calibrated neutral surfaces paired with a single deep emerald-teal accent, designed for clarity in high-trust administrative and commerce workflows.
+## 1. Visual Theme & Identity
+A clean, high-trust Arabic RTL marketplace & operations UI built for digital products (presentations, lesson plans, educational videos, documents, and downloadable assets). Preserves the platform's own brand identity (`NEXT_PUBLIC_APP_NAME`) while using the architectural clarity, color hierarchy, and layout geometry inspired by the reference HTML prototypes.
 
-## 2. Color Palette & Roles
-- **Canvas Off-White** (`#F8FAFC`) — Primary application canvas background
-- **Pure Surface** (`#FFFFFF`) — Elevated cards, tables, and control panels
-- **Subtle Surface** (`#F1F5F9`) — Secondary tinted sections, group headers, inactive chips
-- **Charcoal Ink** (`#18181B`) — Primary headings and body copy (never pure `#000000`)
-- **Muted Slate** (`#64748B`) — Secondary metadata, helper captions, timestamps
-- **Whisper Border** (`#E2E8F0`) — 1px structural dividers and container outlines
-- **Deep Teal Accent** (`#0F766E`, hover `#115E59`) — Single primary accent for CTAs, active nav indicators, toggle switches, and focus rings (saturation < 80%, zero purple/neon glow)
-- **Semantic Status Tokens** — Emerald (`#047857` / `#ECFDF5`) for active/effective, Amber (`#B45309` / `#FFFBEB`) for suspended/inherited notices, Crimson (`#B91C1C` / `#FEF2F2`) for destructive actions and danger zones
+## 2. Color Palette & Roles (Light / Dark)
+- **Canvas (`--background`)**: `#f3f5f7` / Dark `#0c1219`
+- **Card Surface (`--card`)**: `#ffffff` / Dark `#141d27`
+- **Primary Ink (`--foreground`)**: `#0f1b26` / Dark `#e8eef4` (also used for active sidebar pills)
+- **Muted Text (`--muted-foreground`)**: `#5d6b78` / Dark `#92a1af`
+- **Soft Surface (`--muted`)**: `#e9eef5` / Dark `#1b2733`
+- **Hairline Border (`--border`)**: `#d8dee4` / Dark `#26323f`
+- **Primary CTA (`--primary`)**: `#1457d9` / Dark `#6f9bff` (buttons, links, focus outlines)
+- **Brand Header / Hero Surface (`--brand-surface`)**: `#0d3b32` / Dark `#0a2a24` (Storefront hero, Seller top bar, Admin top bar, brand emblem)
+- **Semantic Badges**:
+  - Success: `#17855b` on `#dff3ea` (Dark `#4cc796` on `#12372b`)
+  - Warning: `#b87800` on `#fbefd2` (Dark `#f0b73a` on `#3a2d0c`)
+  - Destructive: `#c93030` on `#fbe3e3` (Dark `#ff7b7b` on `#3d1a1a`)
+  - Info: `#1457d9` on `#dfe9fc` (Dark `#6f9bff` on `#18284a`)
 
-## 3. Typography Rules
-- **Display & Body (Arabic RTL):** `Noto Kufi Arabic` — Tight display tracking, weight-driven hierarchy (`600`/`700` headings, `400`/`500` body), relaxed line height (`1.65`)
-- **Technical / Identifiers / Counters:** Monospace (`ui-monospace, SFMono-Regular, Menlo, monospace`) with `tabular-nums` and explicit `dir="ltr"` for permission codes, email addresses, and numeric counts
-- **Banned:** `Inter`, generic serif fonts, emojis in UI chrome
+## 3. Typography
+- **Font Family**: `IBM Plex Sans Arabic` (`400`, `500`, `600`, `700`), base `15px / 1.7`
+- **Numeric / Code Isolation**: `.ui-num` / `.tabular-nums` (`direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums`)
 
-## 4. Component Stylings
-- **Buttons:** Crisp `rounded-lg` geometry, flat fill with tactile `active:scale-[0.98]` feedback, minimum `40px–44px` height, no outer neon glow
-- **Cards & Panels:** `rounded-xl` to `rounded-2xl` surfaces with `1px solid #E2E8F0` and whisper shadow (`0 1px 2px rgba(15, 23, 42, 0.04)`)
-- **Inputs & Search:** Label above input, helper text below, subtle border transitioning to Deep Teal focus ring (`ring-2 ring-primary/20 border-primary`)
-- **Toggle Switches:** Custom accessible `role="switch"` controls with smooth `transform` thumb transitions for binary permission overrides
-- **Navigation Rail:** Subtle off-white sidebar with monochrome outline SVG icons, active teal indicator pill, and grouped section titles
-
-## 5. Layout Principles
-- Asymmetric 12-column CSS Grid for detail workspaces (4-column sticky profile/role sidebar + 8-column permissions matrix)
-- Strict single-column collapse below `768px` (`md` / `lg` breakpoints)
-- `min-h-[100dvh]` for full-height shells (never `h-screen`)
-- Max-width containment (`max-w-6xl`) with generous breathing room
-
-## 6. Motion & Interaction
-- Hardware-accelerated `transform` and `opacity` transitions (`duration-150` to `duration-200`)
-- Tactile press states on interactive controls and smooth switch slides
-- Inline contextual status banners (success/error) with clear dismissal
-
-## 7. Anti-Patterns (Banned)
-- No emojis anywhere in UI chrome
-- No `Inter` font or generic serif fonts
-- No pure black (`#000000`)
-- No purple/blue neon glows or flashy gradients
-- No fabricated metrics or fake placeholder numbers
-- No 3-column equal generic card grids where asymmetric structure serves better
+## 4. Layout Shells
+- **Storefront**: 60px sticky white header + `--brand-surface` Hero with instant search & inline quick-redeem bar + 16:10 product cards + 4-step "كيف أشتري؟" bar.
+- **Buyer Account**: Sticky 210px sidebar (`--foreground` active pill) + KPI stats + green `.todo` active-download banner + recent orders list.
+- **Seller Dashboard**: 58px `--brand-surface` top bar + sticky 205px sidebar + clean stat/row surfaces.
+- **Admin Panel**: 56px `--brand-surface` top bar + sticky 230px grouped sidebar with live red pending badges + clickable KPI stats + unified `.ui-table-wrap` tables.
