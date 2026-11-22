@@ -92,7 +92,8 @@ export async function createSellerProduct(input: {
   categoryId?: string | null;
   coverImageUrl?: string | null;
   fileVersionIds?: string[];
-}): Promise<{ id: string; slug: string; versionId?: string }> {
+  publishNow?: boolean;
+}): Promise<{ id: string; slug: string; versionId?: string; published?: boolean }> {
   const db = await createClient();
 
   if (!input.title.trim() || input.title.length < 3) throw new Error('title_too_short');
@@ -191,15 +192,31 @@ export async function createSellerProduct(input: {
     }
   }
 
+  let published = false;
+  if (input.publishNow && versionId) {
+    const { error: pubErr } = await db.rpc('publish_product_version', {
+      p_version_id: versionId,
+    });
+    if (pubErr) {
+      throw new Error(pubErr.message);
+    }
+    published = true;
+  }
+
   await logAudit({
     action: 'product.created',
     entityType: 'products',
     entityId: data.id,
-    after: { title: input.title, price: input.priceAmount, attached_files: uniqueFileVersionIds.length },
+    after: {
+      title: input.title,
+      price: input.priceAmount,
+      attached_files: uniqueFileVersionIds.length,
+      published,
+    },
   });
 
   revalidateTag('storefront-products');
-  return { ...data, versionId };
+  return { ...data, versionId, published };
 }
 
 export async function updateSellerProduct(input: {

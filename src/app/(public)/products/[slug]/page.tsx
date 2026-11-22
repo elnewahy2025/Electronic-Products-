@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { notFound } from 'next/navigation';
+import { FileText, HardDrive, ShieldCheck, Layers } from 'lucide-react';
 import {
   getProductRating,
   getProductReviews,
@@ -85,6 +87,32 @@ export default async function ProductPage({ params }: { params: { slug: string }
     ...(gallery.data ?? []).map((g: any) => g.url),
   ].filter(Boolean);
 
+  // Fetch public file specs (extension, count, total size) for the published version
+  const publishedVer = ((product as any).product_versions ?? []).find(
+    (v: any) => v.status === 'published',
+  );
+  let fileSpecs: { count: number; totalBytes: number; extensions: string[] } = {
+    count: 0,
+    totalBytes: 0,
+    extensions: [],
+  };
+  if (publishedVer?.id) {
+    const admin = createAdminClient();
+    const { data: verFiles } = await admin
+      .from('product_version_files')
+      .select('file_versions!inner(size_bytes, extension)')
+      .eq('product_version_id', publishedVer.id);
+
+    const rows = (verFiles ?? []).map((r: any) => r.file_versions).filter(Boolean);
+    fileSpecs = {
+      count: rows.length,
+      totalBytes: rows.reduce((acc: number, r: any) => acc + Number(r.size_bytes ?? 0), 0),
+      extensions: Array.from(
+        new Set(rows.map((r: any) => String(r.extension ?? '').toUpperCase()).filter(Boolean)),
+      ),
+    };
+  }
+
   // Similar products
   const similar = product.category_id
     ? await searchStorefront({
@@ -135,6 +163,43 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
           <ProductGallery images={galleryImages} title={product.title} />
 
+          {fileSpecs.count > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="rounded-xl border border-border bg-card p-3 flex items-center gap-2.5">
+                <FileText className="h-4 w-4 text-primary shrink-0" />
+                <div>
+                  <p className="text-[11px] text-muted-foreground">نوع الملف</p>
+                  <p className="text-xs font-bold ui-num">{fileSpecs.extensions.join(' · ') || 'رقمي'}</p>
+                </div>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-3 flex items-center gap-2.5">
+                <Layers className="h-4 w-4 text-primary shrink-0" />
+                <div>
+                  <p className="text-[11px] text-muted-foreground">عدد الملفات</p>
+                  <p className="text-xs font-bold ui-num">{fileSpecs.count} ملف</p>
+                </div>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-3 flex items-center gap-2.5">
+                <HardDrive className="h-4 w-4 text-primary shrink-0" />
+                <div>
+                  <p className="text-[11px] text-muted-foreground">الحجم الإجمالي</p>
+                  <p className="text-xs font-bold ui-num">
+                    {fileSpecs.totalBytes >= 1024 * 1024
+                      ? `${(fileSpecs.totalBytes / 1024 / 1024).toFixed(2)} MB`
+                      : `${Math.max(1, Math.round(fileSpecs.totalBytes / 1024))} KB`}
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-3 flex items-center gap-2.5">
+                <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <div>
+                  <p className="text-[11px] text-muted-foreground">الحماية والتسليم</p>
+                  <p className="text-xs font-bold">مفحوص · كود فوري</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <p className="text-lg">{product.short_description}</p>
 
           {product.description && (
@@ -146,11 +211,30 @@ export default async function ProductPage({ params }: { params: { slug: string }
         </div>
 
         <aside className="space-y-4">
-          <div className="border rounded-lg p-4 space-y-3">
-            <p className="text-2xl font-bold">
-              {product.price_amount} {product.price_currency}
-            </p>
-            <p className="text-xs text-muted-foreground">الدفع يتم خارج المنصة</p>
+          <div className="ui-box space-y-4 sticky top-20">
+            <div>
+              <p className="text-2xl font-bold ui-num">
+                {product.price_amount} {product.price_currency}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                الدفع يتم خارج المنصة — تسليم فوري بكود تنزيل آمن
+              </p>
+            </div>
+
+            <ol className="rounded-xl bg-muted/40 border border-border p-3 space-y-1.5 text-xs text-muted-foreground">
+              <li className="flex items-center gap-2">
+                <span className="h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
+                <span>أرسل طلب الشراء بالأسفل</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
+                <span>أتمم الدفع عبر وسيلة التواصل المعتمدة</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shrink-0">3</span>
+                <span>استلم كود التنزيل الفوري (3 محاولات نظيفة بدون علامة مائية)</span>
+              </li>
+            </ol>
 
             {userProfile ? (
               <PurchaseRequestForm

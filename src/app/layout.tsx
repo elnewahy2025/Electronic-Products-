@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import { IBM_Plex_Sans_Arabic } from 'next/font/google';
 import { ThemeProvider } from '@/components/shared/theme-provider';
+import { ToastProvider } from '@/components/shared/toast-provider';
 import { PwaRegister } from '@/components/shared/pwa-register';
 import './globals.css';
 
@@ -60,8 +61,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         data-nonce-ready={nonce ? '1' : '0'}
       >
         <ThemeProvider>
-          {children}
-          <PwaRegister />
+          <ToastProvider>
+            {children}
+            <PwaRegister />
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

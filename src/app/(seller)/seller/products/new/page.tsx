@@ -20,8 +20,13 @@ export default async function NewProductPage() {
   }
 
   return (
-    <main className="p-6 space-y-6 max-w-3xl">
-      <h1 className="text-2xl font-bold">منتج جديد</h1>
+    <main className="w-full space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">استوديو إضافة منتج جديد</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          اختر ملفاتك أو استوردها من مجلد Store، عاين بطاقة المنتج مباشرة، وانشره في المتجر بضغطة واحدة.
+        </p>
+      </div>
       <ProductForm
         mode="create"
         categories={categories.filter(c => c.is_active)}

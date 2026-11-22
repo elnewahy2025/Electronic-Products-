@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { FolderOpen, UploadCloud } from 'lucide-react';
+import { FolderOpen, UploadCloud, FileCheck2 } from 'lucide-react';
+import { useToast } from '@/components/shared/toast-provider';
 import {
   DrivePickerButton,
   formatDriveImportError,
@@ -42,6 +43,8 @@ export default function UploadPage() {
   const [result, setResult] = useState<{ fileId: string; fileVersionId: string } | null>(null);
   const [importedResults, setImportedResults] = useState<DriveImportResultItem[] | null>(null);
   const [storeFolderNotice, setStoreFolderNotice] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const toast = useToast();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -107,10 +110,12 @@ export default function UploadPage() {
 
       setResult(compJson);
       setStage('done');
+      toast.success('تم رفع الملف إلى مجلد Store بنجاح وبدأ الفحص التلقائي.');
       setFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (e: any) {
       setError(e.message);
+      toast.error(e.message ?? 'فشل رفع الملف.');
       setStage('error');
     }
   }
@@ -302,18 +307,51 @@ export default function UploadPage() {
 
             <div>
               <label className="block text-sm font-medium mb-1.5">اختر الملف من جهازك</label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="w-full border border-border bg-card rounded-xl p-2.5 text-sm"
-                disabled={stage === 'uploading' || stage === 'initializing' || stage === 'finalizing'}
-              />
-              {file && (
-                <p className="text-xs text-muted-foreground mt-1.5 ui-num">
-                  {(file.size / 1024 / 1024).toFixed(2)} MB — {file.type || 'نوع غير معروف'}
-                </p>
-              )}
+              <label
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragging(true);
+                }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragging(false);
+                  const dropped = e.dataTransfer.files?.[0];
+                  if (dropped) setFile(dropped);
+                }}
+                className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-5 text-center cursor-pointer transition ${
+                  dragging
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border bg-card hover:border-primary/60 hover:bg-muted/40'
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  className="hidden"
+                  disabled={stage === 'uploading' || stage === 'initializing' || stage === 'finalizing'}
+                />
+                {file ? (
+                  <>
+                    <FileCheck2 className="h-6 w-6 text-primary" />
+                    <span className="text-sm font-semibold text-foreground break-all">{file.name}</span>
+                    <span className="text-xs text-muted-foreground ui-num">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB — اضغط لتغيير الملف
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="h-6 w-6 text-muted-foreground" />
+                    <span className="text-sm font-medium text-foreground">
+                      اسحب الملف وأفلته هنا، أو اضغط للاختيار من جهازك
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      PDF · DOCX · PPTX · XLSX · ZIP · MP4 · صور
+                    </span>
+                  </>
+                )}
+              </label>
             </div>
           </div>
 

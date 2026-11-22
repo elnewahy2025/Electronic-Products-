@@ -12,6 +12,7 @@ const body = z.object({
   category_id: z.string().uuid().nullable().optional(),
   cover_image_url: z.string().url().max(1000).nullable().optional(),
   file_version_ids: z.array(z.string().uuid()).max(50).optional(),
+  publish_now: z.boolean().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
       categoryId: parsed.data.category_id ?? null,
       coverImageUrl: parsed.data.cover_image_url ?? null,
       fileVersionIds: parsed.data.file_version_ids ?? [],
+      publishNow: Boolean(parsed.data.publish_now),
     });
     return NextResponse.json(result);
   } catch (e: any) {

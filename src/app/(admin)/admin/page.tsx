@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
+import { AdminActionQueue } from '@/components/admin/admin-action-queue';
 
 async function getAdminOverview() {
   const db = await createClient();
@@ -12,6 +13,9 @@ async function getAdminOverview() {
     { count: openTickets },
     { count: activeSessions },
     { data: recentAudit },
+    { data: queueRequests },
+    { data: queueSellers },
+    { data: queuePayouts },
   ] = await Promise.all([
     db.from('seller_profiles').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     db.from('purchase_requests').select('*', { count: 'exact', head: true }).in('status', ['created', 'pending']),
@@ -24,6 +28,21 @@ async function getAdminOverview() {
       .select('id, action, entity_type, entity_id, created_at, profiles!audit_logs_actor_id_fkey(email)')
       .order('created_at', { ascending: false })
       .limit(8),
+    db.from('purchase_requests')
+      .select('id, request_number, buyer_email, total_amount, currency, created_at')
+      .in('status', ['created', 'pending'])
+      .order('created_at', { ascending: false })
+      .limit(5),
+    db.from('seller_profiles')
+      .select('profile_id, display_name, created_at')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(5),
+    db.from('seller_payouts')
+      .select('id, amount, currency, created_at')
+      .eq('status', 'requested')
+      .order('created_at', { ascending: false })
+      .limit(5),
   ]);
 
   return {
@@ -35,6 +54,9 @@ async function getAdminOverview() {
     openTickets: openTickets ?? 0,
     activeSessions: activeSessions ?? 0,
     recentAudit: recentAudit ?? [],
+    queueRequests: (queueRequests ?? []) as any[],
+    queueSellers: (queueSellers ?? []) as any[],
+    queuePayouts: (queuePayouts ?? []) as any[],
   };
 }
 
@@ -80,6 +102,12 @@ export default async function AdminHome() {
           </Link>
         ))}
       </section>
+
+      <AdminActionQueue
+        requests={s.queueRequests}
+        sellers={s.queueSellers}
+        payouts={s.queuePayouts}
+      />
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
