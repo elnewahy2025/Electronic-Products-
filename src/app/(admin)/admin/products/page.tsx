@@ -5,7 +5,7 @@ import { ProductModerationActions } from './product-moderation-actions';
 
 const STATUS_META: Record<string, { label: string; badge: string }> = {
   published: { label: 'منشور', badge: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
-  draft: { label: 'مسودة', badge: 'bg-slate-100 text-slate-700 border-slate-200' },
+  draft: { label: 'مسودة', badge: 'bg-muted text-foreground border-border' },
   paused: { label: 'موقوف مؤقتًا', badge: 'bg-amber-50 text-amber-800 border-amber-200' },
   suspended: { label: 'موقوف إداريًا', badge: 'bg-red-50 text-red-800 border-red-200' },
   rejected: { label: 'مرفوض', badge: 'bg-red-50 text-red-800 border-red-200' },
@@ -56,16 +56,16 @@ export default async function AdminProductsPage({
         </div>
 
         <div className="flex items-center gap-3 text-xs tabular-nums">
-          <div className="bg-white border border-border rounded-xl px-4 py-2.5 shadow-sm">
+          <div className="bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm">
             <span className="text-muted-foreground block">المعروضة</span>
             <span className="text-lg font-bold text-foreground">{products.length}</span>
           </div>
-          <div className="bg-white border border-border rounded-xl px-4 py-2.5 shadow-sm">
+          <div className="bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm">
             <span className="text-muted-foreground block">المنشورة</span>
             <span className="text-lg font-bold text-emerald-700">{publishedCount}</span>
           </div>
           {suspendedCount > 0 && (
-            <div className="bg-white border border-red-200 rounded-xl px-4 py-2.5 shadow-sm">
+            <div className="bg-card border border-red-200 rounded-xl px-4 py-2.5 shadow-sm">
               <span className="text-muted-foreground block">موقوفة/مرفوضة</span>
               <span className="text-lg font-bold text-red-700">{suspendedCount}</span>
             </div>
@@ -74,7 +74,7 @@ export default async function AdminProductsPage({
       </header>
 
       {/* Filters & Search */}
-      <section className="bg-white border border-border rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <section className="bg-card border border-border rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 flex-wrap">
           <Link
             href="/admin/products"
@@ -122,7 +122,7 @@ export default async function AdminProductsPage({
       </section>
 
       {/* Products List */}
-      <section className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
+      <section className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
         {products.length === 0 ? (
           <div className="p-12 text-center text-sm text-muted-foreground">
             لا توجد منتجات مطابقة للفلاتر الحالية.
@@ -132,7 +132,7 @@ export default async function AdminProductsPage({
             {products.map(p => {
               const meta = STATUS_META[p.status] ?? {
                 label: p.status,
-                badge: 'bg-slate-100 text-slate-700 border-slate-200',
+                badge: 'bg-muted text-foreground border-border',
               };
               const reason = p.suspension_reason || p.rejection_reason;
 

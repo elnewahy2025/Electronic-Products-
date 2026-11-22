@@ -16,7 +16,7 @@ const PAYOUT_LABELS: Record<string, { label: string; cls: string }> = {
 
 const TX_LABELS: Record<string, { label: string; cls: string }> = {
   earning: { label: 'عائد مبيعة', cls: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
-  commission: { label: 'عمولة المنصة', cls: 'bg-slate-100 text-slate-700 border-slate-200' },
+  commission: { label: 'عمولة المنصة', cls: 'bg-muted text-foreground border-border' },
   payout: { label: 'سحب مستحقات', cls: 'bg-sky-50 text-sky-800 border-sky-200' },
   adjustment: { label: 'تعديل إداري', cls: 'bg-amber-50 text-amber-800 border-amber-200' },
 };
@@ -50,13 +50,13 @@ export default async function WalletPage() {
       <section className="space-y-3">
         <h2 className="font-semibold text-base">الأرصدة المتاحة</h2>
         {wallets.length === 0 ? (
-          <div className="bg-white border border-border rounded-2xl p-6 text-muted-foreground text-sm">
+          <div className="bg-card border border-border rounded-2xl p-6 text-muted-foreground text-sm">
             لا توجد أرصدة بعد. ستظهر تلقائيًا بمجرد اعتماد أول عملية شراء لأحد منتجاتك.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {wallets.map(w => (
-              <div key={w.id} className="bg-white border border-border rounded-2xl p-5 shadow-sm">
+              <div key={w.id} className="bg-card border border-border rounded-2xl p-5 shadow-sm">
                 <p className="text-xs text-muted-foreground">الرصيد المتاح ({w.currency})</p>
                 <p className="text-2xl font-bold mt-1.5 text-foreground font-mono tabular-nums" dir="ltr">
                   {w.balance.toFixed(2)} {w.currency}
@@ -68,7 +68,7 @@ export default async function WalletPage() {
       </section>
 
       {wallets.length > 0 && (
-        <section className="bg-white border border-border rounded-2xl p-5 shadow-sm space-y-3">
+        <section className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-3">
           <h2 className="font-semibold text-base">طلب سحب مستحقات</h2>
           <RequestPayoutForm
             wallets={wallets}
@@ -79,7 +79,7 @@ export default async function WalletPage() {
       )}
 
       {/* Financial Transactions Ledger */}
-      <section className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
+      <section className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <h2 className="font-semibold text-base">سجل الحركات المالية</h2>
           <span className="text-xs text-muted-foreground tabular-nums">{transactions.length} حركة</span>
@@ -93,7 +93,7 @@ export default async function WalletPage() {
             {transactions.map(t => {
               const meta = TX_LABELS[t.type] ?? {
                 label: t.type,
-                cls: 'bg-slate-100 text-slate-700 border-slate-200',
+                cls: 'bg-muted text-foreground border-border',
               };
               const isPositive = t.amount >= 0;
               return (
@@ -126,7 +126,7 @@ export default async function WalletPage() {
       </section>
 
       {/* Payout Requests */}
-      <section className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
+      <section className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <h2 className="font-semibold text-base">سجل طلبات السحب</h2>
           <span className="text-xs text-muted-foreground tabular-nums">{payouts.length} طلب</span>
@@ -138,7 +138,7 @@ export default async function WalletPage() {
         ) : (
           <div className="divide-y divide-border/70">
             {payouts.map(p => {
-              const s = PAYOUT_LABELS[p.status] ?? { label: p.status, cls: 'bg-slate-100 text-slate-700 border-slate-200' };
+              const s = PAYOUT_LABELS[p.status] ?? { label: p.status, cls: 'bg-muted text-foreground border-border' };
               return (
                 <div key={p.id} className="px-5 py-3.5 flex items-center justify-between gap-4">
                   <div>

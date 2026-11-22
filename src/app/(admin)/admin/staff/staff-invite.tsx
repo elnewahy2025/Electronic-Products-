@@ -30,7 +30,7 @@ export function StaffInvite() {
   return (
     <form
       onSubmit={submit}
-      className="bg-white border border-border rounded-2xl p-5 shadow-sm space-y-4"
+      className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4"
     >
       <div>
         <h2 className="font-semibold text-base text-foreground">إضافة عضو جديد</h2>

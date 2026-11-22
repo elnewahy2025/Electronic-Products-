@@ -60,7 +60,7 @@ export function RequestActions({ requestId }: { requestId: string }) {
         <p className="text-xs text-yellow-800">انسخها الآن وأرسلها للمشتري قبل مغادرة الصفحة.</p>
         <div className="space-y-2">
           {issued.map(c => (
-            <div key={c.code_id} className="bg-white rounded p-2 flex justify-between items-center">
+            <div key={c.code_id} className="bg-card rounded p-2 flex justify-between items-center">
               <code className="font-mono text-base">{c.plaintext}</code>
               <button
                 onClick={() => navigator.clipboard.writeText(c.plaintext)}

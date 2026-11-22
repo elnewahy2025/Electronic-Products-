@@ -103,7 +103,7 @@ export function GalleryManager({
 
   return (
     <div className="space-y-4">
-      <div className="bg-white border border-border rounded-2xl p-5 shadow-sm space-y-3">
+      <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-3">
         <div className="flex items-center justify-between gap-2">
           <div>
             <p className="text-sm font-semibold text-foreground">رفع صور للمعرض</p>
@@ -148,13 +148,13 @@ export function GalleryManager({
       </div>
 
       {images.length === 0 ? (
-        <div className="bg-white border border-border rounded-2xl p-10 text-center text-muted-foreground text-sm">
+        <div className="bg-card border border-border rounded-2xl p-10 text-center text-muted-foreground text-sm">
           لا توجد صور في المعرض بعد.
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {images.map((img, idx) => (
-            <div key={img.id} className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
+            <div key={img.id} className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
               <div className="aspect-video bg-muted">
                 <img
                   src={img.url}

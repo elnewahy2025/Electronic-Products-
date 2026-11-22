@@ -203,7 +203,7 @@ export function VersionEditor({
       )}
 
       {status === 'archived' && (
-        <div className="border rounded p-4 bg-gray-50 text-sm">
+        <div className="border rounded p-4 bg-muted/50 text-sm">
           <p className="font-medium">هذا الإصدار مؤرشف</p>
           <p className="text-xs text-muted-foreground mt-1">
             لا يزال متاحًا لمن اشتراه، لكنه لم يعد الخيار الحالي للمشترين الجدد.

@@ -258,7 +258,7 @@ export function StaffEditor({
         {/* Left/Right Sticky Identity & Role Column (4 cols) */}
         <aside className="lg:col-span-4 space-y-5 lg:sticky lg:top-6">
           {/* Profile Identity Card */}
-          <section className="bg-white border border-border rounded-2xl p-5 shadow-sm space-y-5">
+          <section className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-5">
             <div className="flex items-start gap-3.5">
               <div className="w-12 h-12 rounded-2xl bg-accent text-accent-foreground font-bold text-sm flex items-center justify-center shrink-0 border border-primary/15">
                 {getInitials(detail.full_name, detail.email)}
@@ -346,7 +346,7 @@ export function StaffEditor({
           </section>
 
           {/* Role Assignment Card */}
-          <section className="bg-white border border-border rounded-2xl p-5 shadow-sm space-y-4">
+          <section className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4">
             <div>
               <h2 className="font-semibold text-sm text-foreground">الدور الوظيفي</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -402,7 +402,7 @@ export function StaffEditor({
 
           {/* Danger Zone Card */}
           {!detail.is_self && detail.member_status === 'active' && (
-            <section className="bg-white border border-red-200 rounded-2xl p-5 shadow-sm space-y-3">
+            <section className="bg-card border border-red-200 rounded-2xl p-5 shadow-sm space-y-3">
               <div>
                 <h2 className="font-semibold text-sm text-red-800">إزالة العضوية الإدارية</h2>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
@@ -455,7 +455,7 @@ export function StaffEditor({
         </aside>
 
         {/* Main Permissions Workspace (8 cols) */}
-        <section className="lg:col-span-8 bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
+        <section className="lg:col-span-8 bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
           {/* Toolbar */}
           <div className="p-5 border-b border-border space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -555,7 +555,7 @@ export function StaffEditor({
                           <div
                             key={p.code}
                             className={`px-5 py-3.5 flex items-center justify-between gap-4 transition-colors ${
-                              p.effective ? 'bg-white' : 'bg-background/30'
+                              p.effective ? 'bg-card' : 'bg-background/30'
                             } hover:bg-muted/25`}
                           >
                             <div className="min-w-0 flex-1 space-y-0.5">

@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 const ROLE_BADGE: Record<string, string> = {
   super_admin: 'bg-teal-50 text-teal-800 border-teal-200',
-  admin: 'bg-slate-100 text-slate-800 border-slate-200',
+  admin: 'bg-muted text-foreground border-border',
   staff: 'bg-zinc-50 text-zinc-700 border-zinc-200',
 };
 
@@ -44,11 +44,11 @@ export default async function StaffPage() {
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs tabular-nums">
-          <div className="bg-white border border-border rounded-xl px-4 py-2.5 shadow-sm">
+          <div className="bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm">
             <span className="text-muted-foreground block">إجمالي الأعضاء</span>
             <span className="text-lg font-bold text-foreground">{list.length}</span>
           </div>
-          <div className="bg-white border border-border rounded-xl px-4 py-2.5 shadow-sm">
+          <div className="bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm">
             <span className="text-muted-foreground block">النشطون</span>
             <span className="text-lg font-bold text-emerald-700">{activeCount}</span>
           </div>
@@ -60,7 +60,7 @@ export default async function StaffPage() {
           <StaffInvite />
         </div>
 
-        <section className="lg:col-span-8 bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
+        <section className="lg:col-span-8 bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-border flex items-center justify-between">
             <h2 className="font-semibold text-base text-foreground">الأعضاء الحاليون</h2>
             <span className="text-xs text-muted-foreground tabular-nums">{list.length} عضو</span>
