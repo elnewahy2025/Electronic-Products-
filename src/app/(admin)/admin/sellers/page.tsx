@@ -16,7 +16,7 @@ export default async function SellersListPage({
   const db = await createClient();
   let q = db
     .from('seller_profiles')
-    .select('profile_id, display_name, status, created_at, profiles!inner(email, phone)')
+    .select('profile_id, display_name, status, created_at, profiles:profiles!seller_profiles_profile_id_fkey(email, phone)')
     .order('created_at', { ascending: false })
     .limit(100);
 
