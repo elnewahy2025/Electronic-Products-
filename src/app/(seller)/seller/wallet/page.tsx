@@ -112,9 +112,8 @@ export default async function WalletPage() {
                   </div>
                   <span
                     dir="ltr"
-                    className={`text-sm font-mono font-semibold tabular-nums ${
-                      isPositive ? 'text-emerald-700' : 'text-red-700'
-                    }`}
+                    className={`text-sm font-mono font-semibold tabular-nums ${isPositive ? 'text-emerald-700' : 'text-red-700'
+                      }`}
                   >
                     {isPositive ? '+' : ''}
                     {t.amount.toFixed(2)} {t.currency}
