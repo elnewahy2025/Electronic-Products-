@@ -9,12 +9,12 @@ on:
       force_backup:
         description: 'Force backup even if schedule is not yet due'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       force_verify:
         description: 'Force isolated restore verification now'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 jobs:
