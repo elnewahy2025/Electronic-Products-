@@ -12,6 +12,7 @@ export async function initiateResumableUpload(params: {
   mime: string;
   size: number;
   folderId?: string;
+  origin?: string;
 }): Promise<{ uploadUrl: string }> {
   const oauth2 = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -27,16 +28,22 @@ export async function initiateResumableUpload(params: {
   };
   if (params.folderId) metadata.parents = [params.folderId];
 
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${accessToken}`,
+    'Content-Type': 'application/json; charset=UTF-8',
+    'X-Upload-Content-Type': params.mime,
+    'X-Upload-Content-Length': String(params.size),
+  };
+  const origin = params.origin || process.env.NEXT_PUBLIC_APP_URL;
+  if (origin) {
+    headers.Origin = origin;
+  }
+
   const res = await fetch(
     'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true',
     {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json; charset=UTF-8',
-        'X-Upload-Content-Type': params.mime,
-        'X-Upload-Content-Length': String(params.size),
-      },
+      headers,
       body: JSON.stringify(metadata),
     }
   );

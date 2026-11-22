@@ -21,6 +21,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'INVALID_BODY', details: parsed.error.flatten() }, { status: 400 });
   }
 
+  const origin = req.headers.get('origin') || req.nextUrl.origin;
+
   try {
     const result = await initUpload({
       sellerId: user.id,
@@ -29,6 +31,7 @@ export async function POST(req: NextRequest) {
       size: parsed.data.size,
       checksum: parsed.data.checksum,
       driveAccountId: parsed.data.drive_account_id,
+      origin,
     });
     return NextResponse.json(result);
   } catch (e: any) {

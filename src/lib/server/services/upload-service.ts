@@ -13,6 +13,7 @@ export type InitUploadInput = {
   size: number;
   checksum?: string;
   driveAccountId?: string;
+  origin?: string;
 };
 
 export type InitUploadResult = {
@@ -81,12 +82,13 @@ export async function initUpload(input: InitUploadInput): Promise<InitUploadResu
   if (!accRow?.encrypted_refresh_token) throw new Error('DRIVE_NOT_LINKED');
   const refreshToken = decrypt(accRow.encrypted_refresh_token);
 
-  // 4. Create Drive resumable session
+  // 4. Create Drive resumable session (pass browser Origin so Google enables CORS on uploadUrl)
   const { uploadUrl } = await initiateResumableUpload({
     refreshToken,
     filename: input.originalName,
     mime: input.mime,
     size: input.size,
+    origin: input.origin,
   });
 
   // 5. Persist session
