@@ -40,6 +40,8 @@ function buildCsp(nonce: string, isDev: boolean): string {
     'https://www.googleapis.com',
     'https://oauth2.googleapis.com',
     'https://accounts.google.com',
+    'https://apis.google.com',
+    'https://docs.google.com',
     downloadServiceUrl ? `https://${downloadServiceHost}` : '',
   ]
     .filter(Boolean)
@@ -67,7 +69,7 @@ function buildCsp(nonce: string, isDev: boolean): string {
     `font-src 'self' data:`,
     `connect-src ${connectSrc}`,
     `media-src 'self' https://*.supabase.co blob: data:`,
-    `frame-src 'self' https://accounts.google.com`,
+    `frame-src 'self' https://accounts.google.com https://docs.google.com https://drive.google.com`,
     `frame-ancestors 'none'`,
     `form-action 'self' https://accounts.google.com`,
     `base-uri 'self'`,
@@ -209,7 +211,7 @@ function applySecurityHeaders(response: NextResponse, csp: string) {
     'Permissions-Policy',
     'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=()'
   );
-  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
   response.headers.set('X-Permitted-Cross-Domain-Policies', 'none');
   response.headers.set('X-DNS-Prefetch-Control', 'on');

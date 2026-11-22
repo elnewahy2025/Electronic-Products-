@@ -269,3 +269,210 @@ export async function completeUpload(params: {
 
   return { fileVersionId: fv.id, fileId: file.id };
 }
+
+export type ImportedDriveFileResult = {
+  driveFileId: string;
+  name: string;
+  status: 'imported' | 'already_imported' | 'skipped';
+  fileId?: string;
+  fileVersionId?: string;
+  sizeBytes?: number;
+  error?: string;
+};
+
+/**
+ * Imports existing files stored on a seller's linked Google Drive account
+ * (selected via Google Picker under the non-restricted `drive.file` scope)
+ * without re-uploading bytes, then enqueues the normal magic-byte scan & preview pipeline.
+ */
+export async function importDriveFiles(params: {
+  sellerId: string;
+  driveAccountId: string;
+  files: Array<{ driveFileId: string; name?: string; mime?: string }>;
+}): Promise<ImportedDriveFileResult[]> {
+  const admin = createAdminClient();
+
+  const { data: acc } = await admin
+    .from('seller_drive_accounts')
+    .select('id, seller_id, status, encrypted_refresh_token')
+    .eq('id', params.driveAccountId)
+    .eq('seller_id', params.sellerId)
+    .maybeSingle();
+
+  if (!acc) throw new Error('DRIVE_ACCOUNT_NOT_FOUND');
+  if (acc.status !== 'active') throw new Error('DRIVE_ACCOUNT_INACTIVE');
+  if (!acc.encrypted_refresh_token) throw new Error('DRIVE_NOT_LINKED');
+
+  const refreshToken = decrypt(acc.encrypted_refresh_token);
+  const results: ImportedDriveFileResult[] = [];
+
+  for (const item of params.files) {
+    const fallbackName = item.name || item.driveFileId;
+    try {
+      // 1. Fetch real Drive metadata (verifies drive.file grant from Google Picker)
+      const meta = await getDriveFileMeta(refreshToken, item.driveFileId);
+      const originalName = meta.name || fallbackName;
+      const mime = meta.mimeType || item.mime || 'application/octet-stream';
+
+      // 2. Reject native Google Workspace docs (no raw binary bytes; seller should export to PDF/DOCX)
+      if (mime.startsWith('application/vnd.google-apps.')) {
+        results.push({
+          driveFileId: item.driveFileId,
+          name: originalName,
+          status: 'skipped',
+          error: 'GOOGLE_DOCS_EXPORT_REQUIRED',
+        });
+        continue;
+      }
+
+      // 3. Validate extension and max size against allowed_file_types
+      const dot = originalName.lastIndexOf('.');
+      const ext = dot >= 0 ? originalName.slice(dot + 1).toLowerCase() : '';
+      if (!ext) {
+        results.push({
+          driveFileId: item.driveFileId,
+          name: originalName,
+          status: 'skipped',
+          error: 'INVALID_FILENAME',
+        });
+        continue;
+      }
+
+      const { data: fileType } = await admin
+        .from('allowed_file_types')
+        .select('mime, max_size_bytes')
+        .eq('extension', ext)
+        .eq('is_enabled', true)
+        .maybeSingle();
+
+      if (!fileType) {
+        results.push({
+          driveFileId: item.driveFileId,
+          name: originalName,
+          status: 'skipped',
+          error: 'FILE_TYPE_NOT_ALLOWED',
+        });
+        continue;
+      }
+
+      if (meta.size <= 0) {
+        results.push({
+          driveFileId: item.driveFileId,
+          name: originalName,
+          status: 'skipped',
+          error: 'EMPTY_FILE',
+        });
+        continue;
+      }
+
+      if (fileType.max_size_bytes && meta.size > Number(fileType.max_size_bytes)) {
+        results.push({
+          driveFileId: item.driveFileId,
+          name: originalName,
+          status: 'skipped',
+          error: 'FILE_TOO_LARGE',
+        });
+        continue;
+      }
+
+      // 4. Deduplicate if this exact Drive file is already registered for this seller
+      const { data: existingLoc } = await admin
+        .from('file_storage_locations')
+        .select('id, file_versions(id, file_id, files!inner(seller_id))')
+        .eq('provider', 'google_drive')
+        .eq('seller_drive_account_id', acc.id)
+        .eq('provider_file_id', meta.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      const existingFv = Array.isArray((existingLoc as any)?.file_versions)
+        ? (existingLoc as any).file_versions[0]
+        : (existingLoc as any)?.file_versions;
+
+      if (existingFv?.id && existingFv?.files?.seller_id === params.sellerId) {
+        results.push({
+          driveFileId: meta.id,
+          name: originalName,
+          status: 'already_imported',
+          fileId: existingFv.file_id,
+          fileVersionId: existingFv.id,
+          sizeBytes: meta.size,
+        });
+        continue;
+      }
+
+      // 5. Register file + storage location + version + scan job
+      const { data: file, error: fe } = await admin
+        .from('files')
+        .insert({
+          seller_id: params.sellerId,
+          original_name: originalName,
+          display_name: originalName,
+          mime,
+          extension: ext,
+        })
+        .select('id')
+        .single();
+      if (fe || !file) throw new Error('FILE_CREATE_FAILED');
+
+      const { data: storage, error: ste } = await admin
+        .from('file_storage_locations')
+        .insert({
+          provider: 'google_drive',
+          seller_drive_account_id: acc.id,
+          provider_file_id: meta.id,
+          status: 'active',
+        })
+        .select('id')
+        .single();
+      if (ste || !storage) throw new Error('STORAGE_CREATE_FAILED');
+
+      const { data: fv, error: fve } = await admin
+        .from('file_versions')
+        .insert({
+          file_id: file.id,
+          version_number: 1,
+          storage_location_id: storage.id,
+          size_bytes: meta.size,
+          checksum_sha256: meta.md5Checksum ?? null,
+          mime,
+          extension: ext,
+          scan_status: 'uploaded',
+        })
+        .select('id')
+        .single();
+      if (fve || !fv) throw new Error('FILE_VERSION_CREATE_FAILED');
+
+      await admin.from('scan_jobs').insert({
+        file_version_id: fv.id,
+        status: 'queued',
+        engine: 'pending',
+      });
+
+      await logAudit({
+        action: 'file.imported_from_drive',
+        entityType: 'file_versions',
+        entityId: fv.id,
+        after: { drive_file_id: meta.id, size: meta.size, mime },
+      });
+
+      results.push({
+        driveFileId: meta.id,
+        name: originalName,
+        status: 'imported',
+        fileId: file.id,
+        fileVersionId: fv.id,
+        sizeBytes: meta.size,
+      });
+    } catch (e: any) {
+      results.push({
+        driveFileId: item.driveFileId,
+        name: fallbackName,
+        status: 'skipped',
+        error: e?.message ?? 'IMPORT_FAILED',
+      });
+    }
+  }
+
+  return results;
+}
