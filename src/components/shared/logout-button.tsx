@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils/cn';
 
@@ -16,7 +15,6 @@ export function LogoutButton({
   variant = 'sidebar',
   redirectTo = '/login',
 }: Props) {
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
 
   async function handleLogout() {
@@ -28,8 +26,8 @@ export function LogoutButton({
         createClient().auth.signOut(),
       ]);
     } finally {
-      router.push(redirectTo);
-      router.refresh();
+      // Full page navigation clears all in-memory client state and avoids stale RSC/webpack chunk swaps across route groups
+      window.location.assign(redirectTo);
     }
   }
 
