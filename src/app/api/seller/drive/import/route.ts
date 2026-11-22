@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireUser } from '@/lib/auth/session';
 import { importDriveFiles } from '@/lib/server/services/upload-service';
 import { processPendingScans } from '@/lib/server/services/scan-service';
+import { processPendingPreviews } from '@/lib/server/services/preview-service';
 
 const bodySchema = z.object({
   drive_account_id: z.string().uuid(),
@@ -42,8 +43,10 @@ export async function POST(req: NextRequest) {
 
     const importedCount = results.filter(r => r.status === 'imported').length;
     if (importedCount > 0) {
-      // Kick off real magic-byte scan immediately so imported files become ready right away
-      void processPendingScans(Math.min(importedCount, 5)).catch(() => {});
+      // Kick off real magic-byte scan AND preview generation so imported files become ready immediately
+      void processPendingScans(Math.min(importedCount, 5))
+        .then(() => processPendingPreviews(Math.min(importedCount, 5)))
+        .catch(() => {});
     }
 
     return NextResponse.json({ results });

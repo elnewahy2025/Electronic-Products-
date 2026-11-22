@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { listMyFiles } from '@/lib/server/services/seller-file-service';
+import { processPendingScans } from '@/lib/server/services/scan-service';
+import { processPendingPreviews } from '@/lib/server/services/preview-service';
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   uploading: { label: 'جارٍ الرفع', cls: 'bg-gray-100 text-gray-800' },
@@ -13,7 +15,17 @@ const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
 };
 
 export default async function SellerFilesPage() {
-  const files = await listMyFiles();
+  let files = await listMyFiles();
+
+  // If any files are awaiting scan or preview generation, process them immediately so they become ready
+  const hasPending = files.some(
+    f => f.scan_status === 'uploaded' || f.scan_status === 'processing',
+  );
+  if (hasPending) {
+    await processPendingScans(5).catch(() => {});
+    await processPendingPreviews(5).catch(() => {});
+    files = await listMyFiles();
+  }
 
   return (
     <main className="p-6 space-y-6">

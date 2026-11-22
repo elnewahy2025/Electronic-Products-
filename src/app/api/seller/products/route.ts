@@ -11,6 +11,7 @@ const body = z.object({
   price_currency: z.enum(['USD', 'EGP', 'SAR', 'KWD']),
   category_id: z.string().uuid().nullable().optional(),
   cover_image_url: z.string().url().max(1000).nullable().optional(),
+  file_version_ids: z.array(z.string().uuid()).max(50).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
       priceCurrency: parsed.data.price_currency,
       categoryId: parsed.data.category_id ?? null,
       coverImageUrl: parsed.data.cover_image_url ?? null,
+      fileVersionIds: parsed.data.file_version_ids ?? [],
     });
     return NextResponse.json(result);
   } catch (e: any) {

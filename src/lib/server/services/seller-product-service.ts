@@ -91,7 +91,8 @@ export async function createSellerProduct(input: {
   priceCurrency: string;
   categoryId?: string | null;
   coverImageUrl?: string | null;
-}): Promise<{ id: string; slug: string }> {
+  fileVersionIds?: string[];
+}): Promise<{ id: string; slug: string; versionId?: string }> {
   const db = await createClient();
 
   if (!input.title.trim() || input.title.length < 3) throw new Error('title_too_short');
@@ -135,15 +136,51 @@ export async function createSellerProduct(input: {
     throw new Error(error.message);
   }
 
+  let versionId: string | undefined;
+  const uniqueFileVersionIds = Array.from(new Set(input.fileVersionIds ?? []));
+  if (uniqueFileVersionIds.length > 0) {
+    // Verify all selected file_versions belong to this seller and are ready
+    const { data: validFvs } = await db
+      .from('file_versions')
+      .select('id, scan_status, files!inner(seller_id)')
+      .in('id', uniqueFileVersionIds)
+      .eq('files.seller_id', input.sellerId)
+      .eq('scan_status', 'ready');
+
+    const readyIds = (validFvs ?? []).map((fv: any) => fv.id as string);
+    if (readyIds.length > 0) {
+      const { data: ver } = await db
+        .from('product_versions')
+        .insert({
+          product_id: data.id,
+          version_number: 1,
+          status: 'draft',
+        })
+        .select('id')
+        .single();
+
+      if (ver?.id) {
+        versionId = ver.id;
+        await db.from('product_version_files').insert(
+          readyIds.map((fvId, idx) => ({
+            product_version_id: ver.id,
+            file_version_id: fvId,
+            sort_order: idx,
+          })),
+        );
+      }
+    }
+  }
+
   await logAudit({
     action: 'product.created',
     entityType: 'products',
     entityId: data.id,
-    after: { title: input.title, price: input.priceAmount },
+    after: { title: input.title, price: input.priceAmount, attached_files: uniqueFileVersionIds.length },
   });
 
   revalidateTag('storefront-products');
-  return data;
+  return { ...data, versionId };
 }
 
 export async function updateSellerProduct(input: {

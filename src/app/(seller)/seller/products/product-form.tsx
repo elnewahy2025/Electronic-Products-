@@ -1,7 +1,17 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+
+type SellerFileOption = {
+  file_version_id: string;
+  name: string;
+  extension: string | null;
+  size_bytes: number;
+  scan_status: string;
+  is_linked: boolean;
+};
 
 type Props = {
   mode: 'create' | 'edit';
@@ -18,17 +28,19 @@ type Props = {
   categories: { id: string; name: string }[];
   minPrice: number;
   minPriceCurrency: string;
+  availableFiles?: SellerFileOption[];
 };
 
 const CURRENCIES = ['USD', 'EGP', 'SAR', 'KWD'];
 
-export function ProductForm({ mode, productId, initial, categories, minPrice, minPriceCurrency }: Props) {
+export function ProductForm({ mode, productId, initial, categories, minPrice, minPriceCurrency, availableFiles = [] }: Props) {
   const [title, setTitle] = useState(initial?.title ?? '');
   const [shortDescription, setShortDescription] = useState(initial?.short_description ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
   const [price, setPrice] = useState(initial?.price_amount?.toString() ?? '');
   const [currency, setCurrency] = useState(initial?.price_currency ?? 'USD');
   const [categoryId, setCategoryId] = useState(initial?.category_id ?? '');
+  const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
   const [coverImageUrl, setCoverImageUrl] = useState(initial?.cover_image_url ?? '');
   const [uploadingCover, setUploadingCover] = useState(false);
   const [coverInfo, setCoverInfo] = useState<string | null>(null);
@@ -61,6 +73,7 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
         body: JSON.stringify({
           action: 'extract_first_page',
           product_id: productId ?? null,
+          file_version_id: selectedFileIds[0] ?? null,
           apply_watermark: useWatermark,
         }),
       });
@@ -205,6 +218,9 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
       price_currency: currency,
       category_id: categoryId || null,
       cover_image_url: coverImageUrl.trim() || null,
+      ...(mode === 'create' && selectedFileIds.length > 0
+        ? { file_version_ids: selectedFileIds }
+        : {}),
     };
 
     const url = mode === 'create'
@@ -274,6 +290,78 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
           placeholder="تفاصيل المنتج..."
         />
       </div>
+
+      {mode === 'create' && (
+        <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-4">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div>
+              <label className="block text-sm font-semibold">ملفات المنتج (من مكتبة ملفاتك)</label>
+              <p className="text-xs text-muted-foreground">
+                اختر ملفاً أو أكثر من ملفاتك الجاهزة ليتم ربطها تلقائياً بالإصدار الأول عند إنشاء المنتج.
+              </p>
+            </div>
+            <Link href="/seller/upload" className="text-xs text-primary hover:underline font-medium">
+              + إضافة / استيراد ملفات
+            </Link>
+          </div>
+
+          {availableFiles.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-2">
+              لا توجد ملفات في مكتبتك بعد.{' '}
+              <Link href="/seller/upload" className="text-primary underline">
+                استورد من Google Drive أو ارفع ملفاً الآن
+              </Link>
+              .
+            </p>
+          ) : (
+            <div className="space-y-1.5 max-h-56 overflow-y-auto pt-1">
+              {availableFiles.map(f => {
+                const isReady = f.scan_status === 'ready';
+                const checked = selectedFileIds.includes(f.file_version_id);
+                return (
+                  <label
+                    key={f.file_version_id}
+                    className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-xs transition ${
+                      isReady
+                        ? checked
+                          ? 'border-primary bg-primary/10 cursor-pointer'
+                          : 'border-border bg-card hover:bg-muted/60 cursor-pointer'
+                        : 'border-border bg-muted/40 opacity-60 cursor-not-allowed'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <input
+                        type="checkbox"
+                        disabled={!isReady}
+                        checked={checked}
+                        onChange={e => {
+                          setSelectedFileIds(prev =>
+                            e.target.checked
+                              ? [...prev, f.file_version_id]
+                              : prev.filter(id => id !== f.file_version_id),
+                          );
+                        }}
+                        className="h-4 w-4 rounded border-border accent-primary shrink-0"
+                      />
+                      <span className="font-medium truncate">{f.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-muted-foreground ui-num">
+                        {(f.size_bytes / 1024).toFixed(0)} KB · {f.extension ?? 'file'}
+                      </span>
+                      {isReady ? (
+                        <span className="ui-badge ui-badge-green">جاهز</span>
+                      ) : (
+                        <span className="ui-badge ui-badge-amber">{f.scan_status}</span>
+                      )}
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="space-y-2">
         <label className="block text-sm font-medium">صورة الغلاف (اختياري)</label>
