@@ -48,8 +48,8 @@ export async function GET(req: NextRequest) {
 
   const target =
     profile?.account_type === 'seller' ? '/seller'
-    : profile?.account_type === 'staff' ? '/admin'
-    : '/account';
+      : profile?.account_type === 'staff' ? '/admin'
+        : '/account';
 
   return NextResponse.redirect(`${origin}${next !== '/' ? next : target}`);
 }
