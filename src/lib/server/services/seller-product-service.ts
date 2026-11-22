@@ -168,6 +168,25 @@ export async function createSellerProduct(input: {
             sort_order: idx,
           })),
         );
+
+        // If the seller didn't set a custom cover image, automatically fall back to the first file's watermarked preview
+        if (!input.coverImageUrl) {
+          const { data: preview } = await db
+            .from('file_previews')
+            .select('public_url')
+            .in('file_version_id', readyIds)
+            .eq('status', 'ready')
+            .not('public_url', 'is', null)
+            .limit(1)
+            .maybeSingle();
+
+          if (preview?.public_url) {
+            await db
+              .from('products')
+              .update({ cover_image_url: preview.public_url })
+              .eq('id', data.id);
+          }
+        }
       }
     }
   }

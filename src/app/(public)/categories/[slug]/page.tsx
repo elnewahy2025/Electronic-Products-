@@ -10,15 +10,22 @@ export default async function CategoryPage({
   params: { slug: string };
   searchParams: { sort?: string; page?: string };
 }) {
+  let slug = params.slug;
+  try {
+    slug = decodeURIComponent(params.slug);
+  } catch {
+    // keep raw slug
+  }
+
   const categories = await getAllCategories();
-  const category = categories.find(c => c.slug === params.slug);
+  const category = categories.find(c => c.slug === slug);
   if (!category) notFound();
 
   const page = Math.max(1, parseInt(searchParams.page ?? '1', 10));
   const perPage = 24;
 
   const result = await searchStorefront({
-    categorySlug: params.slug,
+    categorySlug: slug,
     sort: (searchParams.sort as any) ?? 'newest',
     limit: perPage,
     offset: (page - 1) * perPage,

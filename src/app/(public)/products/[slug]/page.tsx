@@ -17,6 +17,12 @@ import { PurchaseRequestForm } from './purchase-request-form';
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
   const db = await createClient();
+  let slug = params.slug;
+  try {
+    slug = decodeURIComponent(params.slug);
+  } catch {
+    // keep raw slug if malformed percent-encoding
+  }
 
   const { data: product } = await db
     .from('products')
@@ -25,7 +31,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
       status, published_at, seller_id, category_id, cover_image_url,
       product_versions(id, version_number, status)
     `)
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .eq('status', 'published')
     .single();
 
