@@ -5,7 +5,16 @@ import type { Database } from '@/lib/supabase/types';
 const ADMIN_PREFIXES = ['/admin'];
 const SELLER_PREFIXES = ['/seller'];
 const BUYER_PREFIXES = ['/account'];
-const MFA_WHITELIST = ['/verify-mfa', '/api/auth/mfa', '/login', '/register', '/auth/callback'];
+const MFA_WHITELIST = [
+  '/verify-mfa',
+  '/api/auth/mfa',
+  '/login',
+  '/register',
+  '/auth/callback',
+  '/forgot-password',
+  '/reset-password',
+  '/offline',
+];
 
 // ─── CSP builder ─────────────────────────────────────────
 function buildCsp(nonce: string, isDev: boolean): string {
@@ -230,6 +239,6 @@ export const config = {
      *  - static image/font files
      *  - API routes (no HTML served, headers harmless but skip anyway)
      */
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|api/.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf)$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|sw.js|manifest.webmanifest|api/.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf)$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf)$).*)',
   ],
 };
