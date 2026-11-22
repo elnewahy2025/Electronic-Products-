@@ -19,6 +19,17 @@ export type PayoutRow = {
   reference: string | null;
 };
 
+export type WalletTransactionRow = {
+  id: string;
+  wallet_id: string;
+  type: 'earning' | 'commission' | 'payout' | 'adjustment';
+  amount: number;
+  currency: string;
+  reference_type: string | null;
+  reference_id: string | null;
+  created_at: string;
+};
+
 export async function getMyWallets(): Promise<WalletInfo[]> {
   const db = await createClient();
   const { data: { user } } = await db.auth.getUser();
@@ -52,6 +63,23 @@ export async function listMyPayouts(): Promise<PayoutRow[]> {
   return (data ?? []).map((p: any) => ({
     ...p,
     amount: Number(p.amount),
+  }));
+}
+
+export async function listMyTransactions(limit = 50): Promise<WalletTransactionRow[]> {
+  const db = await createClient();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await db
+    .from('financial_transactions')
+    .select('id, wallet_id, type, amount, currency, reference_type, reference_id, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  return (data ?? []).map((t: any) => ({
+    ...t,
+    amount: Number(t.amount),
   }));
 }
 

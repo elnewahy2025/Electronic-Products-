@@ -1,5 +1,5 @@
 # ERD وقاموس البيانات — منصة المنتجات الرقمية
-الإصدار: 1.3 (النهائي المحدّث شاملاً الترحيلات حتى `032`) — 21 نوفمبر 2026
+الإصدار: 1.4 (النهائي المحدّث شاملاً الترحيلات حتى `033`) — 22 نوفمبر 2026
 
 ## 1. الاصطلاحات العامة
 - **المفاتيح الأساسية:** `UUID` مع `gen_random_uuid()` (باستثناء `audit_logs` و`security_events` و`redeem_attempts` من نوع `BIGSERIAL`، وجداول الإعدادات الأحد عشر من نوع `SMALLINT CHECK (id = 1)`).
@@ -216,7 +216,7 @@ erDiagram
 ### `purchase_request_items`, `orders`, `order_items`
 - `purchase_request_items`: `id`, `purchase_request_id` FK, `product_id` FK, `product_version_id` FK, `unit_price`, `currency`, `quantity`
 - `orders`: `id`, `purchase_request_id` UNIQUE FK ON DELETE RESTRICT, `buyer_id`, `status`, `total_amount`, `currency`, `amount_in_usd`, `exchange_rate_at_purchase`, `created_at`
-- `order_items`: `id`, `order_id` FK, `product_id` FK, `product_version_id` FK ON DELETE RESTRICT, `price`, `currency`, `created_at`
+- `order_items`: `id`, `order_id` FK, `product_id` FK, `product_version_id` FK ON DELETE RESTRICT, `price`, `currency`, `commission_rate_at_sale` NUMERIC(5,4), `commission_amount` NUMERIC(18,4), `net_seller_amount` NUMERIC(18,4) (`033_commission_snapshot_and_wallet.sql`), `created_at`
 
 ### `purchase_codes`
 - `id` UUID PK

@@ -37,19 +37,16 @@ One-call aggregate:
 - `revenue_last_30d`, `sales_last_30d`
 - `top_products` (up to 5 by count)
 
-## Commission calculation
+## Commission calculation (Migration 033 — Snapshotted at Sale)
 
-`net_amount = price × (1 − commission_rate)`
-
-`commission_rate` is resolved by:
-1. `seller_commissions` row for this seller (highest `effective_from` where `effective_to IS NULL OR > now()`)
-2. Fallback: `commission_settings.default_rate`
-3. Fallback: `0.10`
-
-**Limitation:** this is the *current* rate. If the rate changed after a sale,
-the displayed net reflects the current rate, not the rate at time of sale.
-Proper accounting requires snapshotting commission at sale — tracked as future
-work (see below).
+When `approve_purchase_request` creates each `order_item`:
+1. `resolve_effective_commission_rate(seller_id, category_id)` resolves the active rate:
+   - Category-specific override in `seller_commissions` (`scope = 'category'`)
+   - Global seller override in `seller_commissions` (`scope = 'global'`)
+   - Platform `commission_settings.default_rate` (fallback `0.10`)
+2. The rate, commission amount, and net seller amount are snapshotted permanently onto `order_items` (`commission_rate_at_sale`, `commission_amount`, `net_seller_amount`).
+3. `credit_seller_wallet_for_order_item` atomically increments `seller_wallets.balance` by `net_seller_amount` and records `earning` (+gross) and `commission` (-commission) rows in `financial_transactions` (idempotent via unique partial index `uq_fin_tx_order_item_type`).
+4. Both `seller_orders` and `seller_sales_stats` read directly from the snapshotted columns on `order_items`, so historical net amounts never shift if commission rates change later.
 
 ## Buyer privacy
 
