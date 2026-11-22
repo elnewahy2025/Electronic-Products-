@@ -120,6 +120,39 @@ export async function revokeDriveAccount(sellerId: string, accountId: string): P
   });
 }
 
+export async function setDefaultDriveAccount(sellerId: string, accountId: string): Promise<void> {
+  const admin = createAdminClient();
+
+  const { data: acc } = await admin
+    .from('seller_drive_accounts')
+    .select('id, seller_id, status, google_account_email')
+    .eq('id', accountId)
+    .maybeSingle();
+
+  if (!acc || acc.seller_id !== sellerId) throw new Error('NOT_FOUND');
+  if (acc.status !== 'active') throw new Error('DRIVE_ACCOUNT_NOT_ACTIVE');
+
+  await admin
+    .from('seller_drive_accounts')
+    .update({ is_default: false })
+    .eq('seller_id', sellerId)
+    .eq('is_default', true);
+
+  const { error } = await admin
+    .from('seller_drive_accounts')
+    .update({ is_default: true })
+    .eq('id', accountId);
+
+  if (error) throw new Error('DRIVE_DEFAULT_UPDATE_FAILED');
+
+  await logAudit({
+    action: 'seller.drive_default_changed',
+    entityType: 'seller_drive_accounts',
+    entityId: accountId,
+    after: { google_email: acc.google_account_email },
+  });
+}
+
 export async function refreshQuotaForAccount(accountId: string): Promise<void> {
   const admin = createAdminClient();
   const { data: acc } = await admin

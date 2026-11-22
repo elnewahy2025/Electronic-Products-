@@ -7,6 +7,16 @@ export async function POST() {
   const { data: { user } } = await db.auth.getUser();
   if (!user) return NextResponse.json({ error: 'UNAUTHENTICATED' }, { status: 401 });
 
+  if (!process.env.GOOGLE_DRIVE_CLIENT_ID || !process.env.GOOGLE_DRIVE_CLIENT_SECRET) {
+    return NextResponse.json(
+      {
+        error: 'GOOGLE_DRIVE_NOT_CONFIGURED',
+        message: 'لم يتم ضبط مفاتيح Google Drive OAuth على مستوى المنصة بعد. يرجى ضبط GOOGLE_DRIVE_CLIENT_ID وGOOGLE_DRIVE_CLIENT_SECRET في متغيرات البيئة.',
+      },
+      { status: 503 },
+    );
+  }
+
   const { url, state } = buildDriveAuthUrl({ sellerId: user.id });
   const res = NextResponse.json({ url });
   // Store state in HttpOnly cookie for CSRF verification on callback
