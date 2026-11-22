@@ -1,8 +1,10 @@
 import 'server-only';
 import crypto from 'node:crypto';
 import sharp from 'sharp';
+import { google } from 'googleapis';
 import { GoogleGenAI } from '@google/genai';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { decrypt } from '@/lib/crypto/encryption';
 
 export const PRODUCT_IMAGES_BUCKET = 'product-images';
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -209,6 +211,150 @@ export async function generateAiProductCover(input: {
     height: info.height,
     sizeBytes: info.size,
     variant,
+  };
+}
+
+/**
+ * Extracts the real high-resolution Page 1 render of a seller's uploaded document
+ * (DOCX, PPTX, PDF, XLSX, image, video) via Google Drive's thumbnail API and
+ * composites it cleanly onto a 1200x750 WebP cover preview for seller approval.
+ */
+export async function extractFirstPageCoverFromDrive(input: {
+  sellerId: string;
+  productId?: string | null;
+  fileVersionId?: string | null;
+}): Promise<{
+  buffer: Buffer;
+  width: number;
+  height: number;
+  sizeBytes: number;
+  sourceFileName: string;
+}> {
+  const adminDb = createAdminClient();
+  let fvId = input.fileVersionId ?? null;
+
+  // 1) If productId provided and no explicit fileVersionId, pick first file attached to product's latest version
+  if (!fvId && input.productId) {
+    const { data: versions } = await adminDb
+      .from('product_versions')
+      .select('id')
+      .eq('product_id', input.productId)
+      .order('version_number', { ascending: false })
+      .limit(3);
+
+    const versionIds = (versions ?? []).map(v => v.id);
+    if (versionIds.length > 0) {
+      const { data: pvf } = await adminDb
+        .from('product_version_files')
+        .select('file_version_id')
+        .in('product_version_id', versionIds)
+        .order('sort_order', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      fvId = pvf?.file_version_id ?? null;
+    }
+  }
+
+  // 2) Fallback: pick seller's latest uploaded file_version
+  if (!fvId) {
+    const { data: latestFv } = await adminDb
+      .from('file_versions')
+      .select('id, files!inner(seller_id)')
+      .eq('files.seller_id', input.sellerId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    fvId = latestFv?.id ?? null;
+  }
+
+  if (!fvId) {
+    throw new Error('NO_UPLOADED_FILE_FOR_COVER');
+  }
+
+  // 3) Resolve file + Drive storage location + seller ownership
+  const { data: fv } = await adminDb
+    .from('file_versions')
+    .select(`
+      id,
+      files!inner(seller_id, original_name, display_name),
+      file_storage_locations!inner(provider, provider_file_id, seller_drive_account_id)
+    `)
+    .eq('id', fvId)
+    .single();
+
+  const fileRec = (fv as any)?.files;
+  const loc = (fv as any)?.file_storage_locations;
+  if (!fileRec || fileRec.seller_id !== input.sellerId) {
+    throw new Error('FORBIDDEN');
+  }
+  if (!loc?.provider_file_id || !loc?.seller_drive_account_id) {
+    throw new Error('DRIVE_FILE_NOT_FOUND');
+  }
+
+  const { data: acc } = await adminDb
+    .from('seller_drive_accounts')
+    .select('encrypted_refresh_token')
+    .eq('id', loc.seller_drive_account_id)
+    .single();
+
+  if (!acc?.encrypted_refresh_token) {
+    throw new Error('DRIVE_NOT_LINKED');
+  }
+
+  const clientId = process.env.GOOGLE_DRIVE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_DRIVE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+  const oauth2 = new google.auth.OAuth2(clientId, clientSecret);
+  oauth2.setCredentials({ refresh_token: decrypt(acc.encrypted_refresh_token) });
+
+  const drive = google.drive({ version: 'v3', auth: oauth2 });
+  const { data: meta } = await drive.files.get({
+    fileId: loc.provider_file_id,
+    fields: 'id, name, hasThumbnail, thumbnailLink',
+  });
+
+  if (!meta.thumbnailLink) {
+    throw new Error('DOCUMENT_THUMBNAIL_UNAVAILABLE');
+  }
+
+  const hiResUrl = meta.thumbnailLink.replace(/=s\d+$/, '=s1200');
+  const { token } = await oauth2.getAccessToken();
+  const imgRes = await fetch(hiResUrl, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (!imgRes.ok) {
+    throw new Error(`THUMBNAIL_FETCH_FAILED_${imgRes.status}`);
+  }
+
+  const rawPageBuf = Buffer.from(await imgRes.arrayBuffer());
+  const pageImg = await sharp(rawPageBuf, { limitInputPixels: 64_000_000 })
+    .resize(1100, 680, { fit: 'inside', withoutEnlargement: false })
+    .png()
+    .toBuffer();
+
+  // Subtle architectural studio backdrop (1200x750) so portrait & landscape first pages both look crisp without cropping
+  const backdrop = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0d3b32"/>
+          <stop offset="100%" stop-color="#1457d9"/>
+        </linearGradient>
+      </defs>
+      <rect width="1200" height="750" fill="url(#g)"/>
+    </svg>`,
+  );
+
+  const { data: buffer, info } = await sharp(backdrop)
+    .composite([{ input: pageImg, gravity: 'centre' }])
+    .webp({ quality: 88 })
+    .toBuffer({ resolveWithObject: true });
+
+  return {
+    buffer,
+    width: info.width,
+    height: info.height,
+    sizeBytes: info.size,
+    sourceFileName: fileRec.display_name || fileRec.original_name || meta.name || 'document',
   };
 }
 

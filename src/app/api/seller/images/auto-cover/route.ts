@@ -3,8 +3,15 @@ import { z } from 'zod';
 import { requireUser } from '@/lib/auth/session';
 import {
   approvePreviewDataUrlCover,
+  extractFirstPageCoverFromDrive,
   generateAiProductCover,
 } from '@/lib/server/services/product-image-service';
+
+const extractSchema = z.object({
+  action: z.literal('extract_first_page'),
+  product_id: z.string().uuid().nullable().optional(),
+  file_version_id: z.string().uuid().nullable().optional(),
+});
 
 const previewSchema = z.object({
   action: z.literal('preview'),
@@ -30,6 +37,25 @@ export async function POST(req: NextRequest) {
     const raw = await req.json().catch(() => null);
     if (!raw || typeof raw !== 'object') {
       return NextResponse.json({ error: 'INVALID_BODY' }, { status: 400 });
+    }
+
+    if ((raw as any).action === 'extract_first_page') {
+      const parsed = extractSchema.safeParse(raw);
+      if (!parsed.success) {
+        return NextResponse.json({ error: 'INVALID_BODY' }, { status: 400 });
+      }
+      const extracted = await extractFirstPageCoverFromDrive({
+        sellerId: user.id,
+        productId: parsed.data.product_id ?? null,
+        fileVersionId: parsed.data.file_version_id ?? null,
+      });
+      return NextResponse.json({
+        previewDataUrl: `data:image/webp;base64,${extracted.buffer.toString('base64')}`,
+        sourceFileName: extracted.sourceFileName,
+        width: extracted.width,
+        height: extracted.height,
+        sizeBytes: extracted.sizeBytes,
+      });
     }
 
     if ((raw as any).action === 'preview') {

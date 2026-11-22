@@ -38,12 +38,51 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
     width: number;
     height: number;
     sizeBytes: number;
+    sourceLabel?: string;
   } | null>(null);
+  const [extractingPage, setExtractingPage] = useState(false);
   const [generatingAuto, setGeneratingAuto] = useState(false);
   const [approvingAuto, setApprovingAuto] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  async function extractFirstPageCover() {
+    setExtractingPage(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/seller/images/auto-cover', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          action: 'extract_first_page',
+          product_id: productId ?? null,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        const map: Record<string, string> = {
+          NO_UPLOADED_FILE_FOR_COVER: 'ارفع ملفاً أولاً في «رفع ملف جديد» حتى نتمكن من استخراج صفحته الأولى كغلاف.',
+          DOCUMENT_THUMBNAIL_UNAVAILABLE: 'لم يجهّز Google Drive صورة مصغّرة لهذا الملف بعد. انتظر بضع ثوانٍ وحاول مجدداً.',
+          DRIVE_NOT_LINKED: 'حساب Google Drive غير مرتبط.',
+        };
+        setError(map[json.error] ?? json.error ?? 'تعذّر استخراج الصفحة الأولى من الملف.');
+        return;
+      }
+      setAutoPreview({
+        dataUrl: json.previewDataUrl,
+        variant: 0,
+        width: json.width,
+        height: json.height,
+        sizeBytes: json.sizeBytes,
+        sourceLabel: `الصفحة الأولى من «${json.sourceFileName}»`,
+      });
+    } catch {
+      setError('تعذّر الاتصال بالخادم أثناء استخراج الصفحة الأولى.');
+    } finally {
+      setExtractingPage(false);
+    }
+  }
 
   async function requestAutoCoverPreview(nextVariant?: number) {
     const cleanTitle = title.trim();
@@ -244,11 +283,19 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
           </label>
           <button
             type="button"
-            onClick={() => requestAutoCoverPreview()}
-            disabled={generatingAuto || uploadingCover || approvingAuto}
+            onClick={extractFirstPageCover}
+            disabled={extractingPage || generatingAuto || uploadingCover || approvingAuto}
             className="inline-flex items-center gap-2 border border-primary/40 bg-accent text-accent-foreground rounded-xl px-4 py-2 text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
           >
-            {generatingAuto ? 'جارٍ التوليد...' : 'توليد غلاف تلقائي'}
+            {extractingPage ? 'جارٍ استخراج الصفحة الأولى...' : 'استخراج الصفحة الأولى من الملف كغلاف'}
+          </button>
+          <button
+            type="button"
+            onClick={() => requestAutoCoverPreview()}
+            disabled={generatingAuto || extractingPage || uploadingCover || approvingAuto}
+            className="inline-flex items-center gap-2 border border-border bg-card text-foreground rounded-xl px-4 py-2 text-sm font-medium hover:bg-muted transition disabled:opacity-50"
+          >
+            {generatingAuto ? 'جارٍ التوليد...' : 'توليد غلاف بالذكاء الاصطناعي'}
           </button>
           {coverImageUrl && (
             <button
@@ -271,7 +318,9 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
           <div className="rounded-xl border border-warning bg-warning-soft/50 p-4 space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <p className="text-xs font-semibold text-foreground">
-                معاينة الغلاف المقترح — بانتظار موافقتك قبل الاعتماد
+                {autoPreview.sourceLabel
+                  ? `معاينة ${autoPreview.sourceLabel} — بانتظار موافقتك قبل الاعتماد`
+                  : 'معاينة الغلاف المقترح — بانتظار موافقتك قبل الاعتماد'}
               </p>
               <span className="text-[11px] text-muted-foreground ui-num">
                 {autoPreview.width}×{autoPreview.height} · {Math.round(autoPreview.sizeBytes / 1024)} KB
