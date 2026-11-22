@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 
 type Account = {
   id: string;
@@ -29,17 +28,10 @@ function translateError(code: string | null, fallback?: string): string | null {
 }
 
 export default function DriveAccountsPage() {
-  const searchParams = useSearchParams();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(() =>
-    translateError(searchParams.get('error')),
-  );
-  const [success, setSuccess] = useState<string | null>(() =>
-    searchParams.get('success') === 'linked'
-      ? 'تم ربط حساب Google Drive بنجاح وأصبح جاهزاً لرفع الملفات.'
-      : null,
-  );
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
 
@@ -59,6 +51,13 @@ export default function DriveAccountsPage() {
   }
 
   useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const errParam = sp.get('error');
+    const okParam = sp.get('success');
+    if (errParam) setError(translateError(errParam));
+    if (okParam === 'linked') {
+      setSuccess('تم ربط حساب Google Drive بنجاح وأصبح جاهزاً لرفع الملفات.');
+    }
     load();
   }, []);
 
