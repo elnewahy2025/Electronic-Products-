@@ -31,6 +31,7 @@ export default function UploadPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ fileId: string; fileVersionId: string } | null>(null);
   const [importedResults, setImportedResults] = useState<DriveImportResultItem[] | null>(null);
+  const [storeFolderNotice, setStoreFolderNotice] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -131,30 +132,46 @@ export default function UploadPage() {
         </div>
       )}
 
-      {/* Option 1: Pick existing files from Google Drive */}
+      {/* Option 1: Pick existing files from Google Drive Store folder */}
       <section className="ui-box space-y-3">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="space-y-1">
-            <h2 className="text-base font-bold">1. استيراد ملفات موجودة على Google Drive</h2>
+            <h2 className="text-base font-bold">1. استيراد ملفات من مجلد Store على Google Drive</h2>
             <p className="text-xs text-muted-foreground">
-              اختر ملفاً أو عدة ملفات محفوظة مسبقاً على Drive (PDF, DOCX, PPTX, XLSX, ZIP, MP4...) ليتم ربطها وفحصها تلقائياً دون إعادة رفع.
+              يتم الأخذ حصرياً من مجلد <code className="ui-num">Store</code> ومجلداته الفرعية (<code className="ui-num">PDFs</code>, <code className="ui-num">Docx</code>, <code className="ui-num">PowerPoints</code>, <code className="ui-num">Images</code>, <code className="ui-num">Videos</code>...) ليتم ربطها وفحصها تلقائياً دون إعادة رفع.
             </p>
           </div>
-          <DrivePickerButton
-            accountId={selectedAccountId || undefined}
-            disabled={accounts.length === 0}
-            onError={msg => {
-              setError(msg);
-              setImportedResults(null);
-            }}
-            onImported={items => {
-              setError(null);
-              setImportedResults(items);
-            }}
-          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <DrivePickerButton
+              accountId={selectedAccountId || undefined}
+              disabled={accounts.length === 0}
+              onError={msg => {
+                setError(msg);
+                setImportedResults(null);
+              }}
+              onImported={items => {
+                setError(null);
+                setImportedResults(items);
+              }}
+            />
+            <DrivePickerButton
+              mode="select-store-folder"
+              accountId={selectedAccountId || undefined}
+              disabled={accounts.length === 0}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card text-foreground px-3 py-2.5 text-xs font-medium hover:bg-muted transition disabled:opacity-50"
+              onError={msg => setError(msg)}
+              onStoreFolderLinked={info => {
+                setError(null);
+                setStoreFolderNotice(`تم ربط مجلد المتجر «${info.storeFolderName}» بنجاح — جميع عمليات الاستيراد والرفع ستتم داخله فقط.`);
+              }}
+            />
+          </div>
         </div>
+        {storeFolderNotice && (
+          <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">{storeFolderNotice}</p>
+        )}
         <p className="text-[11px] text-muted-foreground">
-          ملاحظة: يرجى عدم حذف الملفات المختارة من Google Drive طالما أنها مرتبطة بمنتج منشور. (مستندات Google Docs الأصلية يجب تصديرها إلى PDF أو DOCX أولاً.)
+          ملاحظة: إذا كنت قد أنشأت مجلد <code className="ui-num">Store</code> يدوياً على Google Drive من قبل، اضغط أولاً على «تحديد مجلد Store الموجود» لربطه مرة واحدة دون إنشاء مجلد مكرر.
         </p>
 
         {importedResults && importedResults.length > 0 && (
@@ -191,9 +208,9 @@ export default function UploadPage() {
       {/* Option 2: Direct upload from device */}
       <section className="ui-box space-y-4">
         <div className="space-y-1">
-          <h2 className="text-base font-bold">2. رفع ملف جديد من جهازك إلى Google Drive</h2>
+          <h2 className="text-base font-bold">2. رفع ملف جديد من جهازك إلى مجلد Store على Google Drive</h2>
           <p className="text-xs text-muted-foreground">
-            يُرفع الملف مباشرة من متصفحك إلى حساب Google Drive المرتبط ثم يُفحص تلقائياً.
+            يُحفظ الملف تلقائياً داخل مجلد <code className="ui-num">Store</code> حسب نوعه (<code className="ui-num">Store/PDFs</code>، <code className="ui-num">Store/Docx</code>، <code className="ui-num">Store/PowerPoints</code>، <code className="ui-num">Store/Images</code>، <code className="ui-num">Store/Videos</code>...) ويُنشأ مجلد فرعي جديد تلقائياً لأي نوع جديد.
           </p>
         </div>
 

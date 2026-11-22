@@ -3,7 +3,13 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { decrypt } from '@/lib/crypto/encryption';
 import { initiateResumableUpload, checkResumableUploadStatus } from '@/lib/drive/resumable';
-import { getDriveFileMeta, getDriveQuota } from '@/lib/drive/client';
+import {
+  ensureStoreFolder,
+  ensureTypeSubfolderInStore,
+  getDriveFileMeta,
+  getDriveQuota,
+  isFileInsideFolder,
+} from '@/lib/drive/client';
 import { logAudit } from '@/lib/audit/logger';
 
 export type InitUploadInput = {
@@ -73,21 +79,39 @@ export async function initUpload(input: InitUploadInput): Promise<InitUploadResu
     accountId = picked as string;
   }
 
-  // 3. Fetch refresh token
+  // 3. Fetch refresh token + dedicated Store folder ID
   const { data: accRow } = await admin
     .from('seller_drive_accounts')
-    .select('encrypted_refresh_token')
+    .select('encrypted_refresh_token, store_folder_id')
     .eq('id', accountId)
     .single();
   if (!accRow?.encrypted_refresh_token) throw new Error('DRIVE_NOT_LINKED');
   const refreshToken = decrypt(accRow.encrypted_refresh_token);
 
-  // 4. Create Drive resumable session (pass browser Origin so Google enables CORS on uploadUrl)
+  // 3b. Ensure dedicated `Store/<Type>` subfolder exists on Google Drive
+  const storeFolderId = await ensureStoreFolder(
+    refreshToken,
+    (accRow as any).store_folder_id ?? null,
+  );
+  if (storeFolderId !== (accRow as any).store_folder_id) {
+    await admin
+      .from('seller_drive_accounts')
+      .update({ store_folder_id: storeFolderId } as any)
+      .eq('id', accountId);
+  }
+  const { folderId: targetSubfolderId } = await ensureTypeSubfolderInStore(
+    refreshToken,
+    storeFolderId,
+    ext,
+  );
+
+  // 4. Create Drive resumable session inside Store/<Type> (pass browser Origin for CORS)
   const { uploadUrl } = await initiateResumableUpload({
     refreshToken,
     filename: input.originalName,
     mime: input.mime,
     size: input.size,
+    folderId: targetSubfolderId,
     origin: input.origin,
   });
 
@@ -294,7 +318,7 @@ export async function importDriveFiles(params: {
 
   const { data: acc } = await admin
     .from('seller_drive_accounts')
-    .select('id, seller_id, status, encrypted_refresh_token')
+    .select('id, seller_id, status, encrypted_refresh_token, store_folder_id')
     .eq('id', params.driveAccountId)
     .eq('seller_id', params.sellerId)
     .maybeSingle();
@@ -304,6 +328,7 @@ export async function importDriveFiles(params: {
   if (!acc.encrypted_refresh_token) throw new Error('DRIVE_NOT_LINKED');
 
   const refreshToken = decrypt(acc.encrypted_refresh_token);
+  const storeFolderId: string | null = (acc as any).store_folder_id ?? null;
   const results: ImportedDriveFileResult[] = [];
 
   for (const item of params.files) {
@@ -313,6 +338,20 @@ export async function importDriveFiles(params: {
       const meta = await getDriveFileMeta(refreshToken, item.driveFileId);
       const originalName = meta.name || fallbackName;
       const mime = meta.mimeType || item.mime || 'application/octet-stream';
+
+      // 1b. Enforce Store-folder-only rule when store_folder_id is configured
+      if (storeFolderId) {
+        const insideStore = await isFileInsideFolder(refreshToken, meta.id, storeFolderId);
+        if (!insideStore) {
+          results.push({
+            driveFileId: item.driveFileId,
+            name: originalName,
+            status: 'skipped',
+            error: 'OUTSIDE_STORE_FOLDER',
+          });
+          continue;
+        }
+      }
 
       // 2. Reject native Google Workspace docs (no raw binary bytes; seller should export to PDF/DOCX)
       if (mime.startsWith('application/vnd.google-apps.')) {
