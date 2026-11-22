@@ -16,7 +16,7 @@ async function getAdminOverview() {
     db.from('seller_profiles').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     db.from('purchase_requests').select('*', { count: 'exact', head: true }).in('status', ['created', 'pending']),
     db.from('compensation_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-    db.from('seller_payouts').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    db.from('seller_payouts').select('*', { count: 'exact', head: true }).eq('status', 'requested'),
     db.from('content_reports').select('*', { count: 'exact', head: true }).eq('status', 'open'),
     db.from('support_tickets').select('*', { count: 'exact', head: true }).eq('status', 'open'),
     db.from('download_sessions').select('*', { count: 'exact', head: true }).in('status', ['active', 'compensation_active']),
@@ -42,10 +42,10 @@ export default async function AdminHome() {
   const s = await getAdminOverview();
 
   const cards = [
-    { href: '/admin/requests?status=open', label: 'طلبات شراء بانتظار المراجعة', value: s.openRequests },
+    { href: '/admin/requests?status=pending', label: 'طلبات شراء بانتظار المراجعة', value: s.openRequests },
     { href: '/admin/sellers?status=pending', label: 'بائعون بانتظار الاعتماد', value: s.pendingSellers },
     { href: '/admin/compensation?status=pending', label: 'طلبات تعويض معلّقة', value: s.pendingComp },
-    { href: '/admin/payouts?status=pending', label: 'طلبات سحب بانتظار الصرف', value: s.pendingPayouts },
+    { href: '/admin/payouts?status=requested', label: 'طلبات سحب بانتظار الصرف', value: s.pendingPayouts },
     { href: '/admin/reports?status=open', label: 'بلاغات مفتوحة', value: s.openReports },
     { href: '/admin/support?status=open', label: 'تذاكر دعم مفتوحة', value: s.openTickets },
     { href: '/admin/downloads?status=active', label: 'جلسات تنزيل نشطة', value: s.activeSessions, calm: true },

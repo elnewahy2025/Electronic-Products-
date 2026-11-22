@@ -26,7 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     db.from('seller_profiles').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     db.from('purchase_requests').select('*', { count: 'exact', head: true }).in('status', ['created', 'pending']),
     db.from('compensation_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-    db.from('seller_payouts').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    db.from('seller_payouts').select('*', { count: 'exact', head: true }).eq('status', 'requested'),
     db.from('content_reports').select('*', { count: 'exact', head: true }).eq('status', 'open'),
     db.from('support_tickets').select('*', { count: 'exact', head: true }).eq('status', 'open'),
   ]);

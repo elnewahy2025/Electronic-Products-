@@ -23,7 +23,14 @@ export default async function RequestsPage({ searchParams }: { searchParams: { s
     .order('created_at', { ascending: false })
     .limit(100);
 
-  if (searchParams.status) q = q.eq('status', searchParams.status);
+  if (searchParams.status === 'open') {
+    q = q.in('status', ['created', 'pending']);
+  } else if (
+    searchParams.status &&
+    ['created', 'pending', 'approved', 'rejected', 'cancelled', 'completed'].includes(searchParams.status)
+  ) {
+    q = q.eq('status', searchParams.status);
+  }
 
   const { data } = await q;
 
