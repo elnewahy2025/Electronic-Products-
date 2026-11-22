@@ -104,22 +104,33 @@ export function DrivePickerButton({
         throw new Error(tokenJson.error ?? 'PICKER_TOKEN_FAILED');
       }
 
-      const { accessToken, developerKey, appId, driveAccountId } = tokenJson;
+      const { accessToken, developerKey, appId, driveAccountId, googleAccountEmail } = tokenJson;
       const gp = window.google?.picker;
       if (!gp) throw new Error('PICKER_MODULE_FAILED');
 
-      const docsView = new gp.DocsView(gp.ViewId.DOCS)
+      const myDriveView = new gp.DocsView(gp.ViewId.DOCS)
+        .setParent('root')
         .setIncludeFolders(true)
-        .setSelectFolderEnabled(false);
+        .setSelectFolderEnabled(false)
+        .setMode(gp.DocsViewMode.LIST);
+
+      const recentView = new gp.DocsView(gp.ViewId.RECENTLY_PICKED)
+        .setIncludeFolders(false)
+        .setMode(gp.DocsViewMode.LIST);
 
       const picker = new gp.PickerBuilder()
         .setAppId(appId)
         .setOAuthToken(accessToken)
         .setDeveloperKey(developerKey)
         .setLocale('ar')
-        .setTitle('اختر ملفاتك من Google Drive لبيعها في المتجر')
+        .setTitle(
+          googleAccountEmail
+            ? `اختر ملفاتك من Google Drive (${googleAccountEmail})`
+            : 'اختر ملفاتك من Google Drive لبيعها في المتجر',
+        )
         .enableFeature(gp.Feature.MULTISELECT_ENABLED)
-        .addView(docsView)
+        .addView(myDriveView)
+        .addView(recentView)
         .setCallback(async (data: any) => {
           if (data.action === gp.Action.CANCEL) {
             setBusy(false);
