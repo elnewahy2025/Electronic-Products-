@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  output: 'standalone',
+  ...(process.platform !== 'win32' ? { output: 'standalone' } : {}),
 
   poweredByHeader: false, // removes X-Powered-By
   compress: true,
@@ -19,6 +19,7 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '2mb',
     },
+    serverComponentsExternalPackages: ['sharp', 'canvas', 'pdf-to-img', 'nodemailer'],
   },
 
   async headers() {
