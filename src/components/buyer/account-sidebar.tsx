@@ -11,6 +11,8 @@ const ITEMS = [
   { href: '/account/orders', label: 'طلباتي' },
   { href: '/account/codes', label: 'أكوادي' },
   { href: '/account/downloads', label: 'التنزيلات' },
+  { href: '/account/favorites', label: 'المفضلة' },
+  { href: '/support', label: 'الدعم الفني' },
   { href: '/notifications', label: 'الإشعارات' },
   { href: '/account/profile', label: 'الملف الشخصي' },
 ];

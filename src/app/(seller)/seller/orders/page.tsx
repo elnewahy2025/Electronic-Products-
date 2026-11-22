@@ -73,9 +73,22 @@ export default async function SellerOrdersPage({
               : `${stats.total_sales} عملية بيع`}
           </p>
         </div>
-        <Link href="/seller/wallet" className="text-sm text-primary hover:underline">
-          المحفظة والمستحقات ←
-        </Link>
+        <div className="flex items-center gap-3">
+          <a
+            href={`/api/seller/orders/export?${new URLSearchParams({
+              ...(searchParams.product ? { product: searchParams.product } : {}),
+              ...(searchParams.status ? { status: searchParams.status } : {}),
+              ...(searchParams.from ? { from: searchParams.from } : {}),
+              ...(searchParams.to ? { to: searchParams.to } : {}),
+            }).toString()}`}
+            className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/60 transition"
+          >
+            تصدير CSV
+          </a>
+          <Link href="/seller/wallet" className="text-sm text-primary hover:underline">
+            المحفظة والمستحقات ←
+          </Link>
+        </div>
       </div>
 
       <OrdersStats stats={stats} />

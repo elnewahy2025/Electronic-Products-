@@ -15,6 +15,7 @@ const ITEMS = [
   { href: '/seller/drive-accounts', label: 'حسابات Drive' },
   { href: '/seller/reviews', label: 'التقييمات' },
   { href: '/seller/wallet', label: 'المحفظة والمستحقات' },
+  { href: '/support', label: 'الدعم الفني' },
   { href: '/notifications', label: 'الإشعارات' },
 ];
 

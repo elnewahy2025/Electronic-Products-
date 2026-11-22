@@ -12,6 +12,7 @@ import { ReportForm } from './report-form';
 import { Breadcrumbs } from '@/components/storefront/breadcrumbs';
 import { ProductGallery } from '@/components/storefront/product-gallery';
 import { SimilarProducts } from '@/components/storefront/similar-products';
+import { FavoriteButton } from '@/components/storefront/favorite-button';
 import { PurchaseRequestForm } from './purchase-request-form';
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
@@ -55,13 +56,21 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
   const dbAuth = await db.auth.getUser();
   let userProfile: { email: string; phone: string | null; full_name: string | null } | null = null;
+  let isFavorited = false;
   if (dbAuth.data.user) {
-    const { data: prof } = await db
-      .from('profiles')
-      .select('email, phone, full_name')
-      .eq('id', dbAuth.data.user.id)
-      .single();
+    const [{ data: prof }, { data: fav }] = await Promise.all([
+      db.from('profiles')
+        .select('email, phone, full_name')
+        .eq('id', dbAuth.data.user.id)
+        .single(),
+      db.from('favorites')
+        .select('product_id')
+        .eq('buyer_id', dbAuth.data.user.id)
+        .eq('product_id', product.id)
+        .maybeSingle(),
+    ]);
     userProfile = prof;
+    isFavorited = Boolean(fav);
   }
 
   // Build gallery images array
@@ -102,7 +111,14 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
       <div className="grid md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-4">
-          <h1 className="text-3xl font-bold">{product.title}</h1>
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <h1 className="text-3xl font-bold">{product.title}</h1>
+            <FavoriteButton
+              productId={product.id}
+              initialFavorited={isFavorited}
+              isAuthenticated={Boolean(dbAuth.data.user)}
+            />
+          </div>
           <p className="text-sm text-muted-foreground">
             بواسطة <b>{seller.data?.display_name ?? 'بائع'}</b>
           </p>

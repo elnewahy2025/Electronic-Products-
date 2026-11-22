@@ -46,11 +46,14 @@ const GROUPS: { title: string; items: Item[] }[] = [
     title: 'المالية',
     items: [
       { href: '/admin/payouts', label: 'طلبات السحب', perm: 'payout.read' },
+      { href: '/admin/commissions', label: 'عمولات البائعين', perm: 'commission.seller.override' },
+      { href: '/admin/exchange-rates', label: 'أسعار الصرف', perm: 'exchange_rate.manage' },
     ],
   },
   {
-    title: 'التفاعل',
+    title: 'التفاعل والدعم',
     items: [
+      { href: '/admin/support', label: 'تذاكر الدعم الفني', perm: 'support.read' },
       { href: '/admin/reviews', label: 'التقييمات' },
       { href: '/admin/reports', label: 'البلاغات' },
     ],
@@ -59,6 +62,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     title: 'النظام',
     items: [
       { href: '/admin/audit', label: 'سجل التدقيق', perm: 'audit.read' },
+      { href: '/admin/security-events', label: 'أحداث الأمان', perm: 'security.read' },
       { href: '/admin/redeem-attempts', label: 'محاولات التفعيل', perm: 'security.read' },
       { href: '/admin/backups', label: 'النسخ الاحتياطي' },
       { href: '/admin/settings', label: 'الإعدادات' },

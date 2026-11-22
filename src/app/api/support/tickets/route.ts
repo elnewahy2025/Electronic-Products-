@@ -1,0 +1,76 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+
+export async function GET(req: NextRequest) {
+  const db = await createClient();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+
+  const status = req.nextUrl.searchParams.get('status');
+  let query = db
+    .from('support_tickets')
+    .select('id, owner_id, subject, status, created_at, updated_at, profiles!support_tickets_owner_id_fkey(email, full_name)')
+    .order('updated_at', { ascending: false })
+    .limit(100);
+
+  if (status && ['open', 'pending', 'closed'].includes(status)) {
+    query = query.eq('status', status as any);
+  }
+
+  const { data, error } = await query;
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ items: data ?? [] });
+}
+
+export async function POST(req: NextRequest) {
+  const db = await createClient();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+
+  const body = await req.json().catch(() => null);
+  const subject = String(body?.subject ?? '').trim();
+  const message = String(body?.message ?? '').trim();
+
+  if (subject.length < 4 || subject.length > 200) {
+    return NextResponse.json({ error: 'عنوان التذكرة يجب أن يكون بين 4 و200 حرف.' }, { status: 400 });
+  }
+  if (message.length < 10 || message.length > 5000) {
+    return NextResponse.json({ error: 'تفاصيل الرسالة يجب أن تكون بين 10 و5000 حرف.' }, { status: 400 });
+  }
+
+  const { data: ticket, error: ticketErr } = await db
+    .from('support_tickets')
+    .insert({ owner_id: user.id, subject, status: 'open' })
+    .select('id, subject, status, created_at')
+    .single();
+
+  if (ticketErr || !ticket) {
+    return NextResponse.json({ error: ticketErr?.message ?? 'failed_to_create_ticket' }, { status: 400 });
+  }
+
+  const { error: msgErr } = await db
+    .from('support_messages')
+    .insert({
+      ticket_id: ticket.id,
+      sender_id: user.id,
+      body: message,
+      is_internal: false,
+    });
+
+  if (msgErr) {
+    return NextResponse.json({ error: msgErr.message }, { status: 400 });
+  }
+
+  // Notify staff with support.read permission (best-effort)
+  const adminDb = createAdminClient();
+  await adminDb.rpc('notify_staff_with_permission', {
+    p_permission: 'support.read',
+    p_type: 'support_ticket_opened',
+    p_title: 'تذكرة دعم فني جديدة',
+    p_body: subject,
+    p_metadata: { ticket_id: ticket.id },
+  });
+
+  return NextResponse.json({ ok: true, ticket }, { status: 201 });
+}
