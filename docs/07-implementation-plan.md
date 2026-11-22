@@ -103,6 +103,4 @@
 - [x] **رفع صور المنتجات مباشرة إلى Supabase Storage + `sharp` + تضييق CSP**: مكتمل في الترحيل `034_product_images_storage.sql` و`product-image-service.ts` و`/api/seller/images/upload` وتضييق `img-src` في `middleware.ts`.
 - [x] **إشعارات البريد الإلكتروني الحقيقية + ملخص الإدارة اليومي**: مكتمل في الترحيل `035_email_notifications.sql` و`email-service.ts` (`nodemailer` SMTP + Resend API) ومسارات `email-cron` و`admin-digest` و`docs/email-notifications.md`.
 - [x] **صفحة تفاصيل مبيعة البائع (`/seller/orders/[orderItemId]`)**: مكتملة في الترحيل `036_seller_order_detail.sql` و`src/app/(seller)/seller/orders/[orderItemId]/page.tsx` مع عرض `code_prefix` والعمولة المثبّتة وجلسات وتسليمات التنزيل دون كشف هوية المشتري.
-
-البند المتبقي للجولة القادمة:
-1. **أتمتة النسخ الاحتياطي**: ربط جدولة `backup_settings` بـ Cron خارجي وتنفيذ اختبار استعادة تلقائي.
+- [x] **أتمتة النسخ الاحتياطي واختبار الاستعادة المعزول**: مكتملة في الترحيل `037_backup_automation.sql` وسكربت `scripts/backup-and-verify.mjs` ومسار GitHub Actions (`.github/workflows/backup-and-verify.yml`) وVercel Cron Watchdog (`/api/internal/worker/backup-cron`) وتحديث `/admin/backups` و`docs/backups.md`.

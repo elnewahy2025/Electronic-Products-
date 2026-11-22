@@ -44,7 +44,7 @@
 ├── docs/                     # وثائق المتطلبات، ERD، مصفوفة الصلاحيات وRLS، العقود، والأمان والأداء
 ├── supabase/
 │   ├── config.toml           # إعدادات Supabase المحلية
-│   └── migrations/           # ملفات قاعدة البيانات (001 إلى 036)
+│   └── migrations/           # ملفات قاعدة البيانات (001 إلى 037)
 ├── src/
 │   ├── app/                  # صفحات ومسارات Next.js App Router و API Routes
 │   ├── components/           # مكونات الواجهة (Storefront, Buyer, Seller, Admin)

@@ -1,0 +1,73 @@
+name: Automated Backup & Restore Verification
+
+on:
+  schedule:
+    # Runs daily at 03:00 UTC; script checks backup_settings.schedule (daily / weekly / manual_only)
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      force_backup:
+        description: 'Force backup even if schedule is not yet due'
+        required: false
+        default: 'false'
+        type: boolean
+      force_verify:
+        description: 'Force isolated restore verification now'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  backup-and-verify:
+    runs-on: ubuntu-latest
+    services:
+      verify_postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: verify_password
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5439:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install PostgreSQL 15 client tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-15
+
+      - name: Install Supabase JS client
+        run: npm install --no-save @supabase/supabase-js
+
+      - name: Run backup & restore verification
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          VERIFY_DATABASE_ADMIN_URL: postgresql://postgres:verify_password@127.0.0.1:5439/postgres
+        run: |
+          ARGS=""
+          if [ "${{ github.event.inputs.force_backup }}" = "true" ]; then
+            ARGS="$ARGS --backup"
+          else
+            ARGS="$ARGS --scheduled"
+          fi
+          if [ "${{ github.event.inputs.force_verify }}" = "true" ]; then
+            ARGS="$ARGS --force-verify"
+          else
+            ARGS="$ARGS --verify"
+          fi
+          node scripts/backup-and-verify.mjs $ARGS
