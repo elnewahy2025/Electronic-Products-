@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { FolderOpen, UploadCloud } from 'lucide-react';
 import {
   DrivePickerButton,
   formatDriveImportError,
@@ -115,7 +116,7 @@ export default function UploadPage() {
   }
 
   return (
-    <main className="max-w-3xl space-y-6">
+    <main className="w-full space-y-6">
       <div>
         <h1 className="text-2xl font-bold">إضافة ملفات جديدة</h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -192,127 +193,160 @@ export default function UploadPage() {
         </section>
       )}
 
-      {/* Option 1: Pick existing files from Google Drive Store folder */}
-      <section className="ui-box space-y-3">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="space-y-1">
-            <h2 className="text-base font-bold">1. استيراد ملفات من مجلد Store على Google Drive</h2>
-            <p className="text-xs text-muted-foreground">
-              يتم الأخذ حصرياً من مجلد <code className="ui-num">Store</code> ومجلداته الفرعية (<code className="ui-num">PDFs</code>, <code className="ui-num">Docx</code>, <code className="ui-num">PowerPoints</code>, <code className="ui-num">Images</code>, <code className="ui-num">Videos</code>...) ليتم ربطها وفحصها تلقائياً دون إعادة رفع.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <DrivePickerButton
-              accountId={selectedAccountId || undefined}
-              disabled={accounts.length === 0}
-              onError={msg => {
-                setError(msg);
-                setImportedResults(null);
-              }}
-              onImported={items => {
-                setError(null);
-                setImportedResults(items);
-              }}
-            />
-            <DrivePickerButton
-              mode="select-store-folder"
-              accountId={selectedAccountId || undefined}
-              disabled={accounts.length === 0}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card text-foreground px-3 py-2.5 text-xs font-medium hover:bg-muted transition disabled:opacity-50"
-              onError={msg => setError(msg)}
-              onStoreFolderLinked={info => {
-                setError(null);
-                setStoreFolderNotice(`تم ربط مجلد المتجر «${info.storeFolderName}» بنجاح — جميع عمليات الاستيراد والرفع ستتم داخله فقط.`);
-              }}
-            />
-          </div>
-        </div>
-        {storeFolderNotice && (
-          <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">{storeFolderNotice}</p>
-        )}
-        <p className="text-[11px] text-muted-foreground">
-          ملاحظة: إذا كنت قد أنشأت مجلد <code className="ui-num">Store</code> يدوياً على Google Drive من قبل، اضغط أولاً على «تحديد مجلد Store الموجود» لربطه مرة واحدة دون إنشاء مجلد مكرر.
-        </p>
-
-        {importedResults && importedResults.length > 0 && (
-          <div className="rounded-xl border border-border bg-muted/40 p-3 space-y-2 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-foreground">نتائج الاستيراد من Google Drive:</span>
-              <Link href="/seller/products" className="text-primary hover:underline font-medium">
-                الذهاب إلى منتجاتي ←
-              </Link>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+        {/* Card 1 (Right in RTL): Import from Google Drive Store folder — subtle emerald tint */}
+        <section className="rounded-[14px] border border-emerald-500/30 border-t-4 border-t-emerald-600 dark:border-t-emerald-400 bg-emerald-500/[0.04] dark:bg-emerald-500/[0.07] p-5 flex flex-col justify-between gap-5">
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 h-10 w-10 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 flex items-center justify-center">
+                <FolderOpen className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <span className="inline-block rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 text-[11px] font-semibold">
+                  من Google Drive إلى المتجر
+                </span>
+                <h2 className="text-base font-bold">1. استيراد ملفات من مجلد Store</h2>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  يتم الأخذ حصرياً من مجلد <code className="ui-num">Store</code> ومجلداته الفرعية (<code className="ui-num">PDFs</code>, <code className="ui-num">Docx</code>, <code className="ui-num">PowerPoints</code>, <code className="ui-num">Images</code>, <code className="ui-num">Videos</code>...) ليتم ربطها وفحصها تلقائياً دون إعادة رفع.
+                </p>
+              </div>
             </div>
-            <ul className="space-y-1.5">
-              {importedResults.map((item) => (
-                <li
-                  key={item.driveFileId}
-                  className="flex items-center justify-between gap-2 rounded-lg bg-card border border-border px-3 py-2"
-                >
-                  <span className="font-medium truncate">{item.name}</span>
-                  {item.status === 'imported' && (
-                    <span className="ui-badge ui-badge-green">تم الاستيراد وبدأ الفحص</span>
-                  )}
-                  {item.status === 'already_imported' && (
-                    <span className="ui-badge ui-badge-blue">مرتبط مسبقاً</span>
-                  )}
-                  {item.status === 'skipped' && (
-                    <span className="text-destructive">{formatDriveImportError(item.error)}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
+
+            {storeFolderNotice && (
+              <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300 font-medium">
+                {storeFolderNotice}
+              </p>
+            )}
+
+            {importedResults && importedResults.length > 0 && (
+              <div className="rounded-xl border border-border bg-card/80 p-3 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-foreground">نتائج الاستيراد من Google Drive:</span>
+                  <Link href="/seller/products" className="text-primary hover:underline font-medium">
+                    الذهاب إلى منتجاتي ←
+                  </Link>
+                </div>
+                <ul className="space-y-1.5">
+                  {importedResults.map((item) => (
+                    <li
+                      key={item.driveFileId}
+                      className="flex items-center justify-between gap-2 rounded-lg bg-card border border-border px-3 py-2"
+                    >
+                      <span className="font-medium truncate">{item.name}</span>
+                      {item.status === 'imported' && (
+                        <span className="ui-badge ui-badge-green">تم الاستيراد وبدأ الفحص</span>
+                      )}
+                      {item.status === 'already_imported' && (
+                        <span className="ui-badge ui-badge-blue">مرتبط مسبقاً</span>
+                      )}
+                      {item.status === 'skipped' && (
+                        <span className="text-destructive">{formatDriveImportError(item.error)}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-        )}
-      </section>
 
-      {/* Option 2: Direct upload from device */}
-      <section className="ui-box space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-base font-bold">2. رفع ملف جديد من جهازك إلى مجلد Store على Google Drive</h2>
-          <p className="text-xs text-muted-foreground">
-            يُحفظ الملف تلقائياً داخل مجلد <code className="ui-num">Store</code> حسب نوعه (<code className="ui-num">Store/PDFs</code>، <code className="ui-num">Store/Docx</code>، <code className="ui-num">Store/PowerPoints</code>، <code className="ui-num">Store/Images</code>، <code className="ui-num">Store/Videos</code>...) ويُنشأ مجلد فرعي جديد تلقائياً لأي نوع جديد.
-          </p>
-        </div>
-
-        <div>
-          <label className="block text-sm mb-1">الملف</label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="w-full border border-border rounded-lg p-2 text-sm"
-            disabled={stage === 'uploading' || stage === 'initializing' || stage === 'finalizing'}
-          />
-          {file && (
-            <p className="text-xs text-muted-foreground mt-1 ui-num">
-              {(file.size / 1024 / 1024).toFixed(2)} MB — {file.type || 'نوع غير معروف'}
+          <div className="space-y-3 pt-2 border-t border-emerald-500/15">
+            <div className="flex items-center gap-2 flex-wrap">
+              <DrivePickerButton
+                accountId={selectedAccountId || undefined}
+                disabled={accounts.length === 0}
+                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50"
+                onError={msg => {
+                  setError(msg);
+                  setImportedResults(null);
+                }}
+                onImported={items => {
+                  setError(null);
+                  setImportedResults(items);
+                }}
+              />
+              <DrivePickerButton
+                mode="select-store-folder"
+                accountId={selectedAccountId || undefined}
+                disabled={accounts.length === 0}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-500/35 bg-card text-foreground px-3.5 py-2.5 text-xs font-medium hover:bg-muted transition disabled:opacity-50"
+                onError={msg => setError(msg)}
+                onStoreFolderLinked={info => {
+                  setError(null);
+                  setStoreFolderNotice(`تم ربط مجلد المتجر «${info.storeFolderName}» بنجاح — جميع عمليات الاستيراد والرفع ستتم داخله فقط.`);
+                }}
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              ملاحظة: إذا كنت قد أنشأت مجلد <code className="ui-num">Store</code> يدوياً من قبل، اضغط أولاً على «تحديد مجلد Store الموجود» لربطه مرة واحدة.
             </p>
-          )}
-        </div>
-
-        <button
-          onClick={handleUpload}
-          disabled={!file || !selectedAccount || stage === 'uploading' || stage === 'initializing' || stage === 'finalizing'}
-          className="w-full bg-primary text-primary-foreground rounded-xl p-3 text-sm font-semibold hover:opacity-95 transition disabled:opacity-50"
-        >
-          {stage === 'initializing' && 'جارٍ التجهيز...'}
-          {stage === 'uploading' && `جارٍ الرفع... ${progress}%`}
-          {stage === 'finalizing' && 'جارٍ الإنهاء...'}
-          {(stage === 'idle' || stage === 'done' || stage === 'error') &&
-            (selectedAccount
-              ? `رفع إلى Drive (${selectedAccount.google_account_email})`
-              : 'رفع إلى Drive')}
-        </button>
-
-        {stage === 'uploading' && (
-          <div className="w-full bg-muted rounded h-2 overflow-hidden">
-            <div
-              className="bg-primary h-2 rounded transition-all"
-              style={{ width: `${progress}%` }}
-            />
           </div>
-        )}
-      </section>
+        </section>
+
+        {/* Card 2 (Left in RTL): Direct upload from device to Google Drive Store — subtle blue tint */}
+        <section className="rounded-[14px] border border-primary/30 border-t-4 border-t-primary bg-primary/[0.04] dark:bg-primary/[0.07] p-5 flex flex-col justify-between gap-5">
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 h-10 w-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
+                <UploadCloud className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <span className="inline-block rounded-full bg-primary/15 text-primary px-2.5 py-0.5 text-[11px] font-semibold">
+                  من جهازك إلى Google Drive
+                </span>
+                <h2 className="text-base font-bold">2. رفع ملف جديد إلى مجلد Store</h2>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  يُحفظ الملف تلقائياً داخل مجلد <code className="ui-num">Store</code> حسب نوعه (<code className="ui-num">Store/PDFs</code>، <code className="ui-num">Store/Docx</code>، <code className="ui-num">Store/PowerPoints</code>، <code className="ui-num">Store/Images</code>، <code className="ui-num">Store/Videos</code>...) ويُنشأ مجلد فرعي جديد تلقائياً لأي نوع جديد.
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">اختر الملف من جهازك</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="w-full border border-border bg-card rounded-xl p-2.5 text-sm"
+                disabled={stage === 'uploading' || stage === 'initializing' || stage === 'finalizing'}
+              />
+              {file && (
+                <p className="text-xs text-muted-foreground mt-1.5 ui-num">
+                  {(file.size / 1024 / 1024).toFixed(2)} MB — {file.type || 'نوع غير معروف'}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2 border-t border-primary/15">
+            <button
+              onClick={handleUpload}
+              disabled={!file || !selectedAccount || stage === 'uploading' || stage === 'initializing' || stage === 'finalizing'}
+              className="w-full bg-primary text-primary-foreground rounded-xl p-2.5 text-sm font-semibold hover:opacity-95 transition disabled:opacity-50"
+            >
+              {stage === 'initializing' && 'جارٍ التجهيز...'}
+              {stage === 'uploading' && `جارٍ الرفع... ${progress}%`}
+              {stage === 'finalizing' && 'جارٍ الإنهاء...'}
+              {(stage === 'idle' || stage === 'done' || stage === 'error') &&
+                (selectedAccount
+                  ? `رفع إلى Drive (${selectedAccount.google_account_email})`
+                  : 'رفع إلى Drive')}
+            </button>
+
+            {stage === 'uploading' && (
+              <div className="w-full bg-muted rounded h-2 overflow-hidden">
+                <div
+                  className="bg-primary h-2 rounded transition-all"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            )}
+
+            <p className="text-[11px] text-muted-foreground">
+              الرفع يتم مباشرة من متصفحك إلى Google Drive دون المرور بخوادم المنصة، ثم يبدأ الفحص التلقائي فوراً.
+            </p>
+          </div>
+        </section>
+      </div>
 
       {error && (
         <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">
