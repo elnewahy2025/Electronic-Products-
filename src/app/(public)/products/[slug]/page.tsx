@@ -101,7 +101,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
   ];
 
   return (
-    <main className="container max-w-5xl py-8 space-y-10">
+    <main className="container py-8 space-y-10">
       <Breadcrumbs items={crumbs} />
 
       <div className="grid md:grid-cols-3 gap-6">

@@ -26,7 +26,7 @@ export default async function SellerLayout({ children }: { children: React.React
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col">
       <header className="bg-brand text-brand-foreground sticky top-0 z-30 border-b border-white/10">
-        <div className="container h-[58px] flex items-center gap-4">
+        <div className="px-5 lg:px-8 h-[58px] flex items-center gap-4">
           <BrandLogo href="/seller" subtitle="لوحة البائع" inverted />
           <div className="flex-1" />
           <Link
@@ -48,7 +48,7 @@ export default async function SellerLayout({ children }: { children: React.React
         </div>
       </header>
 
-      <div className="container flex flex-1 gap-6 py-6">
+      <div className="px-5 lg:px-8 flex flex-1 gap-6 py-6">
         <SellerSidebar email={user.email} displayName={seller.display_name} />
         <div className="flex-1 min-w-0">{children}</div>
       </div>

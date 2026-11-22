@@ -6,9 +6,18 @@ const config: Config = {
   theme: {
     container: {
       center: true,
-      padding: '1.25rem',
+      padding: {
+        DEFAULT: '1rem',
+        sm: '1.5rem',
+        lg: '2rem',
+        xl: '2.5rem',
+      },
       screens: {
-        '2xl': '1140px',
+        sm: '100%',
+        md: '100%',
+        lg: '100%',
+        xl: '100%',
+        '2xl': '100%',
       },
     },
     extend: {

@@ -1,6 +1,6 @@
 export default function ProductLoading() {
   return (
-    <main className="container max-w-4xl py-8 space-y-8">
+    <main className="container py-8 space-y-8">
       <div className="h-4 w-64 bg-muted animate-pulse rounded" />
       <div className="grid md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-4">
