@@ -1,5 +1,6 @@
 import 'server-only';
 import sharp from 'sharp';
+import { google } from 'googleapis';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { decrypt } from '@/lib/crypto/encryption';
 import { getDriveClient } from '@/lib/drive/client';
@@ -109,6 +110,55 @@ async function generatePdfPreview(job: PreviewJob, source: Buffer): Promise<void
 }
 
 /**
+ * Office / Document / Video preview: fetch Google Drive's rendered first-page thumbnail
+ * at high resolution (=s1200) and apply the platform watermark.
+ * Returns true if a real thumbnail preview was generated, false if unavailable.
+ */
+async function generateDriveThumbnailPreview(
+  job: PreviewJob,
+  refreshToken: string,
+): Promise<boolean> {
+  if (!job.provider_file_id) return false;
+
+  const clientId = process.env.GOOGLE_DRIVE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_DRIVE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+  const oauth2 = new google.auth.OAuth2(clientId, clientSecret);
+  oauth2.setCredentials({ refresh_token: refreshToken });
+
+  const drive = google.drive({ version: 'v3', auth: oauth2 });
+  const { data: meta } = await drive.files.get({
+    fileId: job.provider_file_id,
+    fields: 'id, thumbnailLink',
+  });
+
+  if (!meta.thumbnailLink) return false;
+
+  const hiResUrl = meta.thumbnailLink.replace(/=s\d+$/, '=s1200');
+  const { token } = await oauth2.getAccessToken();
+  const imgRes = await fetch(hiResUrl, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (!imgRes.ok) return false;
+
+  const rawBuf = Buffer.from(await imgRes.arrayBuffer());
+  const resized = await sharp(rawBuf, { limitInputPixels: 64_000_000 })
+    .resize({ width: MAX_DIMENSION, height: MAX_DIMENSION, fit: 'inside', withoutEnlargement: true })
+    .png()
+    .toBuffer();
+
+  const watermarked = await applyWatermarkToImage(resized, { surface: 'light' });
+  const { storage_path, public_url } = await uploadPreview(job.file_version_id, watermarked, 'png');
+
+  const admin = createAdminClient();
+  await admin.rpc('finalize_preview', {
+    p_preview_id: job.preview_id,
+    p_storage_path: storage_path,
+    p_public_url: public_url,
+  });
+  return true;
+}
+
+/**
  * Video / audio: create a placeholder poster with watermark.
  * Real video watermarks require ffmpeg — deferred to external service.
  * The poster is what visitors see in the product page until the dedicated
@@ -168,8 +218,25 @@ export async function processPreviewJob(job: PreviewJob): Promise<void> {
 
   const ext = (job.extension ?? '').toLowerCase();
 
-  // Placeholder for non-renderable types — do not download full file
-  if (['mp4', 'webm', 'mp3', 'docx', 'xlsx', 'pptx', 'zip'].includes(ext)) {
+  // Office documents & video: try Google Drive's rendered Page 1 / poster thumbnail with watermark first
+  if (['docx', 'xlsx', 'pptx', 'mp4', 'webm'].includes(ext)) {
+    try {
+      const token = decrypt(acc.encrypted_refresh_token);
+      const generated = await generateDriveThumbnailPreview(job, token);
+      if (generated) return;
+    } catch {
+      // Fall back to watermarked placeholder if Drive thumbnail is unavailable
+    }
+    try {
+      await generatePlaceholderPreview(job);
+    } catch (e: any) {
+      await admin.rpc('fail_preview', { p_preview_id: job.preview_id, p_reason: e.message?.slice(0, 200) });
+    }
+    return;
+  }
+
+  // Placeholder for non-renderable archive/audio types — do not download full file
+  if (['mp3', 'zip'].includes(ext)) {
     try {
       await generatePlaceholderPreview(job);
     } catch (e: any) {

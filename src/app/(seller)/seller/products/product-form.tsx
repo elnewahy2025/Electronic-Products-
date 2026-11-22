@@ -39,7 +39,10 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
     height: number;
     sizeBytes: number;
     sourceLabel?: string;
+    isFirstPage?: boolean;
+    watermarked?: boolean;
   } | null>(null);
+  const [watermarkCover, setWatermarkCover] = useState(true);
   const [extractingPage, setExtractingPage] = useState(false);
   const [generatingAuto, setGeneratingAuto] = useState(false);
   const [approvingAuto, setApprovingAuto] = useState(false);
@@ -47,7 +50,8 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  async function extractFirstPageCover() {
+  async function extractFirstPageCover(watermarkOverride?: boolean) {
+    const useWatermark = watermarkOverride ?? watermarkCover;
     setExtractingPage(true);
     setError(null);
     try {
@@ -57,6 +61,7 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
         body: JSON.stringify({
           action: 'extract_first_page',
           product_id: productId ?? null,
+          apply_watermark: useWatermark,
         }),
       });
       const json = await res.json();
@@ -76,6 +81,8 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
         height: json.height,
         sizeBytes: json.sizeBytes,
         sourceLabel: `الصفحة الأولى من «${json.sourceFileName}»`,
+        isFirstPage: true,
+        watermarked: Boolean(json.watermarked),
       });
     } catch {
       setError('تعذّر الاتصال بالخادم أثناء استخراج الصفحة الأولى.');
@@ -283,7 +290,7 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
           </label>
           <button
             type="button"
-            onClick={extractFirstPageCover}
+            onClick={() => extractFirstPageCover()}
             disabled={extractingPage || generatingAuto || uploadingCover || approvingAuto}
             className="inline-flex items-center gap-2 border border-primary/40 bg-accent text-accent-foreground rounded-xl px-4 py-2 text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
           >
@@ -310,18 +317,47 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
             </button>
           )}
         </div>
+        <label className="inline-flex items-center gap-2 text-xs text-foreground cursor-pointer select-none pt-1">
+          <input
+            type="checkbox"
+            checked={watermarkCover}
+            disabled={extractingPage || approvingAuto}
+            onChange={e => {
+              const next = e.target.checked;
+              setWatermarkCover(next);
+              if (autoPreview?.isFirstPage) {
+                void extractFirstPageCover(next);
+              }
+            }}
+            className="h-4 w-4 rounded border-border accent-primary"
+          />
+          <span>إضافة العلامة المائية للمنصة على الصفحة الأولى المستخرجة (لحماية محتوى الملف)</span>
+        </label>
         <p className="text-xs text-muted-foreground">
-          يمكنك رفع صورة بنفسك أو توليد غلاف تلقائي ومعاينته واعتماده قبل الحفظ (WebP، الحد الأقصى 5 ميجابايت).
+          يمكنك رفع صورة بنفسك أو استخراج الصفحة الأولى من ملفك أو توليد غلاف تلقائي ومعاينته واعتماده قبل الحفظ (WebP، الحد الأقصى 5 ميجابايت).
         </p>
 
         {autoPreview && (
           <div className="rounded-xl border border-warning bg-warning-soft/50 p-4 space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <p className="text-xs font-semibold text-foreground">
-                {autoPreview.sourceLabel
-                  ? `معاينة ${autoPreview.sourceLabel} — بانتظار موافقتك قبل الاعتماد`
-                  : 'معاينة الغلاف المقترح — بانتظار موافقتك قبل الاعتماد'}
-              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-xs font-semibold text-foreground">
+                  {autoPreview.sourceLabel
+                    ? `معاينة ${autoPreview.sourceLabel} — بانتظار موافقتك قبل الاعتماد`
+                    : 'معاينة الغلاف المقترح — بانتظار موافقتك قبل الاعتماد'}
+                </p>
+                {autoPreview.isFirstPage && (
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                      autoPreview.watermarked
+                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {autoPreview.watermarked ? 'مختوم بالعلامة المائية' : 'بدون علامة مائية'}
+                  </span>
+                )}
+              </div>
               <span className="text-[11px] text-muted-foreground ui-num">
                 {autoPreview.width}×{autoPreview.height} · {Math.round(autoPreview.sizeBytes / 1024)} KB
               </span>

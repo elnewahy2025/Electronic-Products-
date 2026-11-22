@@ -5,6 +5,7 @@ import { google } from 'googleapis';
 import { GoogleGenAI } from '@google/genai';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { decrypt } from '@/lib/crypto/encryption';
+import { applyWatermarkToImage } from './watermark-service';
 
 export const PRODUCT_IMAGES_BUCKET = 'product-images';
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -223,12 +224,14 @@ export async function extractFirstPageCoverFromDrive(input: {
   sellerId: string;
   productId?: string | null;
   fileVersionId?: string | null;
+  applyWatermark?: boolean;
 }): Promise<{
   buffer: Buffer;
   width: number;
   height: number;
   sizeBytes: number;
   sourceFileName: string;
+  watermarked: boolean;
 }> {
   const adminDb = createAdminClient();
   let fvId = input.fileVersionId ?? null;
@@ -326,10 +329,15 @@ export async function extractFirstPageCoverFromDrive(input: {
   }
 
   const rawPageBuf = Buffer.from(await imgRes.arrayBuffer());
-  const pageImg = await sharp(rawPageBuf, { limitInputPixels: 64_000_000 })
+  const resizedPageImg = await sharp(rawPageBuf, { limitInputPixels: 64_000_000 })
     .resize(1100, 680, { fit: 'inside', withoutEnlargement: false })
     .png()
     .toBuffer();
+
+  const shouldWatermark = input.applyWatermark !== false;
+  const pageImg = shouldWatermark
+    ? await applyWatermarkToImage(resizedPageImg, { surface: 'light' })
+    : resizedPageImg;
 
   // Subtle architectural studio backdrop (1200x750) so portrait & landscape first pages both look crisp without cropping
   const backdrop = Buffer.from(
@@ -355,6 +363,7 @@ export async function extractFirstPageCoverFromDrive(input: {
     height: info.height,
     sizeBytes: info.size,
     sourceFileName: fileRec.display_name || fileRec.original_name || meta.name || 'document',
+    watermarked: shouldWatermark,
   };
 }
 

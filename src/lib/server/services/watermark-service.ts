@@ -25,9 +25,14 @@ export async function getWatermarkText(): Promise<string> {
 
 /**
  * Apply a diagonal (or horizontal) repeated text watermark.
+ * Uses dual-contrast stroke + fill so the watermark stays clearly legible
+ * on both white document pages (DOCX/PDF/PPTX) and dark backgrounds.
  * Returns PNG buffer.
  */
-export async function applyWatermarkToImage(input: Buffer): Promise<Buffer> {
+export async function applyWatermarkToImage(
+  input: Buffer,
+  options?: { surface?: 'auto' | 'light' | 'dark' },
+): Promise<Buffer> {
   const admin = createAdminClient();
   const { data: ws } = await admin
     .from('watermark_settings')
@@ -36,17 +41,27 @@ export async function applyWatermarkToImage(input: Buffer): Promise<Buffer> {
     .single();
 
   const text = await getWatermarkText();
-  const opacityMap: Record<string, number> = { low: 0.12, medium: 0.22, high: 0.35 };
-  const opacity = opacityMap[ws?.opacity_level ?? 'medium'] ?? 0.22;
+  const opacityMap: Record<string, number> = { low: 0.16, medium: 0.28, high: 0.42 };
+  const opacity = opacityMap[ws?.opacity_level ?? 'medium'] ?? 0.28;
   const angle = ws?.direction === 'horizontal' ? 0 : -35;
+  const surface = options?.surface ?? 'auto';
+
+  const fillColor =
+    surface === 'dark'
+      ? `rgba(255,255,255,${opacity})`
+      : `rgba(15,27,38,${opacity})`;
+  const strokeColor =
+    surface === 'dark'
+      ? `rgba(15,27,38,${Math.min(0.7, opacity * 0.9)})`
+      : `rgba(255,255,255,${Math.min(0.85, opacity * 1.4)})`;
 
   const image = sharp(input);
   const meta = await image.metadata();
   const W = meta.width ?? 1200;
   const H = meta.height ?? 800;
 
-  const fontSize = Math.max(20, Math.round(Math.min(W, H) * 0.04));
-  const stepX = Math.round(W / 2.5);
+  const fontSize = Math.max(20, Math.round(Math.min(W, H) * 0.042));
+  const stepX = Math.round(W / 2.2);
   const stepY = Math.round(H / 2.5);
 
   let textSvg = '';
@@ -55,10 +70,13 @@ export async function applyWatermarkToImage(input: Buffer): Promise<Buffer> {
       textSvg += `<text x="${x}" y="${y}"
         text-anchor="middle"
         font-family="sans-serif"
+        font-weight="600"
         font-size="${fontSize}"
-        fill="rgba(255,255,255,${opacity})"
+        fill="${fillColor}"
+        stroke="${strokeColor}"
+        stroke-width="2.5"
+        paint-order="stroke"
         transform="rotate(${angle}, ${x}, ${y})"
-        style="paint-order: stroke; stroke: rgba(0,0,0,${opacity * 0.4}); stroke-width: 1px;"
       >${escapeXml(text)}</text>`;
     }
   }

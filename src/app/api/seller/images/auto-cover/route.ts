@@ -11,6 +11,7 @@ const extractSchema = z.object({
   action: z.literal('extract_first_page'),
   product_id: z.string().uuid().nullable().optional(),
   file_version_id: z.string().uuid().nullable().optional(),
+  apply_watermark: z.boolean().optional().default(true),
 });
 
 const previewSchema = z.object({
@@ -48,10 +49,12 @@ export async function POST(req: NextRequest) {
         sellerId: user.id,
         productId: parsed.data.product_id ?? null,
         fileVersionId: parsed.data.file_version_id ?? null,
+        applyWatermark: parsed.data.apply_watermark,
       });
       return NextResponse.json({
         previewDataUrl: `data:image/webp;base64,${extracted.buffer.toString('base64')}`,
         sourceFileName: extracted.sourceFileName,
+        watermarked: extracted.watermarked,
         width: extracted.width,
         height: extracted.height,
         sizeBytes: extracted.sizeBytes,
