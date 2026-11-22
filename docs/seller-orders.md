@@ -7,7 +7,18 @@ and (optionally) the order status derived from codes + download sessions.
 
 ## Data flow
 
-Two SECURITY DEFINER functions, both gated on `auth.uid()`:
+Three SECURITY DEFINER functions, all gated on `auth.uid()`:
+
+### `seller_order_detail(p_order_item_id)` (Migration 036)
+Returns a full privacy-safe `jsonb` snapshot for a single sale owned by `auth.uid()` (returns `NULL` if not owned):
+- Order item + product metadata (`product_title`, `product_slug`, `cover_image_url`, `version_number`, `ordered_at`)
+- Snapshotted financial breakdown (`price`, `currency`, `commission_rate_at_sale`, `commission_amount`, `net_seller_amount`) + linked `financial_transactions` ledger rows
+- Masked buyer (`ab***@domain.com`) — zero PII (`buyer_id`, `customer_email`, `customer_phone`, `ip`, `user_agent` are never returned)
+- `codes[]` (`code_prefix`, `status`, lifecycle timestamps, `is_replacement`, and `code_delivery_attempts`) — `code_hash` and plaintext are never exposed
+- `sessions[]` (original & compensation sessions with nested `download_deliveries` joined to file display names and transfer sizes)
+- `attempts[]` (`attempt_number`, `type`, `consumed_at`, `completed`) and `attempts_used / attempts_max`
+
+Rendered at `/seller/orders/[orderItemId]` with an asymmetric 12-column layout (4-col sticky product/financial/privacy rail + 8-col codes, attempts, and download deliveries workspace).
 
 ### `seller_orders(product_id?, status?, from?, to?, limit, offset)`
 Returns paginated sales rows with:
@@ -98,27 +109,12 @@ Pagination (50 per page)
 
 ## Not covered (future work)
 
-1. **Commission snapshot at sale time.** When `order_items` are created, the
-   rate should be saved to a new column (e.g., `commission_rate_at_sale`).
-   This requires modifying `approve_purchase_request` in migration 016 and a
-   backfill for existing orders.
-
-2. **Revenue credited to wallet.** Currently sales do NOT increment
-   `seller_wallets.balance` or create `financial_transactions`. When that
-   pipeline is built, the seller's actual balance will be the source of truth
-   and this page becomes a supplementary view.
-
-3. **Buyer-side agreement.** Some platforms give the seller the buyer's email
+1. **Buyer-side agreement.** Some platforms give the seller the buyer's email
    after purchase (for delivery support). We don't — by design — because the
    platform is the sole intermediary.
 
-4. **Export to CSV.** A "download as CSV" button is a common request; not built
+2. **Export to CSV.** A "download as CSV" button is a common request; not built
    yet. Easy to add (reuse `admin/audit/export` pattern).
-
-5. **Per-order detail view.** Currently each row is a link to the public
-   product page. A dedicated `/seller/orders/[orderItemId]` page could show
-   the code prefix, exact timestamps, download deliveries — useful if support
-   issues arise.
 
 ## Testing
 

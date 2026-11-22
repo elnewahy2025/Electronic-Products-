@@ -102,7 +102,7 @@
 - [x] **تثبيت العمولة لحظة البيع + إيداع المحفظة (`credit wallet`)**: مكتمل في الترحيل `033_commission_snapshot_and_wallet.sql` مع سجل الحركات المالية في `/seller/wallet`.
 - [x] **رفع صور المنتجات مباشرة إلى Supabase Storage + `sharp` + تضييق CSP**: مكتمل في الترحيل `034_product_images_storage.sql` و`product-image-service.ts` و`/api/seller/images/upload` وتضييق `img-src` في `middleware.ts`.
 - [x] **إشعارات البريد الإلكتروني الحقيقية + ملخص الإدارة اليومي**: مكتمل في الترحيل `035_email_notifications.sql` و`email-service.ts` (`nodemailer` SMTP + Resend API) ومسارات `email-cron` و`admin-digest` و`docs/email-notifications.md`.
+- [x] **صفحة تفاصيل مبيعة البائع (`/seller/orders/[orderItemId]`)**: مكتملة في الترحيل `036_seller_order_detail.sql` و`src/app/(seller)/seller/orders/[orderItemId]/page.tsx` مع عرض `code_prefix` والعمولة المثبّتة وجلسات وتسليمات التنزيل دون كشف هوية المشتري.
 
-البنود التالية مقترحة للجولات القادمة:
-1. **صفحة تفاصيل مبيعة البائع (`/seller/orders/[orderItemId]`)**: عرض تفاصيل كود المبيعة وحالة التسليمات للبائع دون كشف هوية المشتري.
-2. **أتمتة النسخ الاحتياطي**: ربط جدولة `backup_settings` بـ Cron خارجي وتنفيذ اختبار استعادة تلقائي.
+البند المتبقي للجولة القادمة:
+1. **أتمتة النسخ الاحتياطي**: ربط جدولة `backup_settings` بـ Cron خارجي وتنفيذ اختبار استعادة تلقائي.

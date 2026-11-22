@@ -26,17 +26,19 @@ export function OrdersTable({ orders }: { orders: SellerOrderRow[] }) {
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border rounded-xl overflow-x-auto bg-card">
       <table className="w-full text-sm">
-        <thead className="bg-muted">
+        <thead className="bg-muted/70">
           <tr>
             <th className="text-right p-3">المنتج</th>
+            <th className="text-right p-3">بادئة الكود</th>
             <th className="text-right p-3">المشتري</th>
             <th className="text-right p-3">المبلغ</th>
             <th className="text-right p-3">الصافي</th>
             <th className="text-right p-3">الحالة</th>
             <th className="text-right p-3">المحاولات</th>
             <th className="text-right p-3">التاريخ</th>
+            <th className="text-right p-3"></th>
           </tr>
         </thead>
         <tbody>
@@ -45,22 +47,34 @@ export function OrdersTable({ orders }: { orders: SellerOrderRow[] }) {
             const badge = VARIANT_CLASSES[status.variant] ?? VARIANT_CLASSES.gray;
 
             return (
-              <tr key={o.order_item_id} className="border-t hover:bg-muted/20">
+              <tr key={o.order_item_id} className="border-t hover:bg-muted/20 transition-colors">
                 <td className="p-3">
                   <Link
-                    href={`/products/${o.product_slug}`}
-                    className="font-medium hover:underline"
+                    href={`/seller/orders/${o.order_item_id}`}
+                    className="font-medium hover:text-primary hover:underline"
                   >
                     {o.product_title}
                   </Link>
                 </td>
-                <td className="p-3 text-xs text-muted-foreground" dir="ltr">
+                <td className="p-3">
+                  {o.code_prefix ? (
+                    <span
+                      className="font-mono text-xs bg-muted px-2 py-0.5 rounded tabular-nums"
+                      dir="ltr"
+                    >
+                      {o.code_prefix}-****
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </td>
+                <td className="p-3 text-xs text-muted-foreground font-mono" dir="ltr">
                   {o.buyer_masked}
                 </td>
-                <td className="p-3 text-xs">
+                <td className="p-3 text-xs tabular-nums" dir="ltr">
                   {o.price.toFixed(2)} {o.currency}
                 </td>
-                <td className="p-3 text-xs text-green-700">
+                <td className="p-3 text-xs text-emerald-700 font-medium tabular-nums" dir="ltr">
                   {o.net_amount.toFixed(2)} {o.currency}
                 </td>
                 <td className="p-3">
@@ -68,11 +82,19 @@ export function OrdersTable({ orders }: { orders: SellerOrderRow[] }) {
                     {status.label}
                   </span>
                 </td>
-                <td className="p-3 text-xs text-muted-foreground">
+                <td className="p-3 text-xs text-muted-foreground tabular-nums" dir="ltr">
                   {o.attempts_used}/{o.attempts_max}
                 </td>
                 <td className="p-3 text-xs text-muted-foreground">
                   {new Date(o.ordered_at).toLocaleDateString('ar')}
+                </td>
+                <td className="p-3 text-left">
+                  <Link
+                    href={`/seller/orders/${o.order_item_id}`}
+                    className="text-xs font-medium text-primary hover:underline whitespace-nowrap"
+                  >
+                    التفاصيل ←
+                  </Link>
                 </td>
               </tr>
             );
