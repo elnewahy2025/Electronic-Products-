@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>إلكترونيات — عرض التطبيق الكامل</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+:root{--bar:#0a2a24;--ink:#e8f5f0;--mute:#8fb7aa;--line:#245a4d;--on:#e8f5f0;--onink:#0a2a24;color-scheme:light dark}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;font:400 14px/1.5 "IBM Plex Sans Arabic",Tahoma,sans-serif;background:#f3f5f7}
+@media(prefers-color-scheme:dark){body{background:#0c1219}}
+.top{background:var(--bar);color:var(--ink);display:flex;align-items:stretch;gap:6px;padding:0 14px;min-height:54px;flex:none;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;font-weight:700;font-size:16px;padding-inline-end:14px;margin-inline-end:6px;border-inline-end:1px solid var(--line);white-space:nowrap}
+.tabs{display:flex;gap:4px;overflow-x:auto;align-items:flex-end;flex:1}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--mute);padding:7px 14px 6px;cursor:pointer;text-align:start;font:inherit;display:flex;flex-direction:column;white-space:nowrap}
+.tabs button b{font-weight:600;color:var(--ink);font-size:14.5px}.tabs button small{font-size:11.5px}
+.tabs button:hover{background:#ffffff10}
+.tabs button[aria-selected=true]{border-color:#e8a317;background:#ffffff14}
+.tabs button:focus-visible{outline:3px solid #6f9bff;outline-offset:-3px}
+.note{align-self:center;font-size:12px;color:var(--mute);white-space:nowrap}
+iframe{flex:1;width:100%;border:0;display:block;min-height:0}iframe[hidden]{display:none}
+@media(max-width:760px){.brand,.note{display:none}.tabs button small{display:none}}
+</style>
+</head>
+<body>
+<div class="top"><span class="brand">إلكترونيات</span><div class="tabs" role="tablist" aria-label="اختر الدور"><button role="tab" id="t-visitor" aria-controls="f-visitor" aria-selected="false" data-r="visitor"><b>الزائر</b><small>المتجر وصفحة المنتج</small></button><button role="tab" id="t-buyer" aria-controls="f-buyer" aria-selected="false" data-r="buyer"><b>المشتري</b><small>الطلبات والأكواد والتنزيل</small></button><button role="tab" id="t-seller" aria-controls="f-seller" aria-selected="false" data-r="seller"><b>البائع</b><small>المنتجات والملفات والمحفظة</small></button><button role="tab" id="t-admin" aria-controls="f-admin" aria-selected="false" data-r="admin"><b>المدير</b><small>كل أقسام الإدارة</small></button></div><span class="note">عرض تصميم ببيانات تجريبية</span></div>
+<iframe id="f-visitor" title="الزائر" hidden data-doc="&lt;!doctype html&gt;
+&lt;html lang=&quot;ar&quot; dir=&quot;rtl&quot;&gt;
+&lt;head&gt;
+&lt;base href=&quot;about:srcdoc&quot;&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;title&gt;متجر المنتجات الإلكترونية — عرض تصميم&lt;/title&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap&quot;&gt;
+&lt;style&gt;
+:root{--paper:#f3f5f7;--card:#fff;--ink:#0f1b26;--mute:#5d6b78;--line:#d8dee4;--blue:#1457d9;--blue-ink:#fff;--green:#17855b;--amber:#e8a317;--soft:#e9eef5;--pcb:#0d3b32;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--paper:#0c1219;--card:#141d27;--ink:#e8eef4;--mute:#92a1af;--line:#26323f;--blue:#6f9bff;--blue-ink:#0c1219;--green:#4cc796;--amber:#f0b73a;--soft:#1b2733;--pcb:#0a2a24;color-scheme:dark}}
+*{box-sizing:border-box}html{scroll-padding-top:70px}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 15px/1.7 &quot;IBM Plex Sans Arabic&quot;,Tahoma,&quot;Segoe UI&quot;,sans-serif}
+a{color:inherit;text-decoration:none}button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1120px;margin:auto;padding:0 20px}
+.num{direction:ltr;unicode-bidi:isolate;display:inline-block}
+/* header */
+header{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:20px;height:60px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px}
+.logo i{width:30px;height:30px;border-radius:7px 7px 7px 2px;background:var(--pcb);display:grid;place-items:center}
+.logo svg{width:18px;height:18px}
+nav{display:flex;gap:4px;margin-inline-start:6px}
+nav a{padding:6px 12px;border-radius:8px;color:var(--mute);font-weight:500;font-size:14px}
+nav a:hover,nav a.on{background:var(--soft);color:var(--ink)}
+.sp{flex:1}
+.btn{border:0;border-radius:9px;padding:9px 18px;font-weight:600;cursor:pointer;background:var(--blue);color:var(--blue-ink)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.big{padding:13px 22px;width:100%;font-size:16px}
+.btn:disabled{opacity:.5;cursor:default}
+/* hero */
+.hero{background:var(--pcb);color:#e8f5f0;position:relative;overflow:hidden}
+.hero svg.traces{position:absolute;inset:0;width:100%;height:100%;opacity:.35}
+.hero .wrap{position:relative;padding-top:56px;padding-bottom:64px}
+.hero h1{font-size:clamp(28px,5vw,46px);line-height:1.35;margin:0 0 10px;max-width:640px;font-weight:700}
+.hero p{margin:0 0 26px;color:#b4d3c8;max-width:520px}
+.finder{position:relative;max-width:640px}
+.finder input{width:100%;border:0;border-radius:12px;padding:16px 52px 16px 16px;font-size:17px;background:#fff;color:#0f1b26}
+.finder svg{position:absolute;inset-inline-start:auto;right:16px;top:18px;width:20px;height:20px}
+.sugg{position:absolute;top:calc(100% + 6px);inset-inline:0;background:var(--card);color:var(--ink);border-radius:12px;box-shadow:0 14px 34px #0005;overflow:hidden;z-index:5}
+.sugg a{display:flex;gap:12px;align-items:center;padding:10px 14px}
+.sugg a:hover,.sugg a:focus{background:var(--soft)}
+.sugg .t{width:44px;height:34px;border-radius:5px;overflow:hidden;flex:none}
+.sugg .t svg{width:100%;height:100%;display:block}
+.sugg b{font-weight:600;display:block;line-height:1.3}.sugg small{color:var(--mute)}
+.sugg .none{padding:14px;color:var(--mute)}
+.redeem{display:inline-flex;gap:10px;align-items:center;margin-top:18px;background:#ffffff14;border:1px dashed #6fb09d;border-radius:10px;padding:8px 8px 8px 14px;font-size:14px}
+.redeem input{background:transparent;border:0;border-bottom:1px solid #6fb09d;color:#fff;width:150px;padding:2px 4px;direction:ltr;text-align:left;letter-spacing:.08em}
+.redeem input::placeholder{color:#7fb4a4}
+.redeem button{background:var(--amber);color:#201400;border:0;border-radius:7px;padding:6px 14px;font-weight:700;cursor:pointer}
+/* sections */
+main{padding:34px 0 60px}
+h2{font-size:21px;margin:0 0 4px}.sub{color:var(--mute);margin:0 0 18px;font-size:14px}
+.head{display:flex;justify-content:space-between;align-items:end;margin:38px 0 14px;gap:12px;flex-wrap:wrap}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:5px 15px;cursor:pointer;font-size:14px}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s}
+.card:hover{border-color:var(--blue)}
+.card .th{aspect-ratio:16/10;position:relative}.card .th svg{width:100%;height:100%;display:block}
+.wm{position:absolute;inset:0;display:grid;place-items:center;font-weight:700;font-size:26px;color:#ffffff30;transform:rotate(-14deg);pointer-events:none;letter-spacing:.2em}
+.card .bd{padding:13px 15px 15px;display:flex;flex-direction:column;gap:5px;flex:1}
+.card h3{font-size:15px;margin:0;line-height:1.5;font-weight:600}
+.meta{display:flex;justify-content:space-between;color:var(--mute);font-size:13px}
+.price{margin-top:auto;padding-top:8px;font-weight:700;font-size:17px;display:flex;justify-content:space-between;align-items:baseline}
+.price small{font-weight:400;color:var(--mute);font-size:12px}
+.stars{color:var(--amber);letter-spacing:1px}
+.tag{font-size:12px;background:var(--soft);padding:1px 9px;border-radius:99px;align-self:flex-start}
+.cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.cat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;text-align:start}
+.cat:hover{border-color:var(--blue)}.cat span{color:var(--mute);font-size:13px}
+.empty{grid-column:1/-1;background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:28px;text-align:center;color:var(--mute)}
+/* how */
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;counter-reset:s}
+.how div{padding:18px;border-inline-start:1px solid var(--line);counter-increment:s}
+.how div:first-child{border-inline-start:0}
+.how div:before{content:counter(s);display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--green);color:var(--paper);font-weight:700;font-size:13px;margin-bottom:8px}
+.how b{display:block}.how span{color:var(--mute);font-size:13.5px}
+/* product */
+.crumb{font-size:13px;color:var(--mute);margin-bottom:14px}.crumb a:hover{color:var(--blue)}
+.pg{display:grid;grid-template-columns:1fr 340px;gap:26px;align-items:start}
+.pv{border-radius:16px;overflow:hidden;position:relative;aspect-ratio:16/10;background:var(--pcb)}.pv svg{width:100%;height:100%;display:block}
+.pv .wm{font-size:48px}
+.pv .note{position:absolute;bottom:10px;inset-inline-start:10px;background:#000a;color:#fff;font-size:12px;border-radius:6px;padding:2px 10px}
+.pg h1{font-size:26px;line-height:1.4;margin:18px 0 6px}
+.by{color:var(--mute);display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:14px}
+.pg p.d{max-width:68ch}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.side{position:sticky;top:78px;display:flex;flex-direction:column;gap:14px}
+.big-price{font-size:30px;font-weight:700;line-height:1.2}
+.pay{font-size:13px;color:var(--mute);margin:2px 0 14px;display:flex;gap:6px;align-items:center}
+label{display:block;font-size:13px;font-weight:500;margin:10px 0 3px}
+.in{width:100%;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:9px 11px}
+.in.bad{border-color:#d33}.err{color:#d33;font-size:12.5px;min-height:18px}
+.files{width:100%;border-collapse:collapse;font-size:14px}
+.files td{padding:8px 4px;border-bottom:1px solid var(--line)}.files td:last-child{text-align:left;color:var(--mute)}
+.ext{font:600 11px/1 monospace;background:var(--soft);border-radius:4px;padding:3px 6px;margin-inline-end:8px;direction:ltr;display:inline-block}
+.rev{padding:14px 0;border-bottom:1px solid var(--line)}.rev:last-child{border:0}
+.rev p{margin:4px 0 0}
+.done{background:var(--soft);border-radius:10px;padding:14px;margin-top:4px}
+.done code{background:var(--card);padding:2px 8px;border-radius:6px;direction:ltr;display:inline-block;font-weight:700}
+.vf{color:var(--green);font-weight:700;font-size:13px}.lnk{text-decoration:underline;text-underline-offset:3px}.lnk:hover{color:var(--blue)}
+.gal{display:flex;gap:10px;margin-top:10px}.gal button{width:92px;aspect-ratio:16/10;border-radius:9px;overflow:hidden;border:2px solid var(--line);padding:0;cursor:pointer;background:none}.gal button[aria-pressed=true]{border-color:var(--blue)}.gal svg{width:100%;height:100%;display:block}
+.av{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:20px;color:#fff;flex:none}
+.sh{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.sh h1{margin:0}
+.ss{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:18px 0}
+.ss div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}.ss b{font-size:21px;display:block;line-height:1.3}.ss span{color:var(--mute);font-size:13px}
+.dist{display:grid;gap:5px;font-size:13px}.dist div{display:grid;grid-template-columns:34px 1fr 38px;gap:8px;align-items:center}.dist i{height:8px;background:var(--soft);border-radius:99px;overflow:hidden;display:block}.dist i b{display:block;height:100%;background:var(--amber)}
+.tr{display:grid;gap:8px;font-size:13.5px;color:var(--mute)}.tr span:before{content:&quot;✓&quot;;color:var(--green);font-weight:700;margin-inline-end:8px}
+main.wrap{padding-top:26px;padding-bottom:60px}
+.card{position:relative}.cl{display:flex;flex-direction:column;flex:1;color:inherit}
+.fav{position:absolute;top:8px;inset-inline-start:8px;z-index:2;width:34px;height:34px;border:0;border-radius:50%;background:#000b;color:#fff;font-size:17px;cursor:pointer;line-height:1}.fav[aria-pressed=true]{color:#ff7b9d}
+.bw{display:grid;grid-template-columns:250px 1fr;gap:24px;align-items:start}
+.fl details&gt;summary{display:none;cursor:pointer;font-weight:600;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 14px;margin-bottom:8px}
+.fbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:7px;align-content:start;position:sticky;top:76px}
+.fbox&gt;b{margin-top:8px;font-size:14px}.fbox&gt;b:first-child{margin-top:0}
+.ck{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}.ck .num{margin-inline-start:auto}.ck input{accent-color:var(--blue)}
+.pr{display:grid;grid-template-columns:1fr 1fr;gap:8px}.qp{display:flex;gap:6px;flex-wrap:wrap}
+.in{width:100%;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:8px 11px}
+.rb{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.rb .in{padding:5px 10px}
+.mute{color:var(--mute);font-size:13.5px}.chip.x{background:var(--soft)}
+.pgn{display:flex;gap:6px;justify-content:center;margin-top:24px;flex-wrap:wrap}.pgn .chip{min-width:38px}.pgn .chip:disabled{opacity:.4;cursor:default}
+.sugg .all{width:100%;border:0;background:var(--soft);padding:10px;cursor:pointer;font-weight:600}
+@media(max-width:820px){.bw{grid-template-columns:1fr}.fl details&gt;summary{display:block}.fbox{position:static}.bar .btn.ghost.hb{display:inline-block}.bar .btn:not(.ghost){display:none}}
+.bar .btn{white-space:nowrap}
+.toast{position:fixed;bottom:18px;left:50%;transform:translate(-50%,30px);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;z-index:50}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+footer{border-top:1px solid var(--line);padding:22px 0;color:var(--mute);font-size:13px}
+@media(max-width:820px){nav{display:none}.pg{grid-template-columns:1fr}.side{position:static}.bar .btn.ghost{display:none}.how div{border-inline-start:0;border-top:1px solid var(--line)}.how div:first-child{border-top:0}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;header&gt;&lt;div class=&quot;wrap bar&quot;&gt;
+  &lt;a class=&quot;logo&quot; href=&quot;#home&quot;&gt;&lt;i&gt;&lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;#9ce2bf&quot; stroke-width=&quot;2&quot;&gt;&lt;path d=&quot;M3 12h6l2-5 3 10 2-5h5&quot;/&gt;&lt;/svg&gt;&lt;/i&gt;إلكترونيات&lt;/a&gt;
+  &lt;nav&gt;&lt;a href=&quot;#home&quot; id=&quot;n-home&quot;&gt;المتجر&lt;/a&gt;&lt;a href=&quot;#browse&quot; id=&quot;n-browse&quot;&gt;كل المنتجات&lt;/a&gt;&lt;a href=&quot;#home&quot; data-go=&quot;cats&quot;&gt;التصنيفات&lt;/a&gt;&lt;a href=&quot;#home&quot; data-go=&quot;how&quot;&gt;كيف أشتري؟&lt;/a&gt;&lt;/nav&gt;
+  &lt;span class=&quot;sp&quot;&gt;&lt;/span&gt;
+  &lt;button class=&quot;btn ghost hb&quot; onclick=&quot;goBrowse({fav:true})&quot;&gt;♥ المفضلة &lt;span id=&quot;fc&quot; class=&quot;num&quot;&gt;1&lt;/span&gt;&lt;/button&gt;&lt;button class=&quot;btn ghost&quot; onclick=&quot;parent!==window?parent.postMessage({go:&#x27;buyer&#x27;},&#x27;*&#x27;):toast(&#x27;الدخول متاح في العرض الكامل&#x27;)&quot;&gt;دخول&lt;/button&gt;
+  &lt;button class=&quot;btn&quot; onclick=&quot;parent!==window?parent.postMessage({go:&#x27;buyer&#x27;},&#x27;*&#x27;):toast(&#x27;الدخول متاح في العرض الكامل&#x27;)&quot;&gt;حساب جديد&lt;/button&gt;
+&lt;/div&gt;&lt;/header&gt;
+
+&lt;div id=&quot;app&quot;&gt;&lt;/div&gt;
+
+&lt;footer&gt;&lt;div class=&quot;wrap&quot;&gt;الدفع يتم خارج المنصة بعد موافقة الإدارة على طلبك. هذا عرض تصميم تفاعلي ببيانات تجريبية.&lt;/div&gt;&lt;/footer&gt;
+&lt;div class=&quot;toast&quot; id=&quot;toast&quot; role=&quot;status&quot;&gt;&lt;/div&gt;
+
+&lt;script&gt;
+const CATS=[&#x27;لوحات PCB&#x27;,&#x27;برمجيات مدمجة&#x27;,&#x27;مكتبات&#x27;,&#x27;نماذج ثلاثية الأبعاد&#x27;,&#x27;دورات ووثائق&#x27;];
+const P=[
+ {id:1,t:&#x27;لوحة ESP32 للتحكم المنزلي&#x27;,c:0,k:&#x27;pcb&#x27;,p:450,r:4.8,n:23,s:&#x27;م. هدى سمير&#x27;,f:[[&#x27;gerber&#x27;,&#x27;Gerber + Drill&#x27;,&#x27;4.2 MB&#x27;],[&#x27;kicad&#x27;,&#x27;مشروع KiCad 8&#x27;,&#x27;1.1 MB&#x27;],[&#x27;pdf&#x27;,&#x27;مخطط الدائرة&#x27;,&#x27;640 KB&#x27;]],d:&#x27;تصميم لوحة من طبقتين لمتحكم ESP32 مع مرحلات، ومنظّم جهد، ومنفذ برمجة. ملفات الإنتاج جاهزة للطلب من أي مصنع.&#x27;},
+ {id:2,t:&#x27;مكتبة رموز وبصمات KiCad&#x27;,c:2,k:&#x27;lib&#x27;,p:180,r:4.6,n:41,s:&#x27;ورشة النيل&#x27;,f:[[&#x27;lib&#x27;,&#x27;رموز الدوائر&#x27;,&#x27;2.3 MB&#x27;],[&#x27;pretty&#x27;,&#x27;بصمات الأرجل&#x27;,&#x27;5.8 MB&#x27;]],d:&#x27;أكثر من 1200 مكوّن شائع في السوق المحلي، مع أبعاد مراجعة على أوراق البيانات.&#x27;},
+ {id:3,t:&#x27;فيرموير مراقبة الطاقة على STM32&#x27;,c:1,k:&#x27;code&#x27;,p:620,r:4.9,n:12,s:&#x27;م. كريم عادل&#x27;,f:[[&#x27;c&#x27;,&#x27;شيفرة المصدر&#x27;,&#x27;380 KB&#x27;],[&#x27;ioc&#x27;,&#x27;إعدادات CubeMX&#x27;,&#x27;24 KB&#x27;],[&#x27;md&#x27;,&#x27;دليل المعايرة&#x27;,&#x27;90 KB&#x27;]],d:&#x27;قياس التيار والجهد والقدرة بدقة عالية، مع تسجيل على بطاقة SD وواجهة تسلسلية.&#x27;},
+ {id:4,t:&#x27;مصدر تغذية 5V / 3A&#x27;,c:0,k:&#x27;pcb&#x27;,p:300,r:4.4,n:18,s:&#x27;م. هدى سمير&#x27;,f:[[&#x27;gerber&#x27;,&#x27;Gerber&#x27;,&#x27;2.9 MB&#x27;],[&#x27;pdf&#x27;,&#x27;حساب المكوّنات&#x27;,&#x27;410 KB&#x27;]],d:&#x27;مصدر تبديل صغير بكفاءة عالية، مع حسابات الملف والمكثفات خطوة بخطوة.&#x27;},
+ {id:5,t:&#x27;مضخم صوت Class-D&#x27;,c:0,k:&#x27;pcb&#x27;,p:520,r:4.7,n:9,s:&#x27;ستوديو أمبير&#x27;,f:[[&#x27;kicad&#x27;,&#x27;مشروع KiCad&#x27;,&#x27;1.6 MB&#x27;],[&#x27;pdf&#x27;,&#x27;مخطط الدائرة&#x27;,&#x27;720 KB&#x27;]],d:&#x27;مضخم ستيريو 2×25W بتشويه منخفض، مع نتائج قياس حقيقية.&#x27;},
+ {id:6,t:&#x27;علب مشاريع للطباعة ثلاثية الأبعاد&#x27;,c:3,k:&#x27;cube&#x27;,p:140,r:4.5,n:30,s:&#x27;ورشة النيل&#x27;,f:[[&#x27;stl&#x27;,&#x27;ملفات STL (14)&#x27;,&#x27;18 MB&#x27;],[&#x27;step&#x27;,&#x27;ملفات STEP&#x27;,&#x27;22 MB&#x27;]],d:&#x27;علب لألواح Arduino وESP32 وRaspberry Pi بفتحات للمنافذ وأغطية بمسامير.&#x27;},
+ {id:7,t:&#x27;دورة تصميم PCB من الصفر&#x27;,c:4,k:&#x27;course&#x27;,p:900,r:4.9,n:57,s:&#x27;م. كريم عادل&#x27;,f:[[&#x27;mp4&#x27;,&#x27;24 درسًا بالفيديو&#x27;,&#x27;3.4 GB&#x27;],[&#x27;zip&#x27;,&#x27;ملفات التطبيق&#x27;,&#x27;120 MB&#x27;]],d:&#x27;من رسم المخطط إلى طلب اللوحة من المصنع، بمشروع تطبيقي في كل وحدة.&#x27;},
+ {id:8,t:&#x27;أوراق بيانات مترجمة لـ 40 مستشعرًا&#x27;,c:4,k:&#x27;doc&#x27;,p:90,r:4.3,n:64,s:&#x27;ستوديو أمبير&#x27;,f:[[&#x27;pdf&#x27;,&#x27;40 ملف PDF&#x27;,&#x27;36 MB&#x27;]],d:&#x27;ملخصات بالعربية لأهم خصائص كل مستشعر ومخططات التوصيل.&#x27;}
+];
+const FK={pcb:[[&#x27;gerber&#x27;,&#x27;Gerber + Drill&#x27;,&#x27;3.1 MB&#x27;],[&#x27;pdf&#x27;,&#x27;مخطط الدائرة&#x27;,&#x27;520 KB&#x27;]],code:[[&#x27;c&#x27;,&#x27;شيفرة المصدر&#x27;,&#x27;260 KB&#x27;],[&#x27;md&#x27;,&#x27;دليل الاستخدام&#x27;,&#x27;80 KB&#x27;]],lib:[[&#x27;lib&#x27;,&#x27;رموز الدوائر&#x27;,&#x27;1.8 MB&#x27;],[&#x27;pretty&#x27;,&#x27;بصمات الأرجل&#x27;,&#x27;4.2 MB&#x27;]],cube:[[&#x27;stl&#x27;,&#x27;ملفات STL&#x27;,&#x27;12 MB&#x27;],[&#x27;step&#x27;,&#x27;ملفات STEP&#x27;,&#x27;15 MB&#x27;]],course:[[&#x27;mp4&#x27;,&#x27;دروس بالفيديو&#x27;,&#x27;2.1 GB&#x27;],[&#x27;zip&#x27;,&#x27;ملفات التطبيق&#x27;,&#x27;90 MB&#x27;]],doc:[[&#x27;pdf&#x27;,&#x27;ملفات PDF&#x27;,&#x27;24 MB&#x27;]]};
+[[9,&#x27;لوحة تحكم محرك DC بتقنية PWM&#x27;,0,&#x27;pcb&#x27;,380,4.5,14,&#x27;م. كريم عادل&#x27;,&#x27;تحكم بسرعة واتجاه محرك حتى 10A مع حماية من التيار الزائد.&#x27;],
+ [10,&#x27;مكتبة مستشعرات I2C لـ Arduino&#x27;,2,&#x27;code&#x27;,120,4.4,52,&#x27;ورشة النيل&#x27;,&#x27;مكتبة موحّدة لقراءة 25 مستشعرًا شائعًا بأمثلة جاهزة.&#x27;],
+ [11,&#x27;علب بطاريات 18650 (STL)&#x27;,3,&#x27;cube&#x27;,95,4.3,27,&#x27;ورشة النيل&#x27;,&#x27;علب بسعات مختلفة مع مواضع للتوصيل والحماية.&#x27;],
+ [12,&#x27;دورة برمجة STM32 بالـ HAL&#x27;,4,&#x27;course&#x27;,750,4.8,33,&#x27;م. كريم عادل&#x27;,&#x27;من إعداد CubeMX حتى المقاطعات وDMA بمشاريع عملية.&#x27;],
+ [13,&#x27;شاحن بطارية ليثيوم TP4056 محسّن&#x27;,0,&#x27;pcb&#x27;,260,4.2,21,&#x27;م. هدى سمير&#x27;,&#x27;نسخة محسّنة بحماية من القطبية العكسية ومؤشرات حالة.&#x27;],
+ [14,&#x27;رموز ومخططات للتحكم الصناعي&#x27;,2,&#x27;lib&#x27;,210,4.6,17,&#x27;ستوديو أمبير&#x27;,&#x27;رموز PLC ومرحلات وحساسات بمعايير IEC.&#x27;],
+ [15,&#x27;فيرموير بوابة LoRa لإنترنت الأشياء&#x27;,1,&#x27;code&#x27;,680,4.7,11,&#x27;م. كريم عادل&#x27;,&#x27;بوابة تجمع قراءات العقد وترسلها عبر شبكة محلية.&#x27;],
+ [16,&#x27;دليل اختيار المكثفات والملفات&#x27;,4,&#x27;doc&#x27;,70,4.1,88,&#x27;ستوديو أمبير&#x27;,&#x27;جداول ومعادلات لاختيار القيم المناسبة لكل تصميم.&#x27;],
+ [17,&#x27;غلاف لوحة Raspberry Pi 5 (STEP)&#x27;,3,&#x27;cube&#x27;,160,4.5,24,&#x27;ورشة النيل&#x27;,&#x27;غلاف بتهوية وفتحات للمنافذ، قابل للطباعة بدون دعامات.&#x27;],
+ [18,&#x27;لوحة تطوير ESP32-S3 بشاشة OLED&#x27;,0,&#x27;pcb&#x27;,540,4.9,8,&#x27;م. هدى سمير&#x27;,&#x27;لوحة تطوير مدمجة مع شاشة ومنافذ توسعة.&#x27;],
+ [19,&#x27;مسجّل بيانات بدقة 16 بت&#x27;,0,&#x27;pcb&#x27;,720,4.7,6,&#x27;ستوديو أمبير&#x27;,&#x27;تسجيل على بطاقة SD بثماني قنوات تناظرية.&#x27;],
+ [20,&#x27;ملفات تعلّم لحام SMD&#x27;,4,&#x27;doc&#x27;,60,4.0,40,&#x27;م. هدى سمير&#x27;,&#x27;تمارين ولوحات تدريب بمستويات متدرجة.&#x27;]
+].forEach(([id,t,c,k,p,r,n,s,d])=&gt;P.push({id,t,c,k,p,r,n,s,d,f:FK[k]}));
+let _g=0;
+function thumb(k,id,v=0){
+ const R=n=&gt;((id*9301+n*49297)%233280)/233280,u=&#x27;g&#x27;+(++_g);
+ const vb=[&#x27;0 0 160 100&#x27;,&#x27;58 22 64 40&#x27;,k===&#x27;pcb&#x27;?&#x27;0 0 160 100&#x27;:&#x27;78 38 74 46&#x27;][v];
+ let s=`&lt;svg viewBox=&quot;${vb}&quot; preserveAspectRatio=&quot;xMidYMid slice&quot; role=&quot;img&quot; aria-hidden=&quot;true&quot;&gt;`;
+ if(k===&#x27;pcb&#x27;){
+  const mask=[&#x27;#0f5a3c&#x27;,&#x27;#16394d&#x27;,&#x27;#1b1b22&#x27;,&#x27;#7a1d2b&#x27;][id%4];
+  if(v===2){
+   s+=`&lt;rect width=&quot;160&quot; height=&quot;100&quot; fill=&quot;#0e2238&quot;/&gt;`;for(let i=1;i&lt;16;i++)s+=`&lt;path d=&quot;M${i*10} 0V100M0 ${i*7} H160&quot; stroke=&quot;#27496b&quot; stroke-width=&quot;.4&quot;/&gt;`;
+   s+=`&lt;g stroke=&quot;#7cc4ff&quot; stroke-width=&quot;1.2&quot; fill=&quot;none&quot;&gt;&lt;path d=&quot;M10 30H40l3-5 4 10 4-10 4 10 4-10 3 5H80&quot;/&gt;&lt;path d=&quot;M80 30V60H120&quot;/&gt;&lt;path d=&quot;M120 52v16M112 54v12M128 54v12&quot;/&gt;&lt;path d=&quot;M20 70H60M40 70v15M32 85h16M35 89h10&quot;/&gt;&lt;rect x=&quot;88&quot; y=&quot;22&quot; width=&quot;30&quot; height=&quot;18&quot; rx=&quot;2&quot;/&gt;&lt;/g&gt;&lt;g fill=&quot;#7cc4ff&quot;&gt;&lt;circle cx=&quot;80&quot; cy=&quot;30&quot; r=&quot;2&quot;/&gt;&lt;circle cx=&quot;80&quot; cy=&quot;60&quot; r=&quot;2&quot;/&gt;&lt;circle cx=&quot;40&quot; cy=&quot;70&quot; r=&quot;2&quot;/&gt;&lt;/g&gt;&lt;g fill=&quot;#7cc4ff&quot; opacity=&quot;.6&quot;&gt;&lt;rect x=&quot;10&quot; y=&quot;20&quot; width=&quot;22&quot; height=&quot;3&quot;/&gt;&lt;rect x=&quot;92&quot; y=&quot;28&quot; width=&quot;22&quot; height=&quot;3&quot;/&gt;&lt;rect x=&quot;100&quot; y=&quot;64&quot; width=&quot;26&quot; height=&quot;3&quot;/&gt;&lt;/g&gt;`;
+  }else{
+   s+=`&lt;defs&gt;&lt;linearGradient id=&quot;${u}&quot; x1=&quot;0&quot; y1=&quot;0&quot; x2=&quot;1&quot; y2=&quot;1&quot;&gt;&lt;stop offset=&quot;0&quot; stop-color=&quot;#2a3342&quot;/&gt;&lt;stop offset=&quot;1&quot; stop-color=&quot;#161b24&quot;/&gt;&lt;/linearGradient&gt;&lt;/defs&gt;&lt;rect width=&quot;160&quot; height=&quot;100&quot; fill=&quot;url(#${u})&quot;/&gt;&lt;rect x=&quot;16&quot; y=&quot;14&quot; width=&quot;132&quot; height=&quot;80&quot; rx=&quot;6&quot; fill=&quot;#00000055&quot;/&gt;&lt;rect x=&quot;14&quot; y=&quot;10&quot; width=&quot;132&quot; height=&quot;80&quot; rx=&quot;6&quot; fill=&quot;${mask}&quot;/&gt;&lt;rect x=&quot;14&quot; y=&quot;10&quot; width=&quot;132&quot; height=&quot;80&quot; rx=&quot;6&quot; fill=&quot;none&quot; stroke=&quot;#ffffff22&quot;/&gt;`;
+   s+=`&lt;g stroke=&quot;#ffffff30&quot; stroke-width=&quot;1.3&quot; fill=&quot;none&quot;&gt;`;for(let i=0;i&lt;10;i++){const y=18+i*7,x=56+R(i)*40;s+=`&lt;path d=&quot;M22 ${y}H${x}l7 ${i%2?5:-5}H${112+R(i+3)*24}&quot;/&gt;`}s+=`&lt;/g&gt;`;
+   s+=`&lt;g fill=&quot;#d9b44a&quot;&gt;`;for(let i=0;i&lt;10;i++)s+=`&lt;circle cx=&quot;${56+R(i)*40}&quot; cy=&quot;${18+i*7}&quot; r=&quot;1.4&quot;/&gt;`;for(let i=0;i&lt;14;i++)s+=`&lt;rect x=&quot;${26+i*8.4}&quot; y=&quot;82&quot; width=&quot;4.4&quot; height=&quot;4.4&quot;/&gt;`;s+=`&lt;/g&gt;`;
+   s+=`&lt;g fill=&quot;#0c0e12&quot; stroke=&quot;#d9b44a&quot; stroke-width=&quot;.5&quot;&gt;&lt;circle cx=&quot;21&quot; cy=&quot;17&quot; r=&quot;3&quot;/&gt;&lt;circle cx=&quot;139&quot; cy=&quot;17&quot; r=&quot;3&quot;/&gt;&lt;circle cx=&quot;21&quot; cy=&quot;83&quot; r=&quot;3&quot;/&gt;&lt;circle cx=&quot;139&quot; cy=&quot;83&quot; r=&quot;3&quot;/&gt;&lt;/g&gt;`;
+   if(id%3===1){s+=`&lt;rect x=&quot;22&quot; y=&quot;22&quot; width=&quot;44&quot; height=&quot;28&quot; rx=&quot;2&quot; fill=&quot;#c9ced6&quot;/&gt;&lt;rect x=&quot;25&quot; y=&quot;25&quot; width=&quot;38&quot; height=&quot;22&quot; rx=&quot;1&quot; fill=&quot;#8a919c&quot;/&gt;&lt;path d=&quot;M26 34h30M26 38h30&quot; stroke=&quot;#c9ced6&quot; stroke-width=&quot;1&quot;/&gt;&lt;path d=&quot;M26 18h10v-3h6v3h6v-3h6v3h6&quot; stroke=&quot;#d9b44a&quot; fill=&quot;none&quot; stroke-width=&quot;1&quot;/&gt;`}
+   s+=`&lt;rect x=&quot;78&quot; y=&quot;32&quot; width=&quot;36&quot; height=&quot;30&quot; rx=&quot;2&quot; fill=&quot;#15181d&quot;/&gt;&lt;g stroke=&quot;#cfd3d9&quot; stroke-width=&quot;1.4&quot;&gt;`;for(let i=0;i&lt;7;i++)s+=`&lt;path d=&quot;M${81+i*4.6} 29v3M${81+i*4.6} 62v3&quot;/&gt;`;for(let i=0;i&lt;6;i++)s+=`&lt;path d=&quot;M75 ${35+i*4.6}h3M114 ${35+i*4.6}h3&quot;/&gt;`;s+=`&lt;/g&gt;&lt;circle cx=&quot;83&quot; cy=&quot;37&quot; r=&quot;1.3&quot; fill=&quot;#ffffff80&quot;/&gt;`;
+   s+=`&lt;rect x=&quot;122&quot; y=&quot;30&quot; width=&quot;16&quot; height=&quot;20&quot; rx=&quot;1.5&quot; fill=&quot;#e8e8e8&quot;/&gt;&lt;rect x=&quot;124&quot; y=&quot;33&quot; width=&quot;12&quot; height=&quot;14&quot; fill=&quot;#5d6570&quot;/&gt;&lt;g fill=&quot;#ffffffb0&quot;&gt;&lt;rect x=&quot;26&quot; y=&quot;60&quot; width=&quot;26&quot; height=&quot;1.6&quot;/&gt;&lt;rect x=&quot;26&quot; y=&quot;64&quot; width=&quot;18&quot; height=&quot;1.6&quot;/&gt;&lt;rect x=&quot;94&quot; y=&quot;70&quot; width=&quot;30&quot; height=&quot;1.6&quot;/&gt;&lt;/g&gt;`;
+  }
+ }else if(k===&#x27;code&#x27;){
+  s+=`&lt;rect width=&quot;160&quot; height=&quot;100&quot; fill=&quot;#10161d&quot;/&gt;&lt;rect width=&quot;160&quot; height=&quot;9&quot; fill=&quot;#1b2430&quot;/&gt;&lt;g fill=&quot;#ff6b6b&quot;&gt;&lt;circle cx=&quot;7&quot; cy=&quot;4.5&quot; r=&quot;1.6&quot;/&gt;&lt;/g&gt;&lt;circle cx=&quot;13&quot; cy=&quot;4.5&quot; r=&quot;1.6&quot; fill=&quot;#f0b73a&quot;/&gt;&lt;circle cx=&quot;19&quot; cy=&quot;4.5&quot; r=&quot;1.6&quot; fill=&quot;#4cc796&quot;/&gt;&lt;rect x=&quot;0&quot; y=&quot;9&quot; width=&quot;14&quot; height=&quot;91&quot; fill=&quot;#141c26&quot;/&gt;`;
+  const C=[&#x27;#7cc4ff&#x27;,&#x27;#9ece6a&#x27;,&#x27;#e0af68&#x27;,&#x27;#bb9af7&#x27;,&#x27;#c0caf5&#x27;];
+  for(let i=0;i&lt;13;i++){const ind=[0,0,6,6,12,6,0,0,6,12,12,6,0][i];s+=`&lt;text x=&quot;4&quot; y=&quot;${18+i*6.4}&quot; font-size=&quot;3.4&quot; fill=&quot;#4a5a6c&quot; font-family=&quot;monospace&quot;&gt;${i+1}&lt;/text&gt;&lt;rect x=&quot;${20+ind}&quot; y=&quot;${15.6+i*6.4}&quot; width=&quot;${12+R(i)*58}&quot; height=&quot;2.6&quot; rx=&quot;1.3&quot; fill=&quot;${C[(i+id)%5]}&quot; opacity=&quot;.85&quot;/&gt;`;if(i%3===0)s+=`&lt;rect x=&quot;${34+ind+R(i)*58}&quot; y=&quot;${15.6+i*6.4}&quot; width=&quot;${8+R(i+5)*22}&quot; height=&quot;2.6&quot; rx=&quot;1.3&quot; fill=&quot;${C[(i+2)%5]}&quot; opacity=&quot;.6&quot;/&gt;`}
+ }else if(k===&#x27;lib&#x27;){
+  s+=`&lt;rect width=&quot;160&quot; height=&quot;100&quot; fill=&quot;#0e1e2b&quot;/&gt;`;for(let i=1;i&lt;16;i++)s+=`&lt;path d=&quot;M${i*10} 0V100M0 ${i*10}H160&quot; stroke=&quot;#1d3a52&quot; stroke-width=&quot;.4&quot;/&gt;`;
+  for(let r=0;r&lt;2;r++)for(let c=0;c&lt;4;c++){const x=12+c*37,y=10+r*44;s+=`&lt;rect x=&quot;${x}&quot; y=&quot;${y}&quot; width=&quot;30&quot; height=&quot;36&quot; rx=&quot;3&quot; fill=&quot;#122c40&quot; stroke=&quot;#2c5b80&quot;/&gt;`;
+   if((r+c)%2===0){s+=`&lt;rect x=&quot;${x+9}&quot; y=&quot;${y+9}&quot; width=&quot;12&quot; height=&quot;12&quot; fill=&quot;none&quot; stroke=&quot;#ff7f9d&quot; stroke-width=&quot;.8&quot;/&gt;&lt;g stroke=&quot;#e8c76a&quot; stroke-width=&quot;1.6&quot;&gt;`;for(let i=0;i&lt;4;i++)s+=`&lt;path d=&quot;M${x+10+i*3.3} ${y+6}v3M${x+10+i*3.3} ${y+21}v3M${x+6} ${y+10+i*3.3}h3M${x+21} ${y+10+i*3.3}h3&quot;/&gt;`;s+=`&lt;/g&gt;`}
+   else{s+=`&lt;g stroke=&quot;#7cc4ff&quot; stroke-width=&quot;1&quot; fill=&quot;none&quot;&gt;&lt;path d=&quot;M${x+4} ${y+14}h6l2-5 3 10 3-10 3 10 2-5h5&quot;/&gt;&lt;circle cx=&quot;${x+15}&quot; cy=&quot;${y+27}&quot; r=&quot;3&quot;/&gt;&lt;/g&gt;`}
+   s+=`&lt;rect x=&quot;${x+4}&quot; y=&quot;${y+31}&quot; width=&quot;${12+R(r*4+c)*10}&quot; height=&quot;1.8&quot; fill=&quot;#6f8aa0&quot;/&gt;`}
+ }else if(k===&#x27;cube&#x27;){
+  s+=`&lt;defs&gt;&lt;linearGradient id=&quot;${u}&quot; x1=&quot;0&quot; y1=&quot;0&quot; x2=&quot;0&quot; y2=&quot;1&quot;&gt;&lt;stop offset=&quot;0&quot; stop-color=&quot;#3b2f22&quot;/&gt;&lt;stop offset=&quot;1&quot; stop-color=&quot;#1a140e&quot;/&gt;&lt;/linearGradient&gt;&lt;/defs&gt;&lt;rect width=&quot;160&quot; height=&quot;100&quot; fill=&quot;url(#${u})&quot;/&gt;&lt;ellipse cx=&quot;80&quot; cy=&quot;84&quot; rx=&quot;52&quot; ry=&quot;8&quot; fill=&quot;#00000066&quot;/&gt;`;
+  s+=`&lt;path d=&quot;M80 14l46 24-46 24-46-24z&quot; fill=&quot;#f4bb4a&quot;/&gt;&lt;path d=&quot;M34 38l46 24v26L34 64z&quot; fill=&quot;#c4841a&quot;/&gt;&lt;path d=&quot;M126 38L80 62v26l46-24z&quot; fill=&quot;#8f5d10&quot;/&gt;&lt;path d=&quot;M80 14l46 24-46 24-46-24z&quot; fill=&quot;none&quot; stroke=&quot;#ffffff55&quot;/&gt;`;
+  s+=`&lt;path d=&quot;M52 33l28-14 28 14-28 14z&quot; fill=&quot;#00000030&quot;/&gt;&lt;g fill=&quot;#00000066&quot;&gt;&lt;circle cx=&quot;40&quot; cy=&quot;42&quot; r=&quot;1.6&quot;/&gt;&lt;circle cx=&quot;120&quot; cy=&quot;42&quot; r=&quot;1.6&quot;/&gt;&lt;/g&gt;&lt;g stroke=&quot;#00000055&quot; stroke-width=&quot;2.4&quot; stroke-linecap=&quot;round&quot;&gt;&lt;path d=&quot;M44 54l22 12M44 61l22 12M44 68l22 12&quot;/&gt;&lt;/g&gt;&lt;rect x=&quot;92&quot; y=&quot;68&quot; width=&quot;22&quot; height=&quot;9&quot; rx=&quot;1.5&quot; fill=&quot;#00000050&quot; transform=&quot;skewY(-28) translate(0 49)&quot;/&gt;`;
+ }else if(k===&#x27;course&#x27;){
+  s+=`&lt;defs&gt;&lt;linearGradient id=&quot;${u}&quot; x1=&quot;0&quot; y1=&quot;0&quot; x2=&quot;1&quot; y2=&quot;1&quot;&gt;&lt;stop offset=&quot;0&quot; stop-color=&quot;#1b3b57&quot;/&gt;&lt;stop offset=&quot;1&quot; stop-color=&quot;#0d1b2a&quot;/&gt;&lt;/linearGradient&gt;&lt;/defs&gt;&lt;rect width=&quot;160&quot; height=&quot;100&quot; fill=&quot;url(#${u})&quot;/&gt;&lt;g stroke=&quot;#4d9bd6&quot; stroke-opacity=&quot;.3&quot; fill=&quot;none&quot; stroke-width=&quot;1.4&quot;&gt;&lt;path d=&quot;M0 30H50l8 8H110&quot;/&gt;&lt;path d=&quot;M30 70H90l10-10H160&quot;/&gt;&lt;path d=&quot;M120 0v40&quot;/&gt;&lt;/g&gt;&lt;rect x=&quot;20&quot; y=&quot;16&quot; width=&quot;86&quot; height=&quot;8&quot; rx=&quot;2&quot; fill=&quot;#ffffff22&quot;/&gt;&lt;rect x=&quot;20&quot; y=&quot;28&quot; width=&quot;56&quot; height=&quot;5&quot; rx=&quot;2&quot; fill=&quot;#ffffff14&quot;/&gt;`;
+  s+=`&lt;circle cx=&quot;80&quot; cy=&quot;52&quot; r=&quot;17&quot; fill=&quot;#ffffffe6&quot;/&gt;&lt;path d=&quot;M75 43l16 9-16 9z&quot; fill=&quot;#0d1b2a&quot;/&gt;&lt;rect x=&quot;12&quot; y=&quot;86&quot; width=&quot;136&quot; height=&quot;3.6&quot; rx=&quot;1.8&quot; fill=&quot;#ffffff30&quot;/&gt;&lt;rect x=&quot;12&quot; y=&quot;86&quot; width=&quot;${30+R(1)*40}&quot; height=&quot;3.6&quot; rx=&quot;1.8&quot; fill=&quot;#e8a317&quot;/&gt;&lt;rect x=&quot;116&quot; y=&quot;78&quot; width=&quot;30&quot; height=&quot;6&quot; rx=&quot;2&quot; fill=&quot;#000000aa&quot;/&gt;`;
+ }else{
+  s+=`&lt;rect width=&quot;160&quot; height=&quot;100&quot; fill=&quot;#26303c&quot;/&gt;`;
+  [[-6,34,16],[3,44,10],[0,0,0]].forEach(([rot,x,y],i)=&gt;{const o=i===2?0:1;s+=`&lt;g transform=&quot;rotate(${[-8,5,-1][i]} 80 50)&quot;&gt;&lt;rect x=&quot;${[34,50,42][i]}&quot; y=&quot;${[10,8,6][i]}&quot; width=&quot;62&quot; height=&quot;82&quot; rx=&quot;3&quot; fill=&quot;${[&#x27;#cfd6df&#x27;,&#x27;#e1e6ec&#x27;,&#x27;#fff&#x27;][i]}&quot;/&gt;`;if(i===2){s+=`&lt;rect x=&quot;50&quot; y=&quot;16&quot; width=&quot;30&quot; height=&quot;5&quot; fill=&quot;#26303c&quot;/&gt;&lt;rect x=&quot;50&quot; y=&quot;24&quot; width=&quot;44&quot; height=&quot;2&quot; fill=&quot;#9aa5b2&quot;/&gt;&lt;rect x=&quot;50&quot; y=&quot;30&quot; width=&quot;46&quot; height=&quot;26&quot; fill=&quot;none&quot; stroke=&quot;#9aa5b2&quot; stroke-width=&quot;.8&quot;/&gt;&lt;path d=&quot;M50 38h46M50 46h46M66 30v26M80 30v26&quot; stroke=&quot;#c8d0d9&quot; stroke-width=&quot;.7&quot;/&gt;&lt;rect x=&quot;58&quot; y=&quot;62&quot; width=&quot;30&quot; height=&quot;16&quot; rx=&quot;2&quot; fill=&quot;none&quot; stroke=&quot;#1457d9&quot; stroke-width=&quot;1&quot;/&gt;&lt;path d=&quot;M50 66h8M50 72h8M88 66h8M88 72h8&quot; stroke=&quot;#1457d9&quot; stroke-width=&quot;1&quot;/&gt;&lt;rect x=&quot;50&quot; y=&quot;82&quot; width=&quot;30&quot; height=&quot;2&quot; fill=&quot;#9aa5b2&quot;/&gt;`}s+=`&lt;/g&gt;`});
+ }
+ return s+&#x27;&lt;/svg&gt;&#x27;}
+const $=s=&gt;document.querySelector(s),app=$(&#x27;#app&#x27;);
+const price=p=&gt;`&lt;span class=&quot;num&quot;&gt;${p.toLocaleString(&#x27;en&#x27;)}&lt;/span&gt; ج.م`;
+const stars=r=&gt;`&lt;span class=&quot;stars&quot; aria-label=&quot;${r} من 5&quot;&gt;${&#x27;★&#x27;.repeat(Math.round(r))}${&#x27;☆&#x27;.repeat(5-Math.round(r))}&lt;/span&gt;`;
+const norm=s=&gt;s.toLowerCase().replace(/[\u064b-\u0652]/g,&#x27;&#x27;).replace(/[أإآ]/g,&#x27;ا&#x27;).replace(/ى/g,&#x27;ي&#x27;).replace(/ة/g,&#x27;ه&#x27;);
+function card(p){const f=FAV.has(p.id);return `&lt;div class=&quot;card&quot;&gt;&lt;button class=&quot;fav&quot; data-id=&quot;${p.id}&quot; aria-pressed=&quot;${f}&quot; aria-label=&quot;المفضلة&quot; onclick=&quot;fav(${p.id})&quot;&gt;${f?&#x27;♥&#x27;:&#x27;♡&#x27;}&lt;/button&gt;&lt;a class=&quot;cl&quot; href=&quot;#p${p.id}&quot;&gt;&lt;div class=&quot;th&quot;&gt;${thumb(p.k,p.id)}&lt;div class=&quot;wm&quot;&gt;معاينة&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;bd&quot;&gt;&lt;span class=&quot;tag&quot;&gt;${CATS[p.c]}&lt;/span&gt;&lt;h3&gt;${p.t}&lt;/h3&gt;&lt;div class=&quot;meta&quot;&gt;&lt;span&gt;${p.s}${SELL[p.s].v?&#x27; &lt;span class=&quot;vf&quot; title=&quot;بائع موثّق&quot;&gt;✓&lt;/span&gt;&#x27;:&#x27;&#x27;}&lt;/span&gt;&lt;span&gt;${stars(p.r)} &lt;span class=&quot;num&quot;&gt;${p.r}&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;price&quot;&gt;&lt;span&gt;${price(p.p)}&lt;/span&gt;&lt;small&gt;${p.f.length} ملفات&lt;/small&gt;&lt;/div&gt;&lt;/div&gt;&lt;/a&gt;&lt;/div&gt;`}
+function home(){
+ app.innerHTML=`&lt;section class=&quot;hero&quot;&gt;&lt;svg class=&quot;traces&quot; viewBox=&quot;0 0 800 300&quot; preserveAspectRatio=&quot;xMidYMid slice&quot;&gt;&lt;g stroke=&quot;#4fb89c&quot; stroke-width=&quot;2&quot; fill=&quot;none&quot;&gt;&lt;path d=&quot;M0 60H220l30 30H520&quot;/&gt;&lt;path d=&quot;M0 150H140l40-40H380l30 30H800&quot;/&gt;&lt;path d=&quot;M300 300V230l30-30H700&quot;/&gt;&lt;path d=&quot;M560 0V80l30 30H800&quot;/&gt;&lt;/g&gt;&lt;g fill=&quot;#4fb89c&quot;&gt;&lt;circle cx=&quot;220&quot; cy=&quot;60&quot; r=&quot;5&quot;/&gt;&lt;circle cx=&quot;380&quot; cy=&quot;110&quot; r=&quot;5&quot;/&gt;&lt;circle cx=&quot;700&quot; cy=&quot;200&quot; r=&quot;5&quot;/&gt;&lt;circle cx=&quot;560&quot; cy=&quot;80&quot; r=&quot;5&quot;/&gt;&lt;/g&gt;&lt;/svg&gt;
+ &lt;div class=&quot;wrap&quot;&gt;&lt;h1&gt;ملفات تصميم وبرمجيات إلكترونية جاهزة للتنزيل&lt;/h1&gt;&lt;p&gt;ابحث بالعربية أو بالإنجليزية. اطلب المنتج، وستصلك رسالة بالكود بعد موافقة الإدارة.&lt;/p&gt;
+ &lt;div class=&quot;finder&quot;&gt;&lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;#0f1b26&quot; stroke-width=&quot;2&quot;&gt;&lt;circle cx=&quot;11&quot; cy=&quot;11&quot; r=&quot;7&quot;/&gt;&lt;path d=&quot;m20 20-4-4&quot;/&gt;&lt;/svg&gt;&lt;input id=&quot;q&quot; type=&quot;search&quot; placeholder=&quot;مثال: ESP32 أو مضخم أو مكتبة&quot; autocomplete=&quot;off&quot; aria-label=&quot;بحث في المنتجات&quot;&gt;&lt;div class=&quot;sugg&quot; id=&quot;sg&quot; hidden&gt;&lt;/div&gt;&lt;/div&gt;
+ &lt;div class=&quot;redeem&quot;&gt;لديك كود شراء؟ &lt;input id=&quot;code&quot; placeholder=&quot;XXXX-XXXX&quot; maxlength=&quot;12&quot; aria-label=&quot;كود الشراء&quot;&gt;&lt;button onclick=&quot;redeem()&quot;&gt;فعّل&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;&lt;/section&gt;
+ &lt;main class=&quot;wrap&quot;&gt;&lt;div class=&quot;head&quot; id=&quot;prod&quot;&gt;&lt;div&gt;&lt;h2&gt;أحدث المنتجات&lt;/h2&gt;&lt;p class=&quot;sub&quot; style=&quot;margin:0&quot;&gt;أحدث الملفات المنشورة&lt;/p&gt;&lt;/div&gt;&lt;button class=&quot;btn ghost&quot; onclick=&quot;goBrowse({})&quot;&gt;عرض كل المنتجات (${P.length})&lt;/button&gt;&lt;/div&gt;&lt;div class=&quot;grid&quot; id=&quot;gr&quot;&gt;${[...P].sort((a,b)=&gt;b.id-a.id).slice(0,8).map(card).join(&#x27;&#x27;)}&lt;/div&gt;
+ &lt;div class=&quot;head&quot; data-id=&quot;cats&quot;&gt;&lt;div&gt;&lt;h2&gt;التصنيفات&lt;/h2&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;cats&quot; data-id=&quot;cats&quot;&gt;${CATS.map((c,i)=&gt;`&lt;button class=&quot;cat&quot; onclick=&quot;goBrowse({cat:[${i}]})&quot;&gt;${c}&lt;span class=&quot;num&quot;&gt;${P.filter(p=&gt;p.c===i).length}&lt;/span&gt;&lt;/button&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;
+ &lt;div class=&quot;head&quot; id=&quot;how&quot;&gt;&lt;div&gt;&lt;h2&gt;كيف أشتري؟&lt;/h2&gt;&lt;p class=&quot;sub&quot; style=&quot;margin:0&quot;&gt;الدفع خارج المنصة، والتنزيل بمحاولات محدودة&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;
+ &lt;div class=&quot;how&quot;&gt;&lt;div&gt;&lt;b&gt;أرسل طلب شراء&lt;/b&gt;&lt;span&gt;اختر المنتج واترك بيانات التواصل.&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;تتم مراجعة الطلب&lt;/b&gt;&lt;span&gt;الإدارة تتواصل معك وتؤكد الدفع.&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;يصلك كود تفعيل&lt;/b&gt;&lt;span&gt;الكود صالح لمدة محددة ولمنتج واحد.&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;نزّل ملفاتك&lt;/b&gt;&lt;span&gt;لديك 3 محاولات تنزيل؛ الفاشلة تُعوَّض.&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/main&gt;`;
+
+ const q=$(&#x27;#q&#x27;),sg=$(&#x27;#sg&#x27;);
+ q.addEventListener(&#x27;input&#x27;,()=&gt;{const v=norm(q.value.trim());if(!v){sg.hidden=true;return}
+  const r=P.filter(p=&gt;norm(p.t+&#x27; &#x27;+CATS[p.c]+&#x27; &#x27;+p.d).includes(v)).slice(0,5);
+  sg.hidden=false;sg.innerHTML=r.length?r.map(p=&gt;`&lt;a href=&quot;#p${p.id}&quot;&gt;&lt;span class=&quot;t&quot;&gt;${thumb(p.k,p.id)}&lt;/span&gt;&lt;span&gt;&lt;b&gt;${p.t}&lt;/b&gt;&lt;small&gt;${CATS[p.c]} — ${price(p.p)}&lt;/small&gt;&lt;/span&gt;&lt;/a&gt;`).join(&#x27;&#x27;)+`&lt;button class=&quot;all&quot; onclick=&quot;goBrowse({q:$(&#x27;#q&#x27;).value.trim()})&quot;&gt;عرض كل النتائج&lt;/button&gt;`:`&lt;div class=&quot;none&quot;&gt;لا توجد نتائج لـ «${q.value}». جرّب كلمة أقصر أو اسم تصنيف.&lt;/div&gt;`});
+ q.addEventListener(&#x27;keydown&#x27;,e=&gt;{if(e.key===&#x27;Escape&#x27;)sg.hidden=true;if(e.key===&#x27;Enter&#x27;&amp;&amp;q.value.trim())goBrowse({q:q.value.trim()})});
+ document.addEventListener(&#x27;click&#x27;,e=&gt;{if(!e.target.closest(&#x27;.finder&#x27;))sg.hidden=true},{once:false});
+}
+const FAV=new Set([3]);
+const B={q:&#x27;&#x27;,cat:[],min:&#x27;&#x27;,max:&#x27;&#x27;,rate:0,ver:false,fav:false,sort:&#x27;new&#x27;,page:1},PS=9;
+const B0=()=&gt;({q:&#x27;&#x27;,cat:[],min:&#x27;&#x27;,max:&#x27;&#x27;,rate:0,ver:false,fav:false,sort:&#x27;new&#x27;,page:1});
+const SORTS={new:[&#x27;الأحدث&#x27;,(a,b)=&gt;b.id-a.id],cheap:[&#x27;الأقل سعرًا&#x27;,(a,b)=&gt;a.p-b.p],exp:[&#x27;الأعلى سعرًا&#x27;,(a,b)=&gt;b.p-a.p],rate:[&#x27;الأعلى تقييمًا&#x27;,(a,b)=&gt;b.r-a.r||b.n-a.n],pop:[&#x27;الأكثر مراجعة&#x27;,(a,b)=&gt;b.n-a.n]};
+function goBrowse(o){Object.assign(B,B0(),o);location.hash===&#x27;#browse&#x27;?browse():location.hash=&#x27;#browse&#x27;}
+function filtered(){const q=norm(B.q.trim());return P.filter(p=&gt;(!q||norm(p.t+&#x27; &#x27;+CATS[p.c]+&#x27; &#x27;+p.d+&#x27; &#x27;+p.s).includes(q))&amp;&amp;(!B.cat.length||B.cat.includes(p.c))&amp;&amp;(B.min===&#x27;&#x27;||p.p&gt;=+B.min)&amp;&amp;(B.max===&#x27;&#x27;||p.p&lt;=+B.max)&amp;&amp;p.r&gt;=B.rate&amp;&amp;(!B.ver||SELL[p.s].v)&amp;&amp;(!B.fav||FAV.has(p.id)))}
+function browse(){
+ app.innerHTML=`&lt;main class=&quot;wrap&quot;&gt;&lt;div class=&quot;crumb&quot;&gt;&lt;a href=&quot;#home&quot;&gt;المتجر&lt;/a&gt; / كل المنتجات&lt;/div&gt;&lt;div class=&quot;bw&quot;&gt;&lt;aside class=&quot;fl&quot;&gt;&lt;details id=&quot;fd&quot; open&gt;&lt;summary&gt;تصفية النتائج&lt;/summary&gt;&lt;div class=&quot;fbox&quot;&gt;
+ &lt;b&gt;التصنيف&lt;/b&gt;${CATS.map((c,i)=&gt;`&lt;label class=&quot;ck&quot;&gt;&lt;input type=&quot;checkbox&quot; data-c=&quot;${i}&quot; onchange=&quot;tCat(${i},this.checked)&quot;&gt; ${c} &lt;span class=&quot;num mute&quot;&gt;${P.filter(p=&gt;p.c===i).length}&lt;/span&gt;&lt;/label&gt;`).join(&#x27;&#x27;)}
+ &lt;b&gt;السعر (ج.م)&lt;/b&gt;&lt;div class=&quot;pr&quot;&gt;&lt;input class=&quot;in&quot; id=&quot;pmin&quot; type=&quot;number&quot; min=&quot;0&quot; placeholder=&quot;من&quot; aria-label=&quot;السعر من&quot; dir=&quot;ltr&quot; onchange=&quot;B.min=this.value;B.page=1;draw()&quot;&gt;&lt;input class=&quot;in&quot; id=&quot;pmax&quot; type=&quot;number&quot; min=&quot;0&quot; placeholder=&quot;إلى&quot; aria-label=&quot;السعر إلى&quot; dir=&quot;ltr&quot; onchange=&quot;B.max=this.value;B.page=1;draw()&quot;&gt;&lt;/div&gt;
+ &lt;div class=&quot;qp&quot;&gt;&lt;button class=&quot;chip&quot; onclick=&quot;rng(&#x27;&#x27;,200)&quot;&gt;حتى 200&lt;/button&gt;&lt;button class=&quot;chip&quot; onclick=&quot;rng(200,500)&quot;&gt;200 – 500&lt;/button&gt;&lt;button class=&quot;chip&quot; onclick=&quot;rng(500,&#x27;&#x27;)&quot;&gt;أكثر من 500&lt;/button&gt;&lt;/div&gt;
+ &lt;b&gt;التقييم&lt;/b&gt;${[[0,&#x27;الكل&#x27;],[4,&#x27;4 فأكثر&#x27;],[4.5,&#x27;4.5 فأكثر&#x27;]].map(([v,l])=&gt;`&lt;label class=&quot;ck&quot;&gt;&lt;input type=&quot;radio&quot; name=&quot;rt&quot; value=&quot;${v}&quot; onchange=&quot;B.rate=${v};B.page=1;draw()&quot;&gt; ${l}&lt;/label&gt;`).join(&#x27;&#x27;)}
+ &lt;b&gt;البائع&lt;/b&gt;&lt;label class=&quot;ck&quot;&gt;&lt;input type=&quot;checkbox&quot; id=&quot;fver&quot; onchange=&quot;B.ver=this.checked;B.page=1;draw()&quot;&gt; بائعون موثّقون فقط&lt;/label&gt;&lt;label class=&quot;ck&quot;&gt;&lt;input type=&quot;checkbox&quot; id=&quot;ffav&quot; onchange=&quot;B.fav=this.checked;B.page=1;draw()&quot;&gt; مفضلتي فقط&lt;/label&gt;
+ &lt;button class=&quot;btn ghost&quot; style=&quot;width:100%;margin-top:12px&quot; onclick=&quot;clr()&quot;&gt;مسح كل الفلاتر&lt;/button&gt;&lt;/div&gt;&lt;/details&gt;&lt;/aside&gt;
+ &lt;section&gt;&lt;div class=&quot;rb&quot;&gt;&lt;span id=&quot;rc&quot; class=&quot;mute&quot; aria-live=&quot;polite&quot;&gt;&lt;/span&gt;&lt;label class=&quot;mute&quot;&gt;ترتيب: &lt;select class=&quot;in&quot; id=&quot;srt&quot; style=&quot;width:auto;display:inline-block&quot; onchange=&quot;B.sort=this.value;B.page=1;draw()&quot;&gt;${Object.entries(SORTS).map(([k,v])=&gt;`&lt;option value=&quot;${k}&quot;&gt;${v[0]}&lt;/option&gt;`).join(&#x27;&#x27;)}&lt;/select&gt;&lt;/label&gt;&lt;/div&gt;
+ &lt;div class=&quot;chips&quot; id=&quot;act&quot; style=&quot;margin-bottom:12px&quot;&gt;&lt;/div&gt;&lt;div class=&quot;grid&quot; id=&quot;res&quot;&gt;&lt;/div&gt;&lt;nav class=&quot;pgn&quot; id=&quot;pgn&quot; aria-label=&quot;الصفحات&quot;&gt;&lt;/nav&gt;&lt;/section&gt;&lt;/div&gt;&lt;/main&gt;`;
+ if(innerWidth&lt;=820)$(&#x27;#fd&#x27;).open=false;sync();draw()}
+function sync(){document.querySelectorAll(&#x27;[data-c]&#x27;).forEach(c=&gt;c.checked=B.cat.includes(+c.dataset.c));$(&#x27;#pmin&#x27;).value=B.min;$(&#x27;#pmax&#x27;).value=B.max;document.querySelectorAll(&#x27;[name=rt]&#x27;).forEach(r=&gt;r.checked=+r.value===B.rate);$(&#x27;#fver&#x27;).checked=B.ver;$(&#x27;#ffav&#x27;).checked=B.fav;$(&#x27;#srt&#x27;).value=B.sort}
+function draw(){const l=filtered().sort(SORTS[B.sort][1]),pages=Math.max(1,Math.ceil(l.length/PS));if(B.page&gt;pages)B.page=pages;const from=(B.page-1)*PS,pg=l.slice(from,from+PS);
+ $(&#x27;#rc&#x27;).textContent=l.length?`عرض ${from+1}–${from+pg.length} من ${l.length} منتجًا`:&#x27;لا توجد نتائج&#x27;;
+ const ch=[];if(B.q)ch.push([&#x27;q&#x27;,&#x27;بحث: &#x27;+B.q]);B.cat.forEach(c=&gt;ch.push([&#x27;c&#x27;+c,CATS[c]]));if(B.min!==&#x27;&#x27;||B.max!==&#x27;&#x27;)ch.push([&#x27;pr&#x27;,`السعر: ${B.min===&#x27;&#x27;?0:B.min} – ${B.max===&#x27;&#x27;?&#x27;∞&#x27;:B.max} ج.م`]);if(B.rate)ch.push([&#x27;rt&#x27;,&#x27;تقييم &#x27;+B.rate+&#x27;+&#x27;]);if(B.ver)ch.push([&#x27;ver&#x27;,&#x27;موثّقون فقط&#x27;]);if(B.fav)ch.push([&#x27;fav&#x27;,&#x27;مفضلتي&#x27;]);
+ $(&#x27;#act&#x27;).innerHTML=ch.map(([k,t])=&gt;`&lt;button class=&quot;chip x&quot; onclick=&quot;rm(&#x27;${k}&#x27;)&quot;&gt;${t} ✕&lt;/button&gt;`).join(&#x27;&#x27;);
+ $(&#x27;#res&#x27;).innerHTML=pg.length?pg.map(card).join(&#x27;&#x27;):`&lt;div class=&quot;empty&quot;&gt;&lt;b&gt;لا توجد منتجات تطابق هذه الفلاتر.&lt;/b&gt;&lt;p style=&quot;margin:6px 0 12px&quot;&gt;جرّب توسيع نطاق السعر أو إزالة بعض الفلاتر.&lt;/p&gt;&lt;button class=&quot;btn&quot; onclick=&quot;clr()&quot;&gt;مسح كل الفلاتر&lt;/button&gt;&lt;/div&gt;`;
+ $(&#x27;#pgn&#x27;).innerHTML=pages&gt;1?`&lt;button class=&quot;chip&quot; ${B.page===1?&#x27;disabled&#x27;:&#x27;&#x27;} onclick=&quot;go(${B.page-1})&quot;&gt;السابق&lt;/button&gt;${Array.from({length:pages},(_,i)=&gt;`&lt;button class=&quot;chip&quot; aria-pressed=&quot;${i+1===B.page}&quot; onclick=&quot;go(${i+1})&quot;&gt;${i+1}&lt;/button&gt;`).join(&#x27;&#x27;)}&lt;button class=&quot;chip&quot; ${B.page===pages?&#x27;disabled&#x27;:&#x27;&#x27;} onclick=&quot;go(${B.page+1})&quot;&gt;التالي&lt;/button&gt;`:&#x27;&#x27;}
+function tCat(i,on){B.cat=on?[...B.cat,i]:B.cat.filter(x=&gt;x!==i);B.page=1;draw()}
+function rng(a,b){B.min=a;B.max=b;B.page=1;sync();draw()}
+function clr(){Object.assign(B,B0(),{sort:B.sort});sync();draw()}
+function rm(k){if(k===&#x27;q&#x27;)B.q=&#x27;&#x27;;else if(k[0]===&#x27;c&#x27;)B.cat=B.cat.filter(x=&gt;x!==+k.slice(1));else if(k===&#x27;pr&#x27;)B.min=B.max=&#x27;&#x27;;else if(k===&#x27;rt&#x27;)B.rate=0;else if(k===&#x27;ver&#x27;)B.ver=false;else if(k===&#x27;fav&#x27;)B.fav=false;B.page=1;sync();draw()}
+function go(n){B.page=n;draw();$(&#x27;#res&#x27;).scrollIntoView({behavior:&#x27;smooth&#x27;,block:&#x27;start&#x27;})}
+function fav(id){FAV.has(id)?FAV.delete(id):FAV.add(id);document.querySelectorAll(`.fav[data-id=&quot;${id}&quot;]`).forEach(b=&gt;{b.setAttribute(&#x27;aria-pressed&#x27;,FAV.has(id));b.textContent=FAV.has(id)?&#x27;♥&#x27;:&#x27;♡&#x27;});$(&#x27;#fc&#x27;).textContent=FAV.size;toast(FAV.has(id)?&#x27;أُضيف إلى المفضلة&#x27;:&#x27;أُزيل من المفضلة&#x27;);if(location.hash===&#x27;#browse&#x27;&amp;&amp;B.fav)draw()}
+function redeem(){const v=$(&#x27;#code&#x27;).value.trim();toast(v.length&lt;8?&#x27;الكود يتكوّن من 8 خانات على الأقل&#x27;:&#x27;تم التحقق من الكود — سيُنقل المشتري إلى صفحة التنزيل&#x27;)}
+const REV=[[&#x27;منى ع.&#x27;,5,&#x27;ملفات Gerber مرتبة وطلبتها من المصنع بدون أي تعديل.&#x27;],[&#x27;أحمد ط.&#x27;,4,&#x27;التوثيق ممتاز، وكنت أتمنى لو كان هناك نسخة بحجم أصغر للوحة.&#x27;],[&#x27;يوسف ح.&#x27;,5,&#x27;التنزيل سريع وكود التفعيل وصلني خلال ساعة.&#x27;]];
+function product(id){const p=P.find(x=&gt;x.id===id);if(!p){home();return}
+ app.innerHTML=`&lt;main class=&quot;wrap&quot;&gt;&lt;div class=&quot;crumb&quot;&gt;&lt;a href=&quot;#home&quot;&gt;المتجر&lt;/a&gt; / ${CATS[p.c]} / ${p.t}&lt;/div&gt;&lt;div class=&quot;pg&quot;&gt;&lt;div&gt;
+ &lt;div class=&quot;pv&quot;&gt;&lt;div id=&quot;pvimg&quot;&gt;${thumb(p.k,p.id,0)}&lt;/div&gt;&lt;div class=&quot;wm&quot;&gt;معاينة&lt;/div&gt;&lt;span class=&quot;note&quot;&gt;المعاينة بعلامة مائية؛ الملفات الأصلية بعد التفعيل&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;gal&quot;&gt;${[0,1,2].map(v=&gt;`&lt;button aria-label=&quot;صورة ${v+1}&quot; aria-pressed=&quot;${v===0}&quot; onclick=&quot;gal(${p.id},${v})&quot;&gt;${thumb(p.k,p.id,v)}&lt;/button&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;
+ &lt;h1&gt;${p.t}&lt;/h1&gt;&lt;div class=&quot;by&quot;&gt;&lt;span&gt;البائع: &lt;a class=&quot;lnk&quot; href=&quot;#s${SELL[p.s].id}&quot;&gt;${p.s}&lt;/a&gt;${SELL[p.s].v?&#x27; &lt;span class=&quot;vf&quot; title=&quot;بائع موثّق&quot;&gt;✓&lt;/span&gt;&#x27;:&#x27;&#x27;}&lt;/span&gt;&lt;span&gt;${stars(p.r)} &lt;span class=&quot;num&quot;&gt;${p.r}&lt;/span&gt; (${p.n} تقييمًا)&lt;/span&gt;&lt;span class=&quot;tag&quot;&gt;${CATS[p.c]}&lt;/span&gt;&lt;/div&gt;
+ &lt;p class=&quot;d&quot;&gt;${p.d}&lt;/p&gt;
+ &lt;h2 style=&quot;margin-top:26px&quot;&gt;محتويات الحزمة&lt;/h2&gt;&lt;div class=&quot;box&quot; style=&quot;padding:6px 16px&quot;&gt;&lt;table class=&quot;files&quot;&gt;${p.f.map(f=&gt;`&lt;tr&gt;&lt;td&gt;&lt;span class=&quot;ext&quot;&gt;${f[0]}&lt;/span&gt;${f[1]}&lt;/td&gt;&lt;td&gt;&lt;span class=&quot;num&quot;&gt;${f[2]}&lt;/span&gt;&lt;/td&gt;&lt;/tr&gt;`).join(&#x27;&#x27;)}&lt;/table&gt;&lt;/div&gt;
+ &lt;h2 style=&quot;margin-top:26px&quot;&gt;تقييمات المشترين&lt;/h2&gt;&lt;div class=&quot;box&quot; style=&quot;padding:4px 16px&quot;&gt;${REV.map(r=&gt;`&lt;div class=&quot;rev&quot;&gt;&lt;b&gt;${r[0]}&lt;/b&gt; ${stars(r[1])}&lt;p&gt;${r[2]}&lt;/p&gt;&lt;/div&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;
+ &lt;p style=&quot;margin-top:14px&quot;&gt;&lt;button class=&quot;btn ghost&quot; onclick=&quot;toast(&#x27;تم إرسال البلاغ إلى الإدارة&#x27;)&quot;&gt;أبلغ عن مشكلة في هذا المنتج&lt;/button&gt;&lt;/p&gt;&lt;/div&gt;
+ &lt;aside class=&quot;side&quot;&gt;&lt;div class=&quot;box&quot; id=&quot;buy&quot;&gt;&lt;div class=&quot;big-price&quot;&gt;${price(p.p)}&lt;/div&gt;&lt;div class=&quot;pay&quot;&gt;الدفع يتم خارج المنصة بعد موافقة الإدارة&lt;/div&gt;
+ &lt;form id=&quot;f&quot; novalidate&gt;&lt;label for=&quot;fn&quot;&gt;الاسم الكامل&lt;/label&gt;&lt;input class=&quot;in&quot; id=&quot;fn&quot; autocomplete=&quot;name&quot;&gt;
+ &lt;label for=&quot;fp&quot;&gt;رقم الهاتف&lt;/label&gt;&lt;input class=&quot;in&quot; id=&quot;fp&quot; dir=&quot;ltr&quot; inputmode=&quot;tel&quot; placeholder=&quot;01xxxxxxxxx&quot;&gt;
+ &lt;label for=&quot;fe&quot;&gt;البريد الإلكتروني&lt;/label&gt;&lt;input class=&quot;in&quot; id=&quot;fe&quot; dir=&quot;ltr&quot; type=&quot;email&quot;&gt;
+ &lt;label for=&quot;fo&quot;&gt;ملاحظات (اختياري)&lt;/label&gt;&lt;textarea class=&quot;in&quot; id=&quot;fo&quot; rows=&quot;2&quot;&gt;&lt;/textarea&gt;
+ &lt;div class=&quot;err&quot; id=&quot;er&quot; role=&quot;alert&quot;&gt;&lt;/div&gt;&lt;button class=&quot;btn big&quot; type=&quot;submit&quot;&gt;أرسل طلب الشراء&lt;/button&gt;&lt;/form&gt;&lt;/div&gt;
+ &lt;div class=&quot;box&quot; style=&quot;font-size:14px&quot;&gt;&lt;b&gt;ماذا يحدث بعد الإرسال؟&lt;/b&gt;&lt;p style=&quot;margin:6px 0 0;color:var(--mute)&quot;&gt;ستحصل على رقم مرجعي لمتابعة الطلب. بعد تأكيد الدفع يصلك كود تفعيل لتنزيل الملفات، ولديك 3 محاولات تنزيل.&lt;/p&gt;&lt;/div&gt;${sellerBox(p)}${trust()}&lt;/aside&gt;&lt;/div&gt;&lt;/main&gt;`;
+ $(&#x27;#f&#x27;).onsubmit=e=&gt;{e.preventDefault();const n=$(&#x27;#fn&#x27;),ph=$(&#x27;#fp&#x27;),em=$(&#x27;#fe&#x27;),er=$(&#x27;#er&#x27;);
+  [n,ph,em].forEach(i=&gt;i.classList.remove(&#x27;bad&#x27;));
+  if(!n.value.trim()){n.classList.add(&#x27;bad&#x27;);er.textContent=&#x27;اكتب اسمك الكامل.&#x27;;n.focus();return}
+  if(!/^01\d{9}$/.test(ph.value.trim())){ph.classList.add(&#x27;bad&#x27;);er.textContent=&#x27;رقم الهاتف يجب أن يبدأ بـ 01 ويتكوّن من 11 رقمًا.&#x27;;ph.focus();return}
+  if(!/^\S+@\S+\.\S+$/.test(em.value.trim())){em.classList.add(&#x27;bad&#x27;);er.textContent=&#x27;اكتب بريدًا إلكترونيًا صحيحًا مثل name@example.com.&#x27;;em.focus();return}
+  const ref=&#x27;REQ-&#x27;+Math.random().toString(16).slice(2,8).toUpperCase();
+  $(&#x27;#buy&#x27;).innerHTML=`&lt;div class=&quot;big-price&quot;&gt;${price(p.p)}&lt;/div&gt;&lt;div class=&quot;done&quot;&gt;&lt;b&gt;تم إرسال طلبك&lt;/b&gt;&lt;p style=&quot;margin:6px 0&quot;&gt;رقمك المرجعي: &lt;code&gt;${ref}&lt;/code&gt;&lt;/p&gt;&lt;p style=&quot;margin:0;color:var(--mute);font-size:14px&quot;&gt;سنتواصل معك على &lt;span class=&quot;num&quot;&gt;${ph.value}&lt;/span&gt;. احتفظ بالرقم لمتابعة حالة الطلب.&lt;/p&gt;&lt;/div&gt;&lt;p style=&quot;margin:12px 0 0&quot;&gt;&lt;button class=&quot;btn ghost big&quot; onclick=&quot;toast(&#x27;صفحة المتابعة: /purchase/track/${ref}&#x27;)&quot;&gt;تابع حالة الطلب&lt;/button&gt;&lt;/p&gt;`;toast(&#x27;تم إرسال الطلب&#x27;)};
+}
+const SELL={&#x27;م. هدى سمير&#x27;:{id:1,v:1,av:&#x27;هـس&#x27;,c:&#x27;#17855b&#x27;,city:&#x27;القاهرة&#x27;,since:&#x27;2023&#x27;,resp:&#x27;خلال ساعتين&#x27;,rt:4.8,n:41,sales:96,bio:&#x27;مهندسة إلكترونيات تصمم لوحات التحكم المنزلي منذ ست سنوات. كل ملفات الإنتاج مجرَّبة بطلب فعلي من المصنع قبل نشرها.&#x27;,dist:[78,16,4,1,1]},
+ &#x27;ورشة النيل&#x27;:{id:2,v:1,av:&#x27;نل&#x27;,c:&#x27;#1457d9&#x27;,city:&#x27;الجيزة&#x27;,since:&#x27;2022&#x27;,resp:&#x27;خلال 4 ساعات&#x27;,rt:4.6,n:71,sales:240,bio:&#x27;ورشة صغيرة تجمع المكتبات وملفات الطباعة ثلاثية الأبعاد للمبتدئين والمصنّعين الهواة.&#x27;,dist:[64,24,8,3,1]},
+ &#x27;م. كريم عادل&#x27;:{id:3,v:1,av:&#x27;كع&#x27;,c:&#x27;#8a5a0c&#x27;,city:&#x27;الإسكندرية&#x27;,since:&#x27;2023&#x27;,resp:&#x27;خلال يوم&#x27;,rt:4.9,n:69,sales:118,bio:&#x27;مطوّر أنظمة مدمجة ومدرّب. يقدّم فيرموير موثّقًا ودورات بمشاريع تطبيقية.&#x27;,dist:[88,9,2,1,0]},
+ &#x27;ستوديو أمبير&#x27;:{id:4,v:0,av:&#x27;أب&#x27;,c:&#x27;#7a3fb0&#x27;,city:&#x27;القاهرة&#x27;,since:&#x27;2026&#x27;,resp:&#x27;خلال ساعة&#x27;,rt:4.5,n:18,sales:21,bio:&#x27;ستوديو جديد على المنصة يهتم بدوائر الصوت وأوراق البيانات المترجمة.&#x27;,dist:[60,25,10,3,2]}};
+const sellerBox=p=&gt;{const q=SELL[p.s];return `&lt;div class=&quot;box&quot; style=&quot;font-size:14px&quot;&gt;&lt;div class=&quot;sh&quot; style=&quot;gap:12px&quot;&gt;&lt;span class=&quot;av&quot; style=&quot;width:44px;height:44px;font-size:15px;background:${q.c}&quot;&gt;${q.av}&lt;/span&gt;&lt;div&gt;&lt;b&gt;${p.s}&lt;/b&gt;${q.v?&#x27; &lt;span class=&quot;vf&quot;&gt;✓ موثّق&lt;/span&gt;&#x27;:&#x27; &lt;span class=&quot;mute&quot;&gt;بائع جديد&lt;/span&gt;&#x27;}&lt;div class=&quot;mute&quot;&gt;${stars(Math.round(q.rt))} &lt;span class=&quot;num&quot;&gt;${q.rt}&lt;/span&gt; — &lt;span class=&quot;num&quot;&gt;${q.sales}&lt;/span&gt; عملية بيع&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;p style=&quot;margin:10px 0 0&quot;&gt;&lt;a class=&quot;lnk&quot; href=&quot;#s${q.id}&quot;&gt;عرض صفحة البائع&lt;/a&gt;&lt;/p&gt;&lt;/div&gt;`};
+const trust=()=&gt;`&lt;div class=&quot;box tr&quot;&gt;&lt;b style=&quot;color:var(--ink);font-size:14px&quot;&gt;لماذا تثق بهذه المنصة؟&lt;/b&gt;&lt;span&gt;كل ملف يُفحص آليًا قبل نشره&lt;/span&gt;&lt;span&gt;الدفع يتم بعد مراجعة الإدارة لطلبك&lt;/span&gt;&lt;span&gt;المحاولة الفاشلة في التنزيل تُعوَّض&lt;/span&gt;&lt;span&gt;يمكنك الإبلاغ عن أي منتج أو بائع&lt;/span&gt;&lt;/div&gt;`;
+function gal(id,v){const p=P.find(x=&gt;x.id===id);$(&#x27;#pvimg&#x27;).innerHTML=thumb(p.k,p.id,v);document.querySelectorAll(&#x27;.gal button&#x27;).forEach((b,i)=&gt;b.setAttribute(&#x27;aria-pressed&#x27;,i===v))}
+function seller(id){const name=Object.keys(SELL).find(k=&gt;SELL[k].id===id);if(!name){home();return}const q=SELL[name],ps=P.filter(p=&gt;p.s===name);
+ app.innerHTML=`&lt;main class=&quot;wrap&quot;&gt;&lt;div class=&quot;crumb&quot;&gt;&lt;a href=&quot;#home&quot;&gt;المتجر&lt;/a&gt; / البائعون / ${name}&lt;/div&gt;
+ &lt;div class=&quot;box&quot;&gt;&lt;div class=&quot;sh&quot;&gt;&lt;span class=&quot;av&quot; style=&quot;background:${q.c}&quot;&gt;${q.av}&lt;/span&gt;&lt;div style=&quot;flex:1;min-width:240px&quot;&gt;&lt;h1&gt;${name} ${q.v?&#x27;&lt;span class=&quot;vf&quot; title=&quot;هوية البائع تحققت منها الإدارة&quot;&gt;✓ بائع موثّق&lt;/span&gt;&#x27;:&#x27;&lt;span class=&quot;badge&quot; style=&quot;background:var(--soft);font-size:13px;font-weight:500;padding:1px 10px;border-radius:99px&quot;&gt;بائع جديد&lt;/span&gt;&#x27;}&lt;/h1&gt;&lt;div class=&quot;mute&quot; style=&quot;margin-top:2px&quot;&gt;${q.city} — على المنصة منذ &lt;span class=&quot;num&quot;&gt;${q.since}&lt;/span&gt; — يرد ${q.resp}&lt;/div&gt;&lt;/div&gt;&lt;button class=&quot;btn ghost&quot; onclick=&quot;toast(&#x27;تم إرسال البلاغ عن البائع إلى الإدارة&#x27;)&quot;&gt;أبلغ عن البائع&lt;/button&gt;&lt;/div&gt;&lt;p style=&quot;max-width:68ch;margin:14px 0 0&quot;&gt;${q.bio}&lt;/p&gt;&lt;/div&gt;
+ &lt;div class=&quot;ss&quot;&gt;&lt;div&gt;&lt;b&gt;&lt;span class=&quot;num&quot;&gt;${ps.length}&lt;/span&gt;&lt;/b&gt;&lt;span&gt;منتجات منشورة&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;span class=&quot;num&quot;&gt;${q.sales}&lt;/span&gt;&lt;/b&gt;&lt;span&gt;عملية بيع&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;${stars(Math.round(q.rt))} &lt;span class=&quot;num&quot;&gt;${q.rt}&lt;/span&gt;&lt;/b&gt;&lt;span&gt;من &lt;span class=&quot;num&quot;&gt;${q.n}&lt;/span&gt; تقييمًا&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;${q.resp}&lt;/b&gt;&lt;span&gt;متوسط وقت الرد&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+ &lt;div class=&quot;pg&quot; style=&quot;grid-template-columns:1fr 300px&quot;&gt;&lt;div&gt;&lt;h2&gt;منتجات ${name}&lt;/h2&gt;&lt;div class=&quot;grid&quot; style=&quot;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))&quot;&gt;${ps.map(card).join(&#x27;&#x27;)}&lt;/div&gt;&lt;/div&gt;
+ &lt;aside&gt;&lt;div class=&quot;box&quot;&gt;&lt;b&gt;توزيع التقييمات&lt;/b&gt;&lt;div class=&quot;dist&quot; style=&quot;margin-top:8px&quot;&gt;${q.dist.map((n,i)=&gt;`&lt;div&gt;&lt;span&gt;${5-i} ★&lt;/span&gt;&lt;i&gt;&lt;b style=&quot;width:${n}%&quot;&gt;&lt;/b&gt;&lt;/i&gt;&lt;span class=&quot;num&quot;&gt;${n}%&lt;/span&gt;&lt;/div&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;&lt;/div&gt;&lt;/aside&gt;&lt;/div&gt;&lt;/main&gt;`}
+function toast(m){const t=$(&#x27;#toast&#x27;);t.textContent=m;t.classList.add(&#x27;on&#x27;);clearTimeout(toast.h);toast.h=setTimeout(()=&gt;t.classList.remove(&#x27;on&#x27;),2600)}
+function route(){const h=location.hash;window.scrollTo(0,0);const m=h.match(/^#p(\d+)$/),sm=h.match(/^#s(\d+)$/);m?product(+m[1]):sm?seller(+sm[1]):h===&#x27;#browse&#x27;?browse():home();$(&#x27;#n-home&#x27;).classList.toggle(&#x27;on&#x27;,!m&amp;&amp;!sm&amp;&amp;h!==&#x27;#browse&#x27;);$(&#x27;#n-browse&#x27;).classList.toggle(&#x27;on&#x27;,h===&#x27;#browse&#x27;);$(&#x27;#fc&#x27;).textContent=FAV.size}
+document.addEventListener(&#x27;click&#x27;,e=&gt;{const a=e.target.closest(&#x27;[data-go]&#x27;);if(!a)return;e.preventDefault();const go=()=&gt;document.getElementById(a.dataset.go)?.scrollIntoView({behavior:&#x27;smooth&#x27;})||document.querySelector(&#x27;[data-id=&quot;&#x27;+a.dataset.go+&#x27;&quot;]&#x27;)?.scrollIntoView({behavior:&#x27;smooth&#x27;});if(location.hash.startsWith(&#x27;#p&#x27;)){location.hash=&#x27;#home&#x27;;setTimeout(go,60)}else go()});
+addEventListener(&#x27;hashchange&#x27;,route);route();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe><iframe id="f-buyer" title="المشتري" hidden data-doc="&lt;!doctype html&gt;
+&lt;html lang=&quot;ar&quot; dir=&quot;rtl&quot;&gt;
+&lt;head&gt;
+&lt;base href=&quot;about:srcdoc&quot;&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;title&gt;حسابي — عرض تصميم&lt;/title&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap&quot;&gt;
+&lt;style&gt;
+:root{--paper:#f3f5f7;--card:#fff;--ink:#0f1b26;--mute:#5d6b78;--line:#d8dee4;--blue:#1457d9;--blue-ink:#fff;--green:#17855b;--amber:#b87800;--red:#c93030;--soft:#e9eef5;--pcb:#0d3b32;--gbg:#dff3ea;--abg:#fbefd2;--rbg:#fbe3e3;--bbg:#dfe9fc;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--paper:#0c1219;--card:#141d27;--ink:#e8eef4;--mute:#92a1af;--line:#26323f;--blue:#6f9bff;--blue-ink:#0c1219;--green:#4cc796;--amber:#f0b73a;--red:#ff7b7b;--soft:#1b2733;--pcb:#0a2a24;--gbg:#12372b;--abg:#3a2d0c;--rbg:#3d1a1a;--bbg:#18284a;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 15px/1.7 &quot;IBM Plex Sans Arabic&quot;,Tahoma,&quot;Segoe UI&quot;,sans-serif}
+button,input{font:inherit;color:inherit}a{color:inherit;text-decoration:none}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px;border-radius:6px}
+.num{direction:ltr;unicode-bidi:isolate;display:inline-block}
+header{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.bar{max-width:1120px;margin:auto;padding:0 20px;height:60px;display:flex;align-items:center;gap:16px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px}
+.logo i{width:30px;height:30px;border-radius:7px 7px 7px 2px;background:var(--pcb);display:grid;place-items:center}
+.logo svg{width:18px;height:18px}.sp{flex:1}
+.bell{position:relative;border:1px solid var(--line);background:transparent;border-radius:9px;width:38px;height:38px;cursor:pointer}
+.bell svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2}
+.bell b{position:absolute;top:-6px;inset-inline-start:-6px;background:var(--red);color:#fff;border-radius:99px;min-width:19px;height:19px;font-size:11px;display:grid;place-items:center}
+.shell{max-width:1120px;margin:auto;padding:26px 20px 60px;display:grid;grid-template-columns:210px 1fr;gap:26px}
+aside nav{position:sticky;top:84px;display:flex;flex-direction:column;gap:2px}
+aside a{padding:9px 13px;border-radius:9px;color:var(--mute);font-weight:500;display:flex;justify-content:space-between}
+aside a:hover{background:var(--soft);color:var(--ink)}aside a.on{background:var(--ink);color:var(--paper)}
+aside a i{font-style:normal;background:var(--red);color:#fff;border-radius:99px;font-size:11px;min-width:19px;text-align:center;padding:0 5px}
+h1{font-size:23px;margin:0 0 4px}.sub{color:var(--mute);margin:0 0 20px}
+h2{font-size:17px;margin:26px 0 10px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.btn{border:0;border-radius:9px;padding:8px 16px;font-weight:600;cursor:pointer;background:var(--blue);color:var(--blue-ink)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:default}
+.badge{font-size:12.5px;font-weight:600;padding:1px 10px;border-radius:99px;white-space:nowrap}
+.b-g{background:var(--gbg);color:var(--green)}.b-a{background:var(--abg);color:var(--amber)}.b-r{background:var(--rbg);color:var(--red)}.b-b{background:var(--bbg);color:var(--blue)}.b-n{background:var(--soft);color:var(--mute)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat .v{font-size:28px;font-weight:700;line-height:1.2}.stat span{color:var(--mute);font-size:13.5px}
+.todo{border-color:var(--green);background:linear-gradient(var(--gbg),var(--gbg)) padding-box;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:14px}
+.todo b{font-size:16px}.todo small{display:block;color:var(--mute)}
+.cd{font-weight:700;direction:ltr;unicode-bidi:isolate;display:inline-block;font-variant-numeric:tabular-nums}
+.cd.low{color:var(--red)}
+.row{display:flex;gap:14px;align-items:center;justify-content:space-between;padding:13px 4px;border-bottom:1px solid var(--line);cursor:pointer;flex-wrap:wrap}
+.row:last-child{border:0}.row:hover{background:var(--soft)}
+.row small{color:var(--mute);display:block}
+.code{font:600 16px monospace;direction:ltr;display:inline-block;letter-spacing:.06em}
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.cc{display:flex;flex-direction:column;gap:6px}
+.cc .top{display:flex;justify-content:space-between;align-items:center}
+.cc .act{margin-top:6px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.redeem{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.redeem input{flex:1;min-width:180px;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:9px 12px;direction:ltr;text-align:left;letter-spacing:.08em}
+.hint{font-size:13px;color:var(--mute);margin:6px 0 0}.err{color:var(--red);font-size:13px;margin:6px 0 0;min-height:19px}
+.tl{list-style:none;padding:0;margin:0;position:relative}
+.tl li{padding:0 28px 18px 0;position:relative;color:var(--mute)}
+.tl li:before{content:&quot;&quot;;position:absolute;right:6px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--line)}
+.tl li:after{content:&quot;&quot;;position:absolute;right:11px;top:20px;bottom:-4px;width:2px;background:var(--line)}
+.tl li:last-child:after{display:none}
+.tl li.ok{color:var(--ink)}.tl li.ok:before,.tl li.ok:after{background:var(--green)}
+.tl li.now:before{background:var(--blue);box-shadow:0 0 0 4px var(--bbg)}.tl li.now{color:var(--ink);font-weight:600}
+.dots{display:flex;gap:8px;margin:6px 0}
+.dots i{width:30px;height:30px;border-radius:50%;border:2px solid var(--green);display:grid;place-items:center;font-style:normal;font-size:13px;color:var(--green);font-weight:700}
+.dots i.used{background:var(--line);border-color:var(--line);color:var(--mute)}.dots i.bad{border-color:var(--red);color:var(--red);background:var(--rbg)}
+.prog{height:10px;background:var(--soft);border-radius:99px;overflow:hidden;margin:12px 0 6px}.prog div{height:100%;width:0;background:var(--blue);transition:width .2s}
+.prog.fail div{background:var(--red)}
+.file{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}.file:last-child{border:0}
+.file span:last-child{color:var(--mute)}
+.ntf{display:flex;gap:12px;padding:13px 4px;border-bottom:1px solid var(--line)}.ntf:last-child{border:0}
+.ntf .dot{width:9px;height:9px;border-radius:50%;background:var(--blue);margin-top:9px;flex:none}.ntf .dot.rd{background:transparent;border:1px solid var(--line)}
+.ntf p{margin:0;color:var(--mute);font-size:14px}.ntf small{color:var(--mute)}
+.f label{display:block;font-size:13px;font-weight:500;margin:10px 0 3px}.f input{width:100%;max-width:380px;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:9px 11px}
+.crumb{font-size:13px;color:var(--mute);margin-bottom:12px}.crumb a:hover{color:var(--blue)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translate(-50%,30px);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;z-index:50}.toast.on{opacity:1;transform:translate(-50%,0)}
+.empty{text-align:center;color:var(--mute);padding:26px}
+@media(max-width:820px){.shell{grid-template-columns:1fr}aside nav{position:static;flex-direction:row;overflow-x:auto;gap:6px}aside a{white-space:nowrap;gap:8px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;header&gt;&lt;div class=&quot;bar&quot;&gt;&lt;a class=&quot;logo&quot; href=&quot;#/overview&quot;&gt;&lt;i&gt;&lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;#9ce2bf&quot; stroke-width=&quot;2&quot;&gt;&lt;path d=&quot;M3 12h6l2-5 3 10 2-5h5&quot;/&gt;&lt;/svg&gt;&lt;/i&gt;إلكترونيات&lt;/a&gt;&lt;span class=&quot;sp&quot;&gt;&lt;/span&gt;
+&lt;span style=&quot;color:var(--mute);font-size:14px&quot;&gt;منى عبد الله&lt;/span&gt;
+&lt;button class=&quot;bell&quot; aria-label=&quot;الإشعارات&quot; onclick=&quot;location.hash=&#x27;#/notifications&#x27;&quot;&gt;&lt;svg viewBox=&quot;0 0 24 24&quot;&gt;&lt;path d=&quot;M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0&quot;/&gt;&lt;/svg&gt;&lt;b id=&quot;bc&quot;&gt;&lt;/b&gt;&lt;/button&gt;&lt;/div&gt;&lt;/header&gt;
+&lt;div class=&quot;shell&quot;&gt;&lt;aside&gt;&lt;nav id=&quot;nav&quot;&gt;&lt;/nav&gt;&lt;/aside&gt;&lt;main id=&quot;v&quot;&gt;&lt;/main&gt;&lt;/div&gt;
+&lt;div class=&quot;toast&quot; id=&quot;toast&quot; role=&quot;status&quot;&gt;&lt;/div&gt;
+&lt;script&gt;
+const $=s=&gt;document.querySelector(s),now=Date.now(),H=36e5;
+const S={
+ orders:[
+  {id:&#x27;REQ-7F3A9C&#x27;,p:&#x27;لوحة ESP32 للتحكم المنزلي&#x27;,amt:450,st:&#x27;code&#x27;,at:now-5*H},
+  {id:&#x27;REQ-2B81DE&#x27;,p:&#x27;مكتبة رموز وبصمات KiCad&#x27;,amt:180,st:&#x27;review&#x27;,at:now-2*H},
+  {id:&#x27;REQ-9C04AF&#x27;,p:&#x27;فيرموير مراقبة الطاقة على STM32&#x27;,amt:620,st:&#x27;done&#x27;,at:now-9*24*H},
+  {id:&#x27;REQ-51E7B2&#x27;,p:&#x27;مضخم صوت Class-D&#x27;,amt:520,st:&#x27;rejected&#x27;,at:now-20*24*H}],
+ codes:[
+  {pre:&#x27;K7QF&#x27;,p:&#x27;لوحة ESP32 للتحكم المنزلي&#x27;,st:&#x27;active&#x27;,exp:now+46*H+25*6e4,left:3,order:&#x27;REQ-7F3A9C&#x27;},
+  {pre:&#x27;M2XD&#x27;,p:&#x27;فيرموير مراقبة الطاقة على STM32&#x27;,st:&#x27;used&#x27;,exp:now-5*24*H,left:2,order:&#x27;REQ-9C04AF&#x27;},
+  {pre:&#x27;T9LB&#x27;,p:&#x27;مصدر تغذية 5V / 3A&#x27;,st:&#x27;expired&#x27;,exp:now-30*H,left:3,order:&#x27;—&#x27;}],
+ notes:[
+  {t:&#x27;صدر كود التفعيل لطلبك REQ-7F3A9C&#x27;,d:&#x27;الكود صالح لمدة 48 ساعة. افتح صفحة التنزيل وابدأ.&#x27;,at:now-4*H,r:false},
+  {t:&#x27;طلبك REQ-2B81DE قيد المراجعة&#x27;,d:&#x27;ستتواصل معك الإدارة لتأكيد الدفع.&#x27;,at:now-2*H,r:false},
+  {t:&#x27;اكتمل تنزيل «فيرموير مراقبة الطاقة»&#x27;,d:&#x27;بقيت لك محاولتان على هذا الكود.&#x27;,at:now-9*24*H,r:true}],
+ comp:false};
+const ST={code:[&#x27;b-g&#x27;,&#x27;صدر الكود&#x27;],review:[&#x27;b-a&#x27;,&#x27;قيد المراجعة&#x27;],done:[&#x27;b-b&#x27;,&#x27;مكتمل&#x27;],rejected:[&#x27;b-r&#x27;,&#x27;مرفوض&#x27;]};
+const CS={active:[&#x27;b-g&#x27;,&#x27;فعّال&#x27;],used:[&#x27;b-n&#x27;,&#x27;مستخدم&#x27;],expired:[&#x27;b-r&#x27;,&#x27;منتهي&#x27;]};
+const rel=t=&gt;{const h=Math.round((now-t)/H);return h&lt;1?&#x27;قبل دقائق&#x27;:h&lt;24?`قبل ${h} ساعة`:`قبل ${Math.round(h/24)} يومًا`};
+const cd=e=&gt;{let s=Math.max(0,Math.floor((e-Date.now())/1e3));const h=String(Math.floor(s/3600)).padStart(2,&#x27;0&#x27;),m=String(Math.floor(s%3600/60)).padStart(2,&#x27;0&#x27;),x=String(s%60).padStart(2,&#x27;0&#x27;);return `${h}:${m}:${x}`};
+const cdEl=e=&gt;`&lt;span class=&quot;cd ${e-Date.now()&lt;6*H?&#x27;low&#x27;:&#x27;&#x27;}&quot; data-e=&quot;${e}&quot;&gt;${cd(e)}&lt;/span&gt;`;
+const bd=(m,k)=&gt;`&lt;span class=&quot;badge ${m[k][0]}&quot;&gt;${m[k][1]}&lt;/span&gt;`;
+const act=()=&gt;S.codes.find(c=&gt;c.st===&#x27;active&#x27;);
+const unread=()=&gt;S.notes.filter(n=&gt;!n.r).length;
+const NAV=[[&#x27;overview&#x27;,&#x27;نظرة عامة&#x27;],[&#x27;orders&#x27;,&#x27;طلباتي&#x27;],[&#x27;codes&#x27;,&#x27;أكوادي&#x27;],[&#x27;downloads&#x27;,&#x27;التنزيلات&#x27;],[&#x27;notifications&#x27;,&#x27;الإشعارات&#x27;],[&#x27;profile&#x27;,&#x27;الملف الشخصي&#x27;]];
+function nav(cur){$(&#x27;#nav&#x27;).innerHTML=NAV.map(([k,l])=&gt;`&lt;a href=&quot;#/${k}&quot; class=&quot;${cur===k?&#x27;on&#x27;:&#x27;&#x27;}&quot;&gt;${l}${k===&#x27;notifications&#x27;&amp;&amp;unread()?`&lt;i&gt;${unread()}&lt;/i&gt;`:&#x27;&#x27;}&lt;/a&gt;`).join(&#x27;&#x27;);const b=$(&#x27;#bc&#x27;);b.textContent=unread();b.hidden=!unread()}
+const V={
+ overview(){const a=act();return `&lt;h1&gt;مرحبًا، منى&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;هذا ملخص طلباتك وأكوادك.&lt;/p&gt;
+ &lt;div class=&quot;stats&quot;&gt;&lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;v&quot;&gt;${S.codes.filter(c=&gt;c.st===&#x27;active&#x27;).length}&lt;/div&gt;&lt;span&gt;كود فعّال&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;v&quot;&gt;${a?a.left:0}&lt;/div&gt;&lt;span&gt;محاولات تنزيل متبقية&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;v&quot;&gt;${S.orders.filter(o=&gt;o.st===&#x27;review&#x27;).length}&lt;/div&gt;&lt;span&gt;طلب قيد المراجعة&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+ ${a?`&lt;div class=&quot;box todo&quot;&gt;&lt;div&gt;&lt;b&gt;${a.p}&lt;/b&gt;&lt;small&gt;كودك فعّال، ينتهي بعد ${cdEl(a.exp)}&lt;/small&gt;&lt;/div&gt;&lt;a class=&quot;btn&quot; href=&quot;#/downloads/${a.pre}&quot;&gt;نزّل ملفاتك الآن&lt;/a&gt;&lt;/div&gt;`:&#x27;&#x27;}
+ &lt;h2&gt;آخر الطلبات&lt;/h2&gt;&lt;div class=&quot;box&quot; style=&quot;padding:6px 14px&quot;&gt;${S.orders.slice(0,3).map(orderRow).join(&#x27;&#x27;)}&lt;/div&gt;`},
+ orders(){return `&lt;h1&gt;طلباتي&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;اضغط على أي طلب لمتابعة مراحله.&lt;/p&gt;&lt;div class=&quot;box&quot; style=&quot;padding:6px 14px&quot;&gt;${S.orders.map(orderRow).join(&#x27;&#x27;)}&lt;/div&gt;`},
+ order(id){const o=S.orders.find(x=&gt;x.id===id);if(!o)return V.orders();
+  const step=[&#x27;review&#x27;,&#x27;code&#x27;,&#x27;done&#x27;].indexOf(o.st);const rej=o.st===&#x27;rejected&#x27;;
+  const L=[[&#x27;أُرسل الطلب&#x27;,0],[&#x27;راجعته الإدارة&#x27;,1],[&#x27;صدر كود التفعيل&#x27;,2],[&#x27;نزّلت الملفات&#x27;,3]];
+  const done=rej?1:{review:1,code:3,done:4}[o.st];
+  return `&lt;div class=&quot;crumb&quot;&gt;&lt;a href=&quot;#/orders&quot;&gt;طلباتي&lt;/a&gt; / ${o.id}&lt;/div&gt;&lt;h1&gt;${o.p}&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;&lt;span class=&quot;num&quot;&gt;${o.id}&lt;/span&gt; — ${bd(ST,o.st)} — &lt;span class=&quot;num&quot;&gt;${o.amt}&lt;/span&gt; ج.م&lt;/p&gt;
+  &lt;div class=&quot;box&quot;&gt;&lt;ul class=&quot;tl&quot;&gt;${L.map(([t,i])=&gt;{const c=i&lt;done?&#x27;ok&#x27;:i===done&amp;&amp;!rej?&#x27;now&#x27;:&#x27;&#x27;;return `&lt;li class=&quot;${c}&quot;&gt;${t}&lt;/li&gt;`}).join(&#x27;&#x27;)}${rej?&#x27;&lt;li class=&quot;now&quot; style=&quot;color:var(--red)&quot;&gt;رُفض الطلب — لم يتم تأكيد الدفع&lt;/li&gt;&#x27;:&#x27;&#x27;}&lt;/ul&gt;&lt;/div&gt;
+  ${o.st===&#x27;code&#x27;?`&lt;p style=&quot;margin-top:14px&quot;&gt;&lt;a class=&quot;btn&quot; href=&quot;#/downloads/K7QF&quot;&gt;اذهب إلى التنزيل&lt;/a&gt;&lt;/p&gt;`:&#x27;&#x27;}`},
+ codes(){return `&lt;h1&gt;أكوادي&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;كل كود لمنتج واحد وله مدة صلاحية.&lt;/p&gt;
+ &lt;div class=&quot;box&quot;&gt;&lt;b&gt;لديك كود جديد؟&lt;/b&gt;&lt;div class=&quot;redeem&quot; style=&quot;margin-top:8px&quot;&gt;&lt;input id=&quot;ci&quot; placeholder=&quot;XXXX-XXXX-XXXX&quot; maxlength=&quot;14&quot; aria-label=&quot;كود الشراء&quot;&gt;&lt;button class=&quot;btn&quot; onclick=&quot;redeem()&quot;&gt;فعّل الكود&lt;/button&gt;&lt;/div&gt;&lt;p class=&quot;err&quot; id=&quot;ce&quot;&gt;&lt;/p&gt;&lt;p class=&quot;hint&quot;&gt;للتجربة: اكتب K7QF-92XM-4TLP&lt;/p&gt;&lt;/div&gt;
+ &lt;h2&gt;أكوادك&lt;/h2&gt;&lt;div class=&quot;grid2&quot;&gt;${S.codes.map(c=&gt;`&lt;div class=&quot;box cc&quot;&gt;&lt;div class=&quot;top&quot;&gt;&lt;span class=&quot;code&quot;&gt;${c.pre}-••••&lt;/span&gt;${bd(CS,c.st)}&lt;/div&gt;&lt;b&gt;${c.p}&lt;/b&gt;&lt;small style=&quot;color:var(--mute)&quot;&gt;${c.st===&#x27;active&#x27;?`ينتهي بعد ${cdEl(c.exp)}`:c.st===&#x27;used&#x27;?&#x27;استُخدم لإكمال التنزيل&#x27;:&#x27;انتهت صلاحيته ولم يُستخدم&#x27;}&lt;/small&gt;
+ &lt;div class=&quot;act&quot;&gt;&lt;span style=&quot;color:var(--mute);font-size:13px&quot;&gt;الطلب: &lt;span class=&quot;num&quot;&gt;${c.order}&lt;/span&gt;&lt;/span&gt;${c.st===&#x27;active&#x27;?`&lt;a class=&quot;btn&quot; href=&quot;#/downloads/${c.pre}&quot;&gt;نزّل&lt;/a&gt;`:c.st===&#x27;expired&#x27;?`&lt;button class=&quot;btn ghost&quot; onclick=&quot;toast(&#x27;تم إرسال طلب تمديد الكود إلى الإدارة&#x27;)&quot;&gt;اطلب تمديدًا&lt;/button&gt;`:&#x27;&#x27;}&lt;/div&gt;&lt;/div&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;`},
+ downloads(id){const c=S.codes.find(x=&gt;x.pre===id);if(!c)return `&lt;h1&gt;التنزيلات&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;جلسات التنزيل لأكوادك.&lt;/p&gt;&lt;div class=&quot;box&quot; style=&quot;padding:6px 14px&quot;&gt;${S.codes.filter(c=&gt;c.st!==&#x27;expired&#x27;).map(c=&gt;`&lt;a class=&quot;row&quot; href=&quot;#/downloads/${c.pre}&quot;&gt;&lt;div&gt;&lt;b&gt;${c.p}&lt;/b&gt;&lt;small&gt;باقي ${c.left} من 3 محاولات&lt;/small&gt;&lt;/div&gt;${bd(CS,c.st)}&lt;/a&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;`;
+  const can=c.st===&#x27;active&#x27;&amp;&amp;c.left&gt;0;
+  return `&lt;div class=&quot;crumb&quot;&gt;&lt;a href=&quot;#/downloads&quot;&gt;التنزيلات&lt;/a&gt; / ${c.p}&lt;/div&gt;&lt;h1&gt;${c.p}&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;${can?`ينتهي الكود بعد ${cdEl(c.exp)}`:c.st===&#x27;used&#x27;?&#x27;اكتمل تنزيل هذا المنتج.&#x27;:&#x27;لا يمكن التنزيل بهذا الكود.&#x27;}&lt;/p&gt;
+  &lt;div class=&quot;grid2&quot; style=&quot;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))&quot;&gt;&lt;div class=&quot;box&quot;&gt;&lt;b&gt;المحاولات&lt;/b&gt;&lt;div class=&quot;dots&quot; id=&quot;dots&quot;&gt;${[0,1,2].map(i=&gt;`&lt;i class=&quot;${i&gt;=c.left?&#x27;used&#x27;:&#x27;&#x27;}&quot;&gt;${i+1}&lt;/i&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;&lt;p class=&quot;hint&quot;&gt;المحاولة الفاشلة تظهر هنا، ويمكنك طلب تعويضها.&lt;/p&gt;
+  &lt;div class=&quot;prog&quot; id=&quot;pg&quot;&gt;&lt;div&gt;&lt;/div&gt;&lt;/div&gt;&lt;div id=&quot;ps&quot; class=&quot;hint&quot;&gt;${can?&#x27;جاهز للتنزيل.&#x27;:&#x27;&#x27;}&lt;/div&gt;
+  &lt;p style=&quot;margin:12px 0 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap&quot;&gt;&lt;button class=&quot;btn&quot; id=&quot;go&quot; ${can?&#x27;&#x27;:&#x27;disabled&#x27;} onclick=&quot;dl(&#x27;${c.pre}&#x27;)&quot;&gt;ابدأ التنزيل&lt;/button&gt;&lt;label style=&quot;font-size:13px;color:var(--mute)&quot;&gt;&lt;input type=&quot;checkbox&quot; id=&quot;fail&quot;&gt; محاكاة انقطاع الاتصال&lt;/label&gt;&lt;/p&gt;&lt;div id=&quot;cp&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+  &lt;div class=&quot;box&quot;&gt;&lt;b&gt;الملفات&lt;/b&gt;&lt;div style=&quot;margin-top:6px&quot;&gt;&lt;div class=&quot;file&quot;&gt;&lt;span&gt;مشروع KiCad 8&lt;/span&gt;&lt;span class=&quot;num&quot;&gt;1.1 MB&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;file&quot;&gt;&lt;span&gt;Gerber + Drill&lt;/span&gt;&lt;span class=&quot;num&quot;&gt;4.2 MB&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;file&quot;&gt;&lt;span&gt;مخطط الدائرة (PDF)&lt;/span&gt;&lt;span class=&quot;num&quot;&gt;640 KB&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;`},
+ notifications(){return `&lt;h1&gt;الإشعارات&lt;/h1&gt;&lt;p class=&quot;sub&quot; style=&quot;display:flex;justify-content:space-between;align-items:center&quot;&gt;${unread()?`لديك ${unread()} إشعارات غير مقروءة`:&#x27;لا توجد إشعارات جديدة&#x27;}&lt;button class=&quot;btn ghost&quot; ${unread()?&#x27;&#x27;:&#x27;disabled&#x27;} onclick=&quot;readAll()&quot;&gt;علّم الكل كمقروء&lt;/button&gt;&lt;/p&gt;&lt;div class=&quot;box&quot; style=&quot;padding:6px 14px&quot;&gt;${S.notes.map(n=&gt;`&lt;div class=&quot;ntf&quot;&gt;&lt;span class=&quot;dot ${n.r?&#x27;rd&#x27;:&#x27;&#x27;}&quot;&gt;&lt;/span&gt;&lt;div&gt;&lt;b&gt;${n.t}&lt;/b&gt;&lt;p&gt;${n.d}&lt;/p&gt;&lt;small&gt;${rel(n.at)}&lt;/small&gt;&lt;/div&gt;&lt;/div&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;`},
+ profile(){return `&lt;h1&gt;الملف الشخصي&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;تُستخدم هذه البيانات للتواصل بشأن طلباتك.&lt;/p&gt;&lt;form class=&quot;f box&quot; onsubmit=&quot;event.preventDefault();toast(&#x27;تم حفظ التغييرات&#x27;)&quot;&gt;&lt;label&gt;الاسم الكامل&lt;/label&gt;&lt;input value=&quot;منى عبد الله&quot;&gt;&lt;label&gt;رقم الهاتف&lt;/label&gt;&lt;input dir=&quot;ltr&quot; value=&quot;01012345678&quot;&gt;&lt;label&gt;البريد الإلكتروني&lt;/label&gt;&lt;input dir=&quot;ltr&quot; value=&quot;mona@example.com&quot; disabled&gt;&lt;p style=&quot;margin:14px 0 0&quot;&gt;&lt;button class=&quot;btn&quot;&gt;احفظ التغييرات&lt;/button&gt;&lt;/p&gt;&lt;/form&gt;`}
+};
+function orderRow(o){return `&lt;a class=&quot;row&quot; href=&quot;#/orders/${o.id}&quot;&gt;&lt;div&gt;&lt;b&gt;${o.p}&lt;/b&gt;&lt;small&gt;&lt;span class=&quot;num&quot;&gt;${o.id}&lt;/span&gt; — ${rel(o.at)}&lt;/small&gt;&lt;/div&gt;${bd(ST,o.st)}&lt;/a&gt;`}
+function dl(id){const c=S.codes.find(x=&gt;x.pre===id),fail=$(&#x27;#fail&#x27;).checked,b=$(&#x27;#go&#x27;),pg=$(&#x27;#pg&#x27;),ps=$(&#x27;#ps&#x27;);b.disabled=true;pg.classList.remove(&#x27;fail&#x27;);let p=0;
+ const t=setInterval(()=&gt;{p+=fail?9:7;if(fail&amp;&amp;p&gt;=55){clearInterval(t);pg.classList.add(&#x27;fail&#x27;);ps.textContent=&#x27;انقطع الاتصال عند 55%. سُجّلت هذه المحاولة كفاشلة.&#x27;;c.left--;mark(c,true);return}
+  if(p&gt;=100){clearInterval(t);pg.firstChild.style.width=&#x27;100%&#x27;;ps.textContent=&#x27;اكتمل التنزيل بنجاح.&#x27;;c.left--;S.notes.unshift({t:`اكتمل تنزيل «${c.p}»`,d:`بقيت لك ${c.left} محاولات.`,at:Date.now(),r:false});mark(c,false);return}
+  pg.firstChild.style.width=p+&#x27;%&#x27;;ps.textContent=&#x27;جارٍ التنزيل… &#x27;+p+&#x27;%&#x27;},180)}
+function mark(c,bad){const d=$(&#x27;#dots&#x27;).children;d[c.left].className=bad?&#x27;bad&#x27;:&#x27;used&#x27;;nav(&#x27;downloads&#x27;);
+ if(bad){$(&#x27;#cp&#x27;).innerHTML=S.comp?&#x27;&lt;p class=&quot;hint&quot;&gt;طلب التعويض قيد المراجعة.&lt;/p&gt;&#x27;:&#x27;&lt;p style=&quot;margin:10px 0 0&quot;&gt;&lt;button class=&quot;btn ghost&quot; onclick=&quot;comp()&quot;&gt;اطلب تعويض المحاولة&lt;/button&gt;&lt;/p&gt;&#x27;;if(c.left&gt;0)$(&#x27;#go&#x27;).disabled=false}else if(c.left&gt;0)$(&#x27;#go&#x27;).disabled=false}
+function comp(){S.comp=true;$(&#x27;#cp&#x27;).innerHTML=&#x27;&lt;p class=&quot;hint&quot;&gt;تم إرسال طلب التعويض، وستراجعه الإدارة.&lt;/p&gt;&#x27;;toast(&#x27;تم إرسال طلب التعويض&#x27;)}
+function redeem(){const v=$(&#x27;#ci&#x27;).value.trim().toUpperCase(),e=$(&#x27;#ce&#x27;);
+ if(!/^[A-Z0-9]{4}(-[A-Z0-9]{4}){2}$/.test(v)){e.textContent=&#x27;الكود يتكوّن من 12 خانة في ثلاث مجموعات، مثل K7QF-92XM-4TLP.&#x27;;return}
+ if(v.startsWith(&#x27;K7QF&#x27;)&amp;&amp;act()){e.textContent=&#x27;&#x27;;toast(&#x27;تم التحقق من الكود&#x27;);location.hash=&#x27;#/downloads/K7QF&#x27;}else e.textContent=&#x27;هذا الكود غير صالح أو انتهت صلاحيته. تأكد من كتابته كما وصلك.&#x27;}
+function readAll(){S.notes.forEach(n=&gt;n.r=true);route()}
+function toast(m){const t=$(&#x27;#toast&#x27;);t.textContent=m;t.classList.add(&#x27;on&#x27;);clearTimeout(toast.h);toast.h=setTimeout(()=&gt;t.classList.remove(&#x27;on&#x27;),2600)}
+function route(){const [,k=&#x27;overview&#x27;,id]=location.hash.split(&#x27;/&#x27;);const key=NAV.some(n=&gt;n[0]===k)?k:&#x27;overview&#x27;;
+ $(&#x27;#v&#x27;).innerHTML=(k===&#x27;orders&#x27;&amp;&amp;id?V.order:V[key])(id);nav(key);window.scrollTo(0,0)}
+setInterval(()=&gt;document.querySelectorAll(&#x27;.cd&#x27;).forEach(e=&gt;{const x=+e.dataset.e;e.textContent=cd(x);e.classList.toggle(&#x27;low&#x27;,x-Date.now()&lt;6*H)}),1000);
+addEventListener(&#x27;hashchange&#x27;,route);route();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe><iframe id="f-seller" title="البائع" hidden data-doc="&lt;!doctype html&gt;
+&lt;html lang=&quot;ar&quot; dir=&quot;rtl&quot;&gt;
+&lt;head&gt;
+&lt;base href=&quot;about:srcdoc&quot;&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;title&gt;لوحة البائع — عرض تصميم&lt;/title&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap&quot;&gt;
+&lt;style&gt;
+:root{--paper:#f3f5f7;--card:#fff;--ink:#0f1b26;--mute:#5d6b78;--line:#d8dee4;--blue:#1457d9;--blue-ink:#fff;--green:#17855b;--amber:#b87800;--red:#c93030;--soft:#e9eef5;--pcb:#0d3b32;--gbg:#dff3ea;--abg:#fbefd2;--rbg:#fbe3e3;--bbg:#dfe9fc;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--paper:#0c1219;--card:#141d27;--ink:#e8eef4;--mute:#92a1af;--line:#26323f;--blue:#6f9bff;--blue-ink:#0c1219;--green:#4cc796;--amber:#f0b73a;--red:#ff7b7b;--soft:#1b2733;--pcb:#0a2a24;--gbg:#12372b;--abg:#3a2d0c;--rbg:#3d1a1a;--bbg:#18284a;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 15px/1.7 &quot;IBM Plex Sans Arabic&quot;,Tahoma,&quot;Segoe UI&quot;,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}a{color:inherit;text-decoration:none}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px;border-radius:6px}
+.num{direction:ltr;unicode-bidi:isolate;display:inline-block}
+header{background:var(--pcb);color:#e8f5f0;position:sticky;top:0;z-index:20}
+.bar{max-width:1180px;margin:auto;padding:0 20px;height:58px;display:flex;align-items:center;gap:14px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px}
+.logo small{font-weight:500;color:#9ccbbd;font-size:13px;border-inline-start:1px solid #3d7a6a;padding-inline-start:10px}
+.sp{flex:1}.who{font-size:14px;color:#b4d3c8}
+.shell{max-width:1180px;margin:auto;padding:24px 20px 60px;display:grid;grid-template-columns:200px 1fr;gap:26px}
+aside nav{position:sticky;top:80px;display:flex;flex-direction:column;gap:2px}
+aside a{padding:9px 13px;border-radius:9px;color:var(--mute);font-weight:500;display:flex;justify-content:space-between}
+aside a:hover{background:var(--soft);color:var(--ink)}aside a.on{background:var(--ink);color:var(--paper)}
+aside a i{font-style:normal;background:var(--amber);color:#fff;border-radius:99px;font-size:11px;min-width:19px;text-align:center;padding:0 5px}
+h1{font-size:23px;margin:0 0 4px}.sub{color:var(--mute);margin:0 0 18px}
+h2{font-size:17px;margin:24px 0 10px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.btn{border:0;border-radius:9px;padding:8px 16px;font-weight:600;cursor:pointer;background:var(--blue);color:var(--blue-ink)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}.btn:disabled{opacity:.45;cursor:default}
+.btn.sm{padding:4px 11px;font-size:13px}
+.badge{font-size:12.5px;font-weight:600;padding:1px 10px;border-radius:99px;white-space:nowrap}
+.b-g{background:var(--gbg);color:var(--green)}.b-a{background:var(--abg);color:var(--amber)}.b-r{background:var(--rbg);color:var(--red)}.b-b{background:var(--bbg);color:var(--blue)}.b-n{background:var(--soft);color:var(--mute)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat .v{font-size:26px;font-weight:700;line-height:1.3}.stat span{color:var(--mute);font-size:13.5px}
+.alert{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;background:var(--abg);border:1px solid var(--amber);border-radius:12px;padding:12px 16px;margin-top:12px}
+.row{display:flex;gap:14px;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.row:last-child{border:0}a.row:hover{background:var(--soft)}
+.row small,.mute{color:var(--mute);font-size:13.5px;display:block}
+.ext{font:600 11px/1 monospace;background:var(--soft);border-radius:4px;padding:3px 6px;margin-inline-end:8px;direction:ltr;display:inline-block}
+.q{height:8px;background:var(--soft);border-radius:99px;overflow:hidden;margin:6px 0 2px}.q div{height:100%;background:var(--green)}.q.hi div{background:var(--red)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.f label{display:block;font-size:13px;font-weight:500;margin:10px 0 3px}
+.in{width:100%;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:9px 11px}.in.bad{border-color:var(--red)}
+.err{color:var(--red);font-size:13px;min-height:19px;margin:6px 0 0}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:22px;text-align:center;background:var(--paper)}
+.prog{height:10px;background:var(--soft);border-radius:99px;overflow:hidden;margin:12px 0 4px}.prog div{height:100%;width:0;background:var(--blue);transition:width .15s}
+.vh{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.crumb{font-size:13px;color:var(--mute);margin-bottom:12px}.crumb a:hover{color:var(--blue)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translate(-50%,30px);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;z-index:50}.toast.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:820px){.shell{grid-template-columns:1fr}aside nav{position:static;flex-direction:row;overflow-x:auto;gap:6px}aside a{white-space:nowrap;gap:8px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;header&gt;&lt;div class=&quot;bar&quot;&gt;&lt;span class=&quot;logo&quot;&gt;إلكترونيات&lt;small&gt;لوحة البائع&lt;/small&gt;&lt;/span&gt;&lt;span class=&quot;sp&quot;&gt;&lt;/span&gt;&lt;span class=&quot;who&quot;&gt;م. هدى سمير&lt;/span&gt;&lt;/div&gt;&lt;/header&gt;
+&lt;div class=&quot;shell&quot;&gt;&lt;aside&gt;&lt;nav id=&quot;nav&quot;&gt;&lt;/nav&gt;&lt;/aside&gt;&lt;main id=&quot;v&quot;&gt;&lt;/main&gt;&lt;/div&gt;
+&lt;div class=&quot;toast&quot; id=&quot;toast&quot; role=&quot;status&quot;&gt;&lt;/div&gt;
+&lt;script&gt;
+const $=s=&gt;document.querySelector(s),now=Date.now(),H=36e5;
+const CATS=[&#x27;لوحات PCB&#x27;,&#x27;\u00a0\u00a0└ لوحات متحكمات&#x27;,&#x27;\u00a0\u00a0└ مصادر تغذية&#x27;,&#x27;برمجيات مدمجة&#x27;,&#x27;مكتبات&#x27;,&#x27;نماذج ثلاثية الأبعاد&#x27;];
+const OK=[&#x27;gerber&#x27;,&#x27;zip&#x27;,&#x27;pdf&#x27;,&#x27;kicad&#x27;,&#x27;kicad_pro&#x27;,&#x27;stl&#x27;,&#x27;step&#x27;,&#x27;mp4&#x27;,&#x27;c&#x27;,&#x27;ioc&#x27;,&#x27;md&#x27;,&#x27;lib&#x27;];
+const S={
+ drives:[{id:1,email:&#x27;hoda.pcb@gmail.com&#x27;,used:12.4,tot:15,def:true},{id:2,email:&#x27;hoda.backup@gmail.com&#x27;,used:3.1,tot:15,def:false}],
+ files:[
+  {id:1,n:&#x27;esp32-board.gerber&#x27;,kb:4300,st:&#x27;clean&#x27;,d:1},{id:2,n:&#x27;esp32-board.kicad&#x27;,kb:1100,st:&#x27;clean&#x27;,d:1},{id:3,n:&#x27;esp32-schematic.pdf&#x27;,kb:640,st:&#x27;clean&#x27;,d:1},
+  {id:4,n:&#x27;psu-5v3a.gerber&#x27;,kb:2900,st:&#x27;scan&#x27;,d:1,at:now+9e3},{id:5,n:&#x27;psu-calc.pdf&#x27;,kb:410,st:&#x27;clean&#x27;,d:2},{id:6,n:&#x27;old-sample.zip&#x27;,kb:8800,st:&#x27;quar&#x27;,d:1}],
+ products:[
+  {id:1,t:&#x27;لوحة ESP32 للتحكم المنزلي&#x27;,st:&#x27;published&#x27;,price:450,cat:1,desc:&#x27;تصميم لوحة من طبقتين لمتحكم ESP32 مع مرحلات ومنظّم جهد.&#x27;,sales:23,
+   v:[{n:2,st:&#x27;published&#x27;,f:[1,2,3]},{n:1,st:&#x27;archived&#x27;,f:[1,3]}]},
+  {id:2,t:&#x27;مصدر تغذية 5V / 3A&#x27;,st:&#x27;draft&#x27;,price:300,cat:2,desc:&#x27;مصدر تبديل صغير بكفاءة عالية مع حسابات المكوّنات.&#x27;,sales:0,v:[{n:1,st:&#x27;draft&#x27;,f:[4,5]}]},
+  {id:3,t:&#x27;مضخم صوت Class-D&#x27;,st:&#x27;paused&#x27;,price:520,cat:0,desc:&#x27;مضخم ستيريو 2×25W بتشويه منخفض.&#x27;,sales:9,v:[{n:1,st:&#x27;published&#x27;,f:[]}]}],
+ wallet:{avail:1840,held:360,paid:4200},
+ pay:[{amt:1500,st:&#x27;paid&#x27;,at:now-30*24*H},{amt:2700,st:&#x27;paid&#x27;,at:now-60*24*H},{amt:800,st:&#x27;rejected&#x27;,why:&#x27;بيانات الحساب البنكي غير مكتملة&#x27;,at:now-12*24*H}],
+ notes:[{t:&#x27;اعتُمد طلب السحب بقيمة 1,500 ج.م&#x27;,at:now-30*24*H},{t:&#x27;ملف old-sample.zip نُقل إلى العزل&#x27;,d:&#x27;اكتُشف فيه محتوى غير مسموح. تواصل مع الإدارة لمراجعته.&#x27;,at:now-3*24*H}],
+ sales:[[&#x27;م.ع.&#x27;,&#x27;لوحة ESP32 للتحكم المنزلي&#x27;,450,&#x27;مكتمل&#x27;,now-5*H],[&#x27;أ.ط.&#x27;,&#x27;لوحة ESP32 للتحكم المنزلي&#x27;,450,&#x27;بانتظار تأكيد التسليم&#x27;,now-26*H],[&#x27;ي.ح.&#x27;,&#x27;مضخم صوت Class-D&#x27;,520,&#x27;مكتمل&#x27;,now-4*24*H]]};
+const ST={published:[&#x27;b-g&#x27;,&#x27;منشور&#x27;],draft:[&#x27;b-n&#x27;,&#x27;مسودة&#x27;],paused:[&#x27;b-a&#x27;,&#x27;موقوف&#x27;],archived:[&#x27;b-n&#x27;,&#x27;مؤرشف&#x27;]};
+const FS={clean:[&#x27;b-g&#x27;,&#x27;سليم&#x27;],scan:[&#x27;b-a&#x27;,&#x27;قيد الفحص&#x27;],quar:[&#x27;b-r&#x27;,&#x27;معزول&#x27;]};
+const PS={paid:[&#x27;b-g&#x27;,&#x27;تم الصرف&#x27;],pending:[&#x27;b-a&#x27;,&#x27;قيد المراجعة&#x27;],rejected:[&#x27;b-r&#x27;,&#x27;مرفوض&#x27;]};
+const bd=(m,k)=&gt;`&lt;span class=&quot;badge ${m[k][0]}&quot;&gt;${m[k][1]}&lt;/span&gt;`;
+const sz=kb=&gt;kb&gt;=1024?(kb/1024).toFixed(1)+&#x27; MB&#x27;:kb+&#x27; KB&#x27;;
+const money=n=&gt;`&lt;span class=&quot;num&quot;&gt;${n.toLocaleString(&#x27;en&#x27;)}&lt;/span&gt; ج.م`;
+const rel=t=&gt;{const h=Math.round((now-t)/H);return h&lt;1?&#x27;قبل دقائق&#x27;:h&lt;24?`قبل ${h} ساعة`:`قبل ${Math.round(h/24)} يومًا`};
+const ext=n=&gt;n.split(&#x27;.&#x27;).pop().toLowerCase();
+const file=id=&gt;S.files.find(f=&gt;f.id===id);
+const fr=f=&gt;`&lt;div class=&quot;row&quot;&gt;&lt;div&gt;&lt;span class=&quot;ext&quot;&gt;${ext(f.n)}&lt;/span&gt;${f.n}&lt;small&gt;${sz(f.kb)} — ${S.drives.find(d=&gt;d.id===f.d).email}&lt;/small&gt;&lt;/div&gt;${bd(FS,f.st)}&lt;/div&gt;`;
+const scanning=()=&gt;S.files.filter(f=&gt;f.st===&#x27;scan&#x27;).length;
+const NAV=[[&#x27;overview&#x27;,&#x27;لوحة التحكم&#x27;],[&#x27;products&#x27;,&#x27;منتجاتي&#x27;],[&#x27;files&#x27;,&#x27;مكتبة الملفات&#x27;],[&#x27;upload&#x27;,&#x27;رفع ملف جديد&#x27;],[&#x27;drives&#x27;,&#x27;حسابات Drive&#x27;],[&#x27;wallet&#x27;,&#x27;المحفظة والمستحقات&#x27;],[&#x27;notifications&#x27;,&#x27;الإشعارات&#x27;]];
+function nav(cur){$(&#x27;#nav&#x27;).innerHTML=NAV.map(([k,l])=&gt;`&lt;a href=&quot;#/${k}&quot; class=&quot;${cur===k?&#x27;on&#x27;:&#x27;&#x27;}&quot;&gt;${l}${k===&#x27;files&#x27;&amp;&amp;scanning()?`&lt;i&gt;${scanning()}&lt;/i&gt;`:&#x27;&#x27;}&lt;/a&gt;`).join(&#x27;&#x27;)}
+const quota=d=&gt;{const p=Math.round(d.used/d.tot*100);return `&lt;div class=&quot;q ${p&gt;80?&#x27;hi&#x27;:&#x27;&#x27;}&quot;&gt;&lt;div style=&quot;width:${p}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;&lt;span class=&quot;mute&quot;&gt;&lt;span class=&quot;num&quot;&gt;${d.used}&lt;/span&gt; من &lt;span class=&quot;num&quot;&gt;${d.tot}&lt;/span&gt; GB — متبقي &lt;span class=&quot;num&quot;&gt;${(d.tot-d.used).toFixed(1)}&lt;/span&gt; GB&lt;/span&gt;`};
+const V={
+ overview(){const low=S.drives.find(d=&gt;d.used/d.tot&gt;.8);return `&lt;h1&gt;مرحبًا، هدى&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;هذا ملخص نشاطك كبائعة.&lt;/p&gt;
+ &lt;div class=&quot;stats&quot;&gt;&lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;v&quot;&gt;${money(S.wallet.avail)}&lt;/div&gt;&lt;span&gt;رصيد متاح للسحب&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;v&quot;&gt;${money(S.wallet.held)}&lt;/div&gt;&lt;span&gt;معلّق لحين تأكيد التسليم&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;v&quot;&gt;${S.products.filter(p=&gt;p.st===&#x27;published&#x27;).length}&lt;/div&gt;&lt;span&gt;منتج منشور&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;v&quot;&gt;${scanning()}&lt;/div&gt;&lt;span&gt;ملف قيد الفحص&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+ ${low?`&lt;div class=&quot;alert&quot;&gt;&lt;span&gt;&lt;b&gt;مساحة ${low.email} شبه ممتلئة.&lt;/b&gt; متبقي &lt;span class=&quot;num&quot;&gt;${(low.tot-low.used).toFixed(1)}&lt;/span&gt; GB فقط.&lt;/span&gt;&lt;a class=&quot;btn ghost sm&quot; href=&quot;#/drives&quot;&gt;أدر الحسابات&lt;/a&gt;&lt;/div&gt;`:&#x27;&#x27;}
+ &lt;h2&gt;آخر المبيعات&lt;/h2&gt;&lt;div class=&quot;box&quot; style=&quot;padding:6px 14px&quot;&gt;${S.sales.map(s=&gt;`&lt;div class=&quot;row&quot;&gt;&lt;div&gt;&lt;b&gt;${s[1]}&lt;/b&gt;&lt;small&gt;المشتري ${s[0]} — ${rel(s[4])}&lt;/small&gt;&lt;/div&gt;&lt;span style=&quot;text-align:end&quot;&gt;${money(s[2])}&lt;small&gt;${s[3]}&lt;/small&gt;&lt;/span&gt;&lt;/div&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;`},
+ products(){return `&lt;div class=&quot;vh&quot;&gt;&lt;div&gt;&lt;h1&gt;منتجاتي&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;أدر إصدارات ملفاتك ونشرها.&lt;/p&gt;&lt;/div&gt;&lt;button class=&quot;btn&quot; onclick=&quot;newProd()&quot;&gt;منتج جديد&lt;/button&gt;&lt;/div&gt;&lt;div class=&quot;box&quot; style=&quot;padding:6px 14px&quot;&gt;${S.products.map(p=&gt;`&lt;a class=&quot;row&quot; href=&quot;#/products/${p.id}&quot;&gt;&lt;div&gt;&lt;b&gt;${p.t}&lt;/b&gt;&lt;small&gt;${CATS[p.cat].replace(/[\u00a0└]/g,&#x27;&#x27;).trim()} — ${p.v.length} إصدارات — ${p.sales} مبيعات&lt;/small&gt;&lt;/div&gt;&lt;span style=&quot;text-align:end&quot;&gt;${money(p.price)} ${bd(ST,p.st)}&lt;/span&gt;&lt;/a&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;`},
+ product(id){const p=S.products.find(x=&gt;x.id===id);if(!p)return V.products();
+  const free=S.files.filter(f=&gt;f.st===&#x27;clean&#x27;&amp;&amp;!S.products.some(q=&gt;q.v.some(v=&gt;v.f.includes(f.id))));
+  return `&lt;div class=&quot;crumb&quot;&gt;&lt;a href=&quot;#/products&quot;&gt;منتجاتي&lt;/a&gt; / ${p.t}&lt;/div&gt;&lt;div class=&quot;vh&quot;&gt;&lt;h1&gt;${p.t}&lt;/h1&gt;${bd(ST,p.st)}&lt;/div&gt;
+  &lt;form class=&quot;f box&quot; onsubmit=&quot;event.preventDefault();saveProd(${p.id})&quot;&gt;&lt;label for=&quot;pt&quot;&gt;اسم المنتج&lt;/label&gt;&lt;input class=&quot;in&quot; id=&quot;pt&quot; value=&quot;${p.t}&quot;&gt;
+  &lt;div class=&quot;grid2&quot; style=&quot;grid-template-columns:1fr 1fr&quot;&gt;&lt;div&gt;&lt;label for=&quot;pp&quot;&gt;السعر (ج.م)&lt;/label&gt;&lt;input class=&quot;in&quot; id=&quot;pp&quot; type=&quot;number&quot; min=&quot;1&quot; value=&quot;${p.price}&quot; dir=&quot;ltr&quot;&gt;&lt;/div&gt;&lt;div&gt;&lt;label for=&quot;pc&quot;&gt;التصنيف&lt;/label&gt;&lt;select class=&quot;in&quot; id=&quot;pc&quot;&gt;${CATS.map((c,i)=&gt;`&lt;option value=&quot;${i}&quot; ${i===p.cat?&#x27;selected&#x27;:&#x27;&#x27;}&gt;${c}&lt;/option&gt;`).join(&#x27;&#x27;)}&lt;/select&gt;&lt;/div&gt;&lt;/div&gt;
+  &lt;label for=&quot;pd&quot;&gt;الوصف&lt;/label&gt;&lt;textarea class=&quot;in&quot; id=&quot;pd&quot; rows=&quot;3&quot;&gt;${p.desc}&lt;/textarea&gt;&lt;div class=&quot;err&quot; id=&quot;pe&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;vh&quot;&gt;&lt;button class=&quot;btn&quot;&gt;احفظ التغييرات&lt;/button&gt;${p.st===&#x27;published&#x27;?`&lt;button type=&quot;button&quot; class=&quot;btn ghost&quot; onclick=&quot;setSt(${p.id},&#x27;paused&#x27;)&quot;&gt;أوقف النشر&lt;/button&gt;`:p.st===&#x27;paused&#x27;?`&lt;button type=&quot;button&quot; class=&quot;btn ghost&quot; onclick=&quot;setSt(${p.id},&#x27;published&#x27;)&quot;&gt;أعد النشر&lt;/button&gt;`:&#x27;&#x27;}&lt;/div&gt;&lt;/form&gt;
+  &lt;h2&gt;الإصدارات&lt;/h2&gt;${p.v.map(v=&gt;{const fs=v.f.map(file),bad=fs.filter(f=&gt;f.st!==&#x27;clean&#x27;).length;
+   return `&lt;div class=&quot;box&quot; style=&quot;margin-bottom:12px&quot;&gt;&lt;div class=&quot;vh&quot;&gt;&lt;b&gt;الإصدار &lt;span class=&quot;num&quot;&gt;${v.n}&lt;/span&gt; ${bd(ST,v.st)}&lt;/b&gt;${v.st===&#x27;draft&#x27;?`&lt;button class=&quot;btn sm&quot; ${!fs.length||bad?&#x27;disabled&#x27;:&#x27;&#x27;} onclick=&quot;pubV(${p.id},${v.n})&quot;&gt;انشر الإصدار&lt;/button&gt;`:&#x27;&#x27;}&lt;/div&gt;
+   ${fs.length?fs.map(fr).join(&#x27;&#x27;):&#x27;&lt;p class=&quot;mute&quot; style=&quot;margin:10px 0 0&quot;&gt;لا توجد ملفات في هذا الإصدار بعد.&lt;/p&gt;&#x27;}
+   ${v.st===&#x27;draft&#x27;&amp;&amp;bad?`&lt;p class=&quot;mute&quot; style=&quot;color:var(--amber)&quot;&gt;لا يمكن النشر الآن: ${bad} ملف لم يكتمل فحصه أو معزول.&lt;/p&gt;`:&#x27;&#x27;}
+   ${v.st===&#x27;draft&#x27;?`&lt;div class=&quot;vh&quot; style=&quot;margin-top:10px&quot;&gt;&lt;select class=&quot;in&quot; id=&quot;at${v.n}&quot; style=&quot;max-width:260px&quot;&gt;&lt;option value=&quot;&quot;&gt;أرفق ملفًا من المكتبة…&lt;/option&gt;${free.map(f=&gt;`&lt;option value=&quot;${f.id}&quot;&gt;${f.n}&lt;/option&gt;`).join(&#x27;&#x27;)}&lt;/select&gt;&lt;button class=&quot;btn ghost sm&quot; onclick=&quot;attach(${p.id},${v.n})&quot;&gt;أرفق&lt;/button&gt;&lt;/div&gt;`:&#x27;&#x27;}&lt;/div&gt;`}).join(&#x27;&#x27;)}
+  &lt;button class=&quot;btn ghost&quot; onclick=&quot;newV(${p.id})&quot;&gt;أنشئ إصدارًا جديدًا&lt;/button&gt;`},
+ files(){return `&lt;div class=&quot;vh&quot;&gt;&lt;div&gt;&lt;h1&gt;مكتبة الملفات&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;كل ملف يُفحص قبل أن يُسمح بنشره.&lt;/p&gt;&lt;/div&gt;&lt;a class=&quot;btn&quot; href=&quot;#/upload&quot;&gt;ارفع ملفًا&lt;/a&gt;&lt;/div&gt;&lt;div class=&quot;box&quot; style=&quot;padding:6px 14px&quot;&gt;${S.files.map(fr).join(&#x27;&#x27;)}&lt;/div&gt;`},
+ upload(){return `&lt;h1&gt;رفع ملف جديد&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;يُرفع الملف مباشرة إلى حساب Drive الخاص بك.&lt;/p&gt;&lt;div class=&quot;box f&quot;&gt;&lt;label for=&quot;ud&quot;&gt;حفظ في حساب&lt;/label&gt;&lt;select class=&quot;in&quot; id=&quot;ud&quot; style=&quot;max-width:380px&quot;&gt;${S.drives.map(d=&gt;`&lt;option value=&quot;${d.id}&quot;&gt;${d.email} — متبقي ${(d.tot-d.used).toFixed(1)} GB&lt;/option&gt;`).join(&#x27;&#x27;)}&lt;/select&gt;
+  &lt;label&gt;الملف&lt;/label&gt;&lt;div class=&quot;drop&quot;&gt;&lt;input type=&quot;file&quot; id=&quot;uf&quot; aria-label=&quot;اختر ملفًا&quot;&gt;&lt;p class=&quot;mute&quot;&gt;الأنواع المسموحة: &lt;span class=&quot;num&quot;&gt;${OK.join(&#x27; · &#x27;)}&lt;/span&gt;&lt;/p&gt;&lt;/div&gt;
+  &lt;div class=&quot;err&quot; id=&quot;ue&quot;&gt;&lt;/div&gt;&lt;div class=&quot;vh&quot;&gt;&lt;button class=&quot;btn&quot; id=&quot;ub&quot; onclick=&quot;upload()&quot;&gt;ابدأ الرفع&lt;/button&gt;&lt;button class=&quot;btn ghost&quot; onclick=&quot;sample()&quot;&gt;جرّب ملفًا تجريبيًا غير مسموح&lt;/button&gt;&lt;/div&gt;
+  &lt;div class=&quot;prog&quot;&gt;&lt;div id=&quot;up&quot;&gt;&lt;/div&gt;&lt;/div&gt;&lt;span class=&quot;mute&quot; id=&quot;us&quot;&gt;&lt;/span&gt;&lt;/div&gt;`},
+ drives(){return `&lt;div class=&quot;vh&quot;&gt;&lt;div&gt;&lt;h1&gt;حسابات Drive&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;ملفاتك تبقى في حساباتك وليس على خوادم المنصة.&lt;/p&gt;&lt;/div&gt;&lt;button class=&quot;btn&quot; onclick=&quot;toast(&#x27;سيُفتح تسجيل الدخول من Google لربط الحساب&#x27;)&quot;&gt;اربط حسابًا جديدًا&lt;/button&gt;&lt;/div&gt;
+  &lt;div class=&quot;grid2&quot;&gt;${S.drives.map(d=&gt;`&lt;div class=&quot;box&quot;&gt;&lt;div class=&quot;vh&quot;&gt;&lt;b dir=&quot;ltr&quot;&gt;${d.email}&lt;/b&gt;${d.def?&#x27;&lt;span class=&quot;badge b-b&quot;&gt;الافتراضي&lt;/span&gt;&#x27;:`&lt;button class=&quot;btn ghost sm&quot; onclick=&quot;defD(${d.id})&quot;&gt;اجعله افتراضيًا&lt;/button&gt;`}&lt;/div&gt;${quota(d)}&lt;/div&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;`},
+ wallet(){const w=S.wallet;return `&lt;h1&gt;المحفظة والمستحقات&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;المبلغ يصبح متاحًا بعد تأكيد تسليم الكود للمشتري.&lt;/p&gt;
+  &lt;div class=&quot;stats&quot;&gt;&lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;v&quot;&gt;${money(w.avail)}&lt;/div&gt;&lt;span&gt;متاح للسحب&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;v&quot;&gt;${money(w.held)}&lt;/div&gt;&lt;span&gt;معلّق&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;v&quot;&gt;${money(w.paid)}&lt;/div&gt;&lt;span&gt;مجموع ما صُرف&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+  &lt;h2&gt;اطلب سحبًا&lt;/h2&gt;&lt;form class=&quot;f box&quot; onsubmit=&quot;event.preventDefault();payout()&quot;&gt;&lt;label for=&quot;pa&quot;&gt;المبلغ (ج.م) — الحد الأدنى 200&lt;/label&gt;&lt;input class=&quot;in&quot; id=&quot;pa&quot; type=&quot;number&quot; dir=&quot;ltr&quot; style=&quot;max-width:240px&quot;&gt;&lt;div class=&quot;err&quot; id=&quot;pe&quot;&gt;&lt;/div&gt;&lt;button class=&quot;btn&quot;&gt;أرسل طلب السحب&lt;/button&gt;&lt;/form&gt;
+  &lt;h2&gt;سجل الطلبات&lt;/h2&gt;&lt;div class=&quot;box&quot; style=&quot;padding:6px 14px&quot;&gt;${S.pay.map(p=&gt;`&lt;div class=&quot;row&quot;&gt;&lt;div&gt;${money(p.amt)}&lt;small&gt;${rel(p.at)}${p.why?&#x27; — &#x27;+p.why:&#x27;&#x27;}&lt;/small&gt;&lt;/div&gt;${bd(PS,p.st)}&lt;/div&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;`},
+ notifications(){return `&lt;h1&gt;الإشعارات&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;آخر ما يخص منتجاتك وملفاتك.&lt;/p&gt;&lt;div class=&quot;box&quot; style=&quot;padding:6px 14px&quot;&gt;${S.notes.map(n=&gt;`&lt;div class=&quot;row&quot;&gt;&lt;div&gt;&lt;b&gt;${n.t}&lt;/b&gt;${n.d?`&lt;small&gt;${n.d}&lt;/small&gt;`:&#x27;&#x27;}&lt;/div&gt;&lt;small&gt;${rel(n.at)}&lt;/small&gt;&lt;/div&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;`}
+};
+function saveProd(id){const p=S.products.find(x=&gt;x.id===id),t=$(&#x27;#pt&#x27;).value.trim(),pr=+$(&#x27;#pp&#x27;).value;
+ if(!t){$(&#x27;#pt&#x27;).classList.add(&#x27;bad&#x27;);$(&#x27;#pe&#x27;).textContent=&#x27;اكتب اسم المنتج.&#x27;;return}
+ if(!(pr&gt;0)){$(&#x27;#pp&#x27;).classList.add(&#x27;bad&#x27;);$(&#x27;#pe&#x27;).textContent=&#x27;اكتب سعرًا أكبر من صفر.&#x27;;return}
+ Object.assign(p,{t,price:pr,cat:+$(&#x27;#pc&#x27;).value,desc:$(&#x27;#pd&#x27;).value});toast(&#x27;تم حفظ التغييرات&#x27;);route()}
+function setSt(id,s){S.products.find(x=&gt;x.id===id).st=s;toast(s===&#x27;paused&#x27;?&#x27;تم إيقاف النشر&#x27;:&#x27;تمت إعادة النشر&#x27;);route()}
+function pubV(id,n){const p=S.products.find(x=&gt;x.id===id);p.v.forEach(v=&gt;{if(v.st===&#x27;published&#x27;)v.st=&#x27;archived&#x27;});p.v.find(v=&gt;v.n===n).st=&#x27;published&#x27;;p.st=&#x27;published&#x27;;toast(&#x27;تم نشر الإصدار&#x27;);route()}
+function attach(id,n){const x=$(&#x27;#at&#x27;+n).value;if(!x)return toast(&#x27;اختر ملفًا أولًا&#x27;);S.products.find(p=&gt;p.id===id).v.find(v=&gt;v.n===n).f.push(+x);toast(&#x27;تم إرفاق الملف&#x27;);route()}
+function newV(id){const p=S.products.find(x=&gt;x.id===id);if(p.v.some(v=&gt;v.st===&#x27;draft&#x27;))return toast(&#x27;لديك إصدار مسودة بالفعل&#x27;);p.v.unshift({n:Math.max(...p.v.map(v=&gt;v.n))+1,st:&#x27;draft&#x27;,f:[]});toast(&#x27;تم إنشاء إصدار جديد&#x27;);route()}
+function newProd(){const id=S.products.length+1;S.products.push({id,t:&#x27;منتج جديد بلا اسم&#x27;,st:&#x27;draft&#x27;,price:100,cat:0,desc:&#x27;&#x27;,sales:0,v:[{n:1,st:&#x27;draft&#x27;,f:[]}]});location.hash=&#x27;#/products/&#x27;+id}
+function defD(id){S.drives.forEach(d=&gt;d.def=d.id===id);toast(&#x27;تم تغيير الحساب الافتراضي&#x27;);route()}
+function payout(){const a=+$(&#x27;#pa&#x27;).value,e=$(&#x27;#pe&#x27;);if(!(a&gt;=200)){e.textContent=&#x27;الحد الأدنى للسحب 200 ج.م.&#x27;;return}if(a&gt;S.wallet.avail){e.textContent=&#x27;المبلغ أكبر من رصيدك المتاح.&#x27;;return}
+ S.wallet.avail-=a;S.pay.unshift({amt:a,st:&#x27;pending&#x27;,at:Date.now()});toast(&#x27;تم إرسال طلب السحب&#x27;);route()}
+function run(name,kb,did){const e=$(&#x27;#ue&#x27;),d=S.drives.find(x=&gt;x.id===did),x=ext(name);e.textContent=&#x27;&#x27;;
+ if(!OK.includes(x)){e.textContent=`النوع .${x} غير مسموح. ارفع ملفًا من الأنواع المذكورة أعلاه.`;return}
+ if(kb/1048576&gt;d.tot-d.used){e.textContent=&#x27;مساحة الحساب المختار لا تكفي لهذا الملف.&#x27;;return}
+ const b=$(&#x27;#ub&#x27;);b.disabled=true;let p=0;const t=setInterval(()=&gt;{p+=8;$(&#x27;#up&#x27;).style.width=Math.min(p,100)+&#x27;%&#x27;;$(&#x27;#us&#x27;).textContent=&#x27;جارٍ الرفع… &#x27;+Math.min(p,100)+&#x27;%&#x27;;
+  if(p&gt;=100){clearInterval(t);S.files.unshift({id:Date.now(),n:name,kb,st:&#x27;scan&#x27;,d:did,at:Date.now()+6e3});$(&#x27;#us&#x27;).textContent=&#x27;اكتمل الرفع. الملف الآن قيد الفحص.&#x27;;b.disabled=false;nav(&#x27;upload&#x27;);toast(&#x27;تم رفع الملف&#x27;)}},150)}
+function upload(){const f=$(&#x27;#uf&#x27;).files[0];if(!f){$(&#x27;#ue&#x27;).textContent=&#x27;اختر ملفًا أولًا.&#x27;;return}run(f.name,Math.max(1,Math.round(f.size/1024)),+$(&#x27;#ud&#x27;).value)}
+function sample(){run(&#x27;setup.exe&#x27;,2400,+$(&#x27;#ud&#x27;).value)}
+function toast(m){const t=$(&#x27;#toast&#x27;);t.textContent=m;t.classList.add(&#x27;on&#x27;);clearTimeout(toast.h);toast.h=setTimeout(()=&gt;t.classList.remove(&#x27;on&#x27;),2600)}
+function route(){const [,k=&#x27;overview&#x27;,id]=location.hash.split(&#x27;/&#x27;);const key=NAV.some(n=&gt;n[0]===k)?k:&#x27;overview&#x27;;
+ $(&#x27;#v&#x27;).innerHTML=(key===&#x27;products&#x27;&amp;&amp;id?V.product:V[key])(+id||id);nav(key);window.scrollTo(0,0)}
+setInterval(()=&gt;{let ch=false;S.files.forEach(f=&gt;{if(f.st===&#x27;scan&#x27;&amp;&amp;Date.now()&gt;=f.at){f.st=&#x27;clean&#x27;;ch=true}});
+ if(ch){toast(&#x27;انتهى فحص ملف وأصبح سليمًا&#x27;);const k=location.hash.split(&#x27;/&#x27;)[1];if(![&#x27;upload&#x27;,&#x27;wallet&#x27;].includes(k)&amp;&amp;!document.activeElement?.closest?.(&#x27;form&#x27;))route();else nav(k||&#x27;overview&#x27;)}},1000);
+addEventListener(&#x27;hashchange&#x27;,route);route();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe><iframe id="f-admin" title="المدير" hidden data-doc="&lt;!doctype html&gt;
+&lt;html lang=&quot;ar&quot; dir=&quot;rtl&quot;&gt;
+&lt;head&gt;
+&lt;base href=&quot;about:srcdoc&quot;&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;title&gt;لوحة الإدارة — عرض تصميم&lt;/title&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap&quot;&gt;
+&lt;style&gt;
+:root{--paper:#f3f5f7;--card:#fff;--ink:#0f1b26;--mute:#5d6b78;--line:#d8dee4;--blue:#1457d9;--blue-ink:#fff;--green:#17855b;--amber:#b87800;--red:#c93030;--soft:#e9eef5;--pcb:#0d3b32;--gbg:#dff3ea;--abg:#fbefd2;--rbg:#fbe3e3;--bbg:#dfe9fc;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--paper:#0c1219;--card:#141d27;--ink:#e8eef4;--mute:#92a1af;--line:#26323f;--blue:#6f9bff;--blue-ink:#0c1219;--green:#4cc796;--amber:#f0b73a;--red:#ff7b7b;--soft:#1b2733;--pcb:#0a2a24;--gbg:#12372b;--abg:#3a2d0c;--rbg:#3d1a1a;--bbg:#18284a;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 14.5px/1.65 &quot;IBM Plex Sans Arabic&quot;,Tahoma,&quot;Segoe UI&quot;,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}a{color:inherit;text-decoration:none}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px;border-radius:6px}
+.num{direction:ltr;unicode-bidi:isolate;display:inline-block}
+header{background:var(--pcb);color:#e8f5f0;position:sticky;top:0;z-index:20}
+.bar{padding:0 20px;height:56px;display:flex;align-items:center;gap:14px}
+.logo{font-weight:700;font-size:17px}.logo small{font-weight:500;color:#9ccbbd;font-size:13px;margin-inline-start:10px;border-inline-start:1px solid #3d7a6a;padding-inline-start:10px}
+.sp{flex:1}.bar select{background:#ffffff18;border:1px solid #3d7a6a;color:#fff;border-radius:8px;padding:5px 10px}.bar option{color:#000}
+.shell{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 56px)}
+aside{background:var(--card);border-inline-end:1px solid var(--line);padding:14px 12px}
+aside nav{position:sticky;top:70px;max-height:calc(100vh - 80px);overflow:auto}
+aside p{font-size:12px;color:var(--mute);margin:14px 8px 4px;font-weight:600}aside p:first-child{margin-top:0}
+aside a{display:flex;justify-content:space-between;padding:6px 10px;border-radius:8px;color:var(--mute);font-weight:500;font-size:14px}
+aside a:hover{background:var(--soft);color:var(--ink)}aside a.on{background:var(--ink);color:var(--paper)}
+aside a i{font-style:normal;background:var(--red);color:#fff;border-radius:99px;font-size:11px;min-width:19px;text-align:center;padding:0 5px}
+main{padding:24px 28px 60px;min-width:0}
+h1{font-size:22px;margin:0 0 2px}.sub{color:var(--mute);margin:0 0 16px}
+h2{font-size:16px;margin:22px 0 10px}
+.vh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.btn{border:0;border-radius:8px;padding:7px 15px;font-weight:600;cursor:pointer;background:var(--blue);color:var(--blue-ink)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}.btn.danger{background:var(--red);color:#fff}
+.btn.sm{padding:3px 10px;font-size:13px}.btn:disabled{opacity:.45;cursor:default}
+.badge{font-size:12px;font-weight:600;padding:1px 9px;border-radius:99px;white-space:nowrap}
+.g{background:var(--gbg);color:var(--green)}.a{background:var(--abg);color:var(--amber)}.r{background:var(--rbg);color:var(--red)}.b{background:var(--bbg);color:var(--blue)}.n{background:var(--soft);color:var(--mute)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:2px 13px;cursor:pointer;font-size:13px}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tw{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:start;font-weight:600;color:var(--mute);font-size:12.5px;padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:middle}tr:last-child td{border:0}
+td.ac{white-space:nowrap;text-align:end}td.ac .btn{margin-inline-start:5px}
+.empty{padding:28px;text-align:center;color:var(--mute)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+a.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;display:block}
+a.stat:hover{border-color:var(--blue)}.stat .v{font-size:27px;font-weight:700;line-height:1.3}.stat span{color:var(--mute);font-size:13px}
+.stat.z .v{color:var(--mute)}.stat:not(.z) .v{color:var(--amber)}
+.mute{color:var(--mute);font-size:13px}.note{background:var(--abg);border:1px solid var(--amber);border-radius:10px;padding:9px 14px;margin-bottom:14px;font-size:13.5px}
+.f label{display:block;font-size:13px;font-weight:500;margin:10px 0 3px}
+.in{width:100%;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:8px 11px}.in.bad{border-color:var(--red)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.tabs button{background:none;border:0;padding:8px 14px;cursor:pointer;color:var(--mute);border-bottom:2px solid transparent;font-weight:500}
+.tabs button[aria-selected=true]{color:var(--ink);border-color:var(--blue)}
+.sw{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.sw input[type=checkbox]{width:38px;height:22px;accent-color:var(--green)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ov{position:fixed;inset:0;background:#0009;display:grid;place-items:center;z-index:40;padding:16px}
+.md{background:var(--card);border-radius:14px;padding:20px;width:min(440px,100%)}.md h3{margin:0 0 6px}.md p{margin:0 0 10px;color:var(--mute)}
+.md .vh{margin-top:14px;justify-content:flex-start}.err{color:var(--red);font-size:13px;min-height:18px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translate(-50%,30px);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;z-index:60}.toast.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:860px){.shell{grid-template-columns:1fr}aside nav{position:static;max-height:none;display:flex;gap:4px;overflow-x:auto}aside p{display:none}aside a{white-space:nowrap;gap:8px}main{padding:18px 14px}.grid2{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;header&gt;&lt;div class=&quot;bar&quot;&gt;&lt;span class=&quot;logo&quot;&gt;إلكترونيات&lt;small&gt;لوحة الإدارة&lt;/small&gt;&lt;/span&gt;&lt;span class=&quot;sp&quot;&gt;&lt;/span&gt;&lt;label for=&quot;role&quot; class=&quot;mute&quot; style=&quot;color:#9ccbbd&quot;&gt;الدور:&lt;/label&gt;&lt;select id=&quot;role&quot; onchange=&quot;setRole(this.value)&quot;&gt;&lt;option value=&quot;super&quot;&gt;مدير أعلى&lt;/option&gt;&lt;option value=&quot;support&quot;&gt;موظف دعم&lt;/option&gt;&lt;/select&gt;&lt;/div&gt;&lt;/header&gt;
+&lt;div class=&quot;shell&quot;&gt;&lt;aside&gt;&lt;nav id=&quot;nav&quot;&gt;&lt;/nav&gt;&lt;/aside&gt;&lt;main id=&quot;v&quot;&gt;&lt;/main&gt;&lt;/div&gt;
+&lt;div class=&quot;toast&quot; id=&quot;toast&quot; role=&quot;status&quot;&gt;&lt;/div&gt;&lt;div id=&quot;md&quot;&gt;&lt;/div&gt;
+&lt;script&gt;
+const $=s=&gt;document.querySelector(s),now=Date.now(),H=36e5,D=24*H;
+const rel=t=&gt;{const m=Math.round((Date.now()-t)/6e4);if(m&lt;1)return&#x27;الآن&#x27;;if(m&lt;60)return`قبل ${m} دقيقة`;const h=Math.round(m/60);return h&lt;24?`قبل ${h} ساعة`:`قبل ${Math.round(h/24)} يومًا`};
+const ST={pending:[&#x27;a&#x27;,&#x27;قيد المراجعة&#x27;],approved:[&#x27;g&#x27;,&#x27;معتمد&#x27;],rejected:[&#x27;r&#x27;,&#x27;مرفوض&#x27;],suspended:[&#x27;r&#x27;,&#x27;موقوف&#x27;],active:[&#x27;g&#x27;,&#x27;فعّال&#x27;],revoked:[&#x27;r&#x27;,&#x27;ملغى&#x27;],used:[&#x27;n&#x27;,&#x27;مستخدم&#x27;],expired:[&#x27;n&#x27;,&#x27;منتهي&#x27;],published:[&#x27;g&#x27;,&#x27;منشور&#x27;],paused:[&#x27;a&#x27;,&#x27;موقوف مؤقتًا&#x27;],hidden:[&#x27;n&#x27;,&#x27;مخفي&#x27;],open:[&#x27;a&#x27;,&#x27;مفتوح&#x27;],resolved:[&#x27;g&#x27;,&#x27;تم الحل&#x27;],dismissed:[&#x27;n&#x27;,&#x27;مرفوض البلاغ&#x27;],paid:[&#x27;g&#x27;,&#x27;تم الصرف&#x27;],quarantined:[&#x27;r&#x27;,&#x27;معزول&#x27;],released:[&#x27;g&#x27;,&#x27;أُفرج عنه&#x27;],ok:[&#x27;g&#x27;,&#x27;ناجح&#x27;],failed:[&#x27;a&#x27;,&#x27;فاشل&#x27;],blocked:[&#x27;r&#x27;,&#x27;محظور&#x27;],completed:[&#x27;b&#x27;,&#x27;مكتمل&#x27;],partial:[&#x27;a&#x27;,&#x27;جزئي&#x27;],compensated:[&#x27;g&#x27;,&#x27;عُوّض&#x27;],enabled:[&#x27;g&#x27;,&#x27;مفعّل&#x27;],disabled:[&#x27;n&#x27;,&#x27;معطّل&#x27;],auto:[&#x27;n&#x27;,&#x27;تلقائي&#x27;],manual:[&#x27;b&#x27;,&#x27;يدوي&#x27;],invited:[&#x27;a&#x27;,&#x27;مدعو&#x27;]};
+const badge=k=&gt;`&lt;span class=&quot;badge ${ST[k]?.[0]||&#x27;n&#x27;}&quot;&gt;${ST[k]?.[1]||k}&lt;/span&gt;`;
+const m$=n=&gt;`&lt;span class=&quot;num&quot;&gt;${n.toLocaleString(&#x27;en&#x27;)}&lt;/span&gt; ج.م`;
+const stars=n=&gt;&#x27;★&#x27;.repeat(n)+&#x27;☆&#x27;.repeat(5-n);
+const T=(id,at)=&gt;now-at;
+const D0={
+ sellers:[{id:&#x27;S1&#x27;,n:&#x27;م. هدى سمير&#x27;,e:&#x27;hoda@mail.com&#x27;,pr:3,st:&#x27;approved&#x27;},{id:&#x27;S2&#x27;,n:&#x27;ستوديو أمبير&#x27;,e:&#x27;amp@mail.com&#x27;,pr:0,st:&#x27;pending&#x27;},{id:&#x27;S3&#x27;,n:&#x27;ورشة النيل&#x27;,e:&#x27;nile@mail.com&#x27;,pr:5,st:&#x27;approved&#x27;},{id:&#x27;S4&#x27;,n:&#x27;م. كريم عادل&#x27;,e:&#x27;karim@mail.com&#x27;,pr:2,st:&#x27;suspended&#x27;}],
+ products:[{id:&#x27;P1&#x27;,n:&#x27;لوحة ESP32 للتحكم المنزلي&#x27;,s:&#x27;م. هدى سمير&#x27;,pr:450,st:&#x27;published&#x27;},{id:&#x27;P2&#x27;,n:&#x27;مكتبة رموز وبصمات KiCad&#x27;,s:&#x27;ورشة النيل&#x27;,pr:180,st:&#x27;published&#x27;},{id:&#x27;P3&#x27;,n:&#x27;مضخم صوت Class-D&#x27;,s:&#x27;ستوديو أمبير&#x27;,pr:520,st:&#x27;paused&#x27;}],
+ filetypes:[{id:&#x27;gerber&#x27;,mime:&#x27;application/octet-stream&#x27;,mb:50,st:&#x27;enabled&#x27;},{id:&#x27;pdf&#x27;,mime:&#x27;application/pdf&#x27;,mb:100,st:&#x27;enabled&#x27;},{id:&#x27;zip&#x27;,mime:&#x27;application/zip&#x27;,mb:500,st:&#x27;enabled&#x27;},{id:&#x27;exe&#x27;,mime:&#x27;application/x-msdownload&#x27;,mb:0,st:&#x27;disabled&#x27;}],
+ quarantine:[{id:&#x27;Q1&#x27;,f:&#x27;old-sample.zip&#x27;,s:&#x27;ورشة النيل&#x27;,why:&#x27;محتوى تنفيذي داخل أرشيف&#x27;,st:&#x27;quarantined&#x27;},{id:&#x27;Q2&#x27;,f:&#x27;fw-test.bin&#x27;,s:&#x27;م. كريم عادل&#x27;,why:&#x27;توقيع ملف لا يطابق الامتداد&#x27;,st:&#x27;quarantined&#x27;}],
+ categories:[{id:&#x27;C1&#x27;,n:&#x27;لوحات PCB&#x27;,par:&#x27;—&#x27;,pc:12,st:&#x27;active&#x27;},{id:&#x27;C2&#x27;,n:&#x27;لوحات متحكمات&#x27;,par:&#x27;لوحات PCB&#x27;,pc:7,st:&#x27;active&#x27;},{id:&#x27;C3&#x27;,n:&#x27;برمجيات مدمجة&#x27;,par:&#x27;—&#x27;,pc:6,st:&#x27;active&#x27;},{id:&#x27;C4&#x27;,n:&#x27;دورات ووثائق&#x27;,par:&#x27;—&#x27;,pc:9,st:&#x27;hidden&#x27;}],
+ requests:[{id:&#x27;REQ-2B81DE&#x27;,b:&#x27;منى عبد الله&#x27;,p:&#x27;مكتبة رموز وبصمات KiCad&#x27;,a:180,st:&#x27;pending&#x27;,at:now-2*H},{id:&#x27;REQ-7F3A9C&#x27;,b:&#x27;أحمد طارق&#x27;,p:&#x27;لوحة ESP32 للتحكم المنزلي&#x27;,a:450,st:&#x27;approved&#x27;,at:now-5*H},{id:&#x27;REQ-51E7B2&#x27;,b:&#x27;يوسف حسن&#x27;,p:&#x27;مضخم صوت Class-D&#x27;,a:520,st:&#x27;rejected&#x27;,at:now-3*D}],
+ codes:[{id:&#x27;K7QF&#x27;,p:&#x27;لوحة ESP32 للتحكم المنزلي&#x27;,b:&#x27;أحمد طارق&#x27;,st:&#x27;active&#x27;,at:now-4*H},{id:&#x27;M2XD&#x27;,p:&#x27;فيرموير STM32&#x27;,b:&#x27;منى عبد الله&#x27;,st:&#x27;used&#x27;,at:now-9*D},{id:&#x27;T9LB&#x27;,p:&#x27;مصدر تغذية 5V / 3A&#x27;,b:&#x27;سارة علي&#x27;,st:&#x27;expired&#x27;,at:now-3*D}],
+ downloads:[{id:&#x27;DL-104&#x27;,b:&#x27;أحمد طارق&#x27;,p:&#x27;لوحة ESP32 للتحكم المنزلي&#x27;,at_:&#x27;0 / 3&#x27;,st:&#x27;active&#x27;},{id:&#x27;DL-097&#x27;,b:&#x27;منى عبد الله&#x27;,p:&#x27;فيرموير STM32&#x27;,at_:&#x27;1 / 3&#x27;,st:&#x27;completed&#x27;},{id:&#x27;DL-091&#x27;,b:&#x27;سارة علي&#x27;,p:&#x27;مصدر تغذية 5V / 3A&#x27;,at_:&#x27;2 / 3&#x27;,st:&#x27;partial&#x27;}],
+ compensation:[{id:&#x27;CP-12&#x27;,b:&#x27;سارة علي&#x27;,p:&#x27;مصدر تغذية 5V / 3A&#x27;,why:&#x27;انقطع التنزيل عند 55%&#x27;,st:&#x27;pending&#x27;},{id:&#x27;CP-11&#x27;,b:&#x27;خالد محمود&#x27;,p:&#x27;دورة تصميم PCB&#x27;,why:&#x27;ملف تالف بعد الفك&#x27;,st:&#x27;approved&#x27;}],
+ exceptions:[{id:&#x27;EX-5&#x27;,b:&#x27;خالد محمود&#x27;,p:&#x27;دورة تصميم PCB&#x27;,x:&#x27;+2 محاولة&#x27;,st:&#x27;pending&#x27;},{id:&#x27;EX-4&#x27;,b:&#x27;نور سعيد&#x27;,p:&#x27;مضخم Class-D&#x27;,x:&#x27;+1 محاولة&#x27;,st:&#x27;approved&#x27;}],
+ payouts:[{id:&#x27;PO-31&#x27;,s:&#x27;م. هدى سمير&#x27;,a:1500,st:&#x27;pending&#x27;},{id:&#x27;PO-30&#x27;,s:&#x27;ورشة النيل&#x27;,a:2400,st:&#x27;approved&#x27;},{id:&#x27;PO-29&#x27;,s:&#x27;م. كريم عادل&#x27;,a:800,st:&#x27;paid&#x27;}],
+ reviews:[{id:&#x27;RV-8&#x27;,p:&#x27;لوحة ESP32 للتحكم المنزلي&#x27;,b:&#x27;منى ع.&#x27;,r:5,t:&#x27;ملفات مرتبة وجاهزة للمصنع.&#x27;,st:&#x27;published&#x27;},{id:&#x27;RV-7&#x27;,p:&#x27;مضخم صوت Class-D&#x27;,b:&#x27;مجهول&#x27;,r:1,t:&#x27;نصب واحتيال (نص مسيء مختصر).&#x27;,st:&#x27;published&#x27;}],
+ reports:[{id:&#x27;RP-6&#x27;,e:&#x27;منتج: مكتبة KiCad&#x27;,who:&#x27;أحمد ط.&#x27;,why:&#x27;ملف لا يطابق الوصف&#x27;,st:&#x27;open&#x27;},{id:&#x27;RP-5&#x27;,e:&#x27;بائع: ستوديو أمبير&#x27;,who:&#x27;سارة ع.&#x27;,why:&#x27;إعلان مضلل&#x27;,st:&#x27;resolved&#x27;}],
+ redeem:[{id:&#x27;R5&#x27;,ip:&#x27;41.33.12.8&#x27;,c:&#x27;K7QF&#x27;,r:&#x27;ok&#x27;,at:now-4*H},{id:&#x27;R4&#x27;,ip:&#x27;197.55.2.91&#x27;,c:&#x27;AB12&#x27;,r:&#x27;failed&#x27;,at:now-3*H},{id:&#x27;R3&#x27;,ip:&#x27;197.55.2.91&#x27;,c:&#x27;AB13&#x27;,r:&#x27;failed&#x27;,at:now-3*H},{id:&#x27;R2&#x27;,ip:&#x27;197.55.2.91&#x27;,c:&#x27;ZZ90&#x27;,r:&#x27;blocked&#x27;,at:now-2*H}],
+ backups:[{id:&#x27;bk-0622&#x27;,kb:&#x27;48 MB&#x27;,ty:&#x27;auto&#x27;,at:now-18*H},{id:&#x27;bk-0621&#x27;,kb:&#x27;47 MB&#x27;,ty:&#x27;auto&#x27;,at:now-42*H},{id:&#x27;bk-0618&#x27;,kb:&#x27;45 MB&#x27;,ty:&#x27;manual&#x27;,at:now-4*D}],
+ staff:[{id:&#x27;U1&#x27;,n:&#x27;عمر فاروق&#x27;,role:&#x27;مدير أعلى&#x27;,st:&#x27;active&#x27;},{id:&#x27;U2&#x27;,n:&#x27;ليلى حسني&#x27;,role:&#x27;موظف دعم&#x27;,st:&#x27;active&#x27;},{id:&#x27;U3&#x27;,n:&#x27;تامر علي&#x27;,role:&#x27;موظف دعم&#x27;,st:&#x27;invited&#x27;}]
+};
+const S={role:&#x27;super&#x27;,d:structuredClone(D0),F:{},tab:&#x27;general&#x27;,
+ audit:[{at:now-30*H,who:&#x27;عمر فاروق&#x27;,act:&#x27;اعتماد — البائعون&#x27;,t:&#x27;م. هدى سمير&#x27;,note:&#x27;&#x27;},{at:now-20*H,who:&#x27;ليلى حسني&#x27;,act:&#x27;اعتماد — طلبات الشراء&#x27;,t:&#x27;REQ-7F3A9C&#x27;,note:&#x27;تم تأكيد الدفع هاتفيًا&#x27;},{at:now-3*D,who:&#x27;عمر فاروق&#x27;,act:&#x27;رفض — طلبات الشراء&#x27;,t:&#x27;REQ-51E7B2&#x27;,note:&#x27;لم يتم الدفع&#x27;}]};
+const act=(l,st,o={})=&gt;({l,st,...o});
+const on=s=&gt;r=&gt;r.st===s;
+const SEC=[
+ {g:&#x27;الرئيسية&#x27;,k:&#x27;overview&#x27;,l:&#x27;لوحة التحكم&#x27;},
+ {g:&#x27;البائعون والمنتجات&#x27;,k:&#x27;sellers&#x27;,l:&#x27;البائعون&#x27;,d:&#x27;اعتماد البائعين الجدد وإيقاف المخالفين.&#x27;,cols:[[&#x27;n&#x27;,&#x27;البائع&#x27;,&#x27;b&#x27;],[&#x27;e&#x27;,&#x27;البريد&#x27;,&#x27;ltr&#x27;],[&#x27;pr&#x27;,&#x27;المنتجات&#x27;,&#x27;ltr&#x27;],[&#x27;st&#x27;,&#x27;الحالة&#x27;,&#x27;st&#x27;]],a:[act(&#x27;اعتمد&#x27;,&#x27;approved&#x27;,{show:on(&#x27;pending&#x27;)}),act(&#x27;ارفض&#x27;,&#x27;rejected&#x27;,{show:on(&#x27;pending&#x27;),reason:&#x27;سبب الرفض&#x27;,danger:1}),act(&#x27;أوقف&#x27;,&#x27;suspended&#x27;,{show:on(&#x27;approved&#x27;),reason:&#x27;سبب الإيقاف&#x27;,danger:1}),act(&#x27;أعد التفعيل&#x27;,&#x27;approved&#x27;,{show:on(&#x27;suspended&#x27;)})]},
+ {k:&#x27;products&#x27;,l:&#x27;المنتجات&#x27;,d:&#x27;مراجعة المنتجات المنشورة على المنصة.&#x27;,cols:[[&#x27;n&#x27;,&#x27;المنتج&#x27;,&#x27;b&#x27;],[&#x27;s&#x27;,&#x27;البائع&#x27;],[&#x27;pr&#x27;,&#x27;السعر&#x27;,&#x27;m&#x27;],[&#x27;st&#x27;,&#x27;الحالة&#x27;,&#x27;st&#x27;]],a:[act(&#x27;أوقف النشر&#x27;,&#x27;paused&#x27;,{show:on(&#x27;published&#x27;),reason:&#x27;سبب الإيقاف&#x27;,danger:1}),act(&#x27;أعد النشر&#x27;,&#x27;published&#x27;,{show:r=&gt;r.st===&#x27;paused&#x27;})]},
+ {k:&#x27;filetypes&#x27;,l:&#x27;أنواع الملفات&#x27;,d:&#x27;الامتدادات المسموح برفعها وحدودها.&#x27;,cols:[[&#x27;id&#x27;,&#x27;الامتداد&#x27;,&#x27;ltr&#x27;],[&#x27;mime&#x27;,&#x27;النوع&#x27;,&#x27;ltr&#x27;],[&#x27;mb&#x27;,&#x27;الحد (MB)&#x27;,&#x27;ltr&#x27;],[&#x27;st&#x27;,&#x27;الحالة&#x27;,&#x27;st&#x27;]],add:{l:&#x27;أضف نوعًا&#x27;,ask:&#x27;الامتداد (مثل stl)&#x27;,mk:v=&gt;({id:v.toLowerCase(),mime:&#x27;application/octet-stream&#x27;,mb:50,st:&#x27;enabled&#x27;})},a:[act(&#x27;عطّل&#x27;,&#x27;disabled&#x27;,{show:on(&#x27;enabled&#x27;)}),act(&#x27;فعّل&#x27;,&#x27;enabled&#x27;,{show:on(&#x27;disabled&#x27;)})],sup:0},
+ {k:&#x27;quarantine&#x27;,l:&#x27;الملفات المعزولة&#x27;,d:&#x27;ملفات أوقفها الفحص الآلي.&#x27;,cols:[[&#x27;f&#x27;,&#x27;الملف&#x27;,&#x27;ltr&#x27;],[&#x27;s&#x27;,&#x27;البائع&#x27;],[&#x27;why&#x27;,&#x27;السبب&#x27;],[&#x27;st&#x27;,&#x27;الحالة&#x27;,&#x27;st&#x27;]],a:[act(&#x27;أفرج&#x27;,&#x27;released&#x27;,{show:on(&#x27;quarantined&#x27;)}),act(&#x27;احذف نهائيًا&#x27;,&#x27;revoked&#x27;,{show:on(&#x27;quarantined&#x27;),reason:&#x27;سبب الحذف&#x27;,danger:1,su:1})]},
+ {k:&#x27;categories&#x27;,l:&#x27;التصنيفات&#x27;,d:&#x27;شجرة تصنيفات المتجر.&#x27;,cols:[[&#x27;n&#x27;,&#x27;التصنيف&#x27;,&#x27;b&#x27;],[&#x27;par&#x27;,&#x27;الأب&#x27;],[&#x27;pc&#x27;,&#x27;المنتجات&#x27;,&#x27;ltr&#x27;],[&#x27;st&#x27;,&#x27;الحالة&#x27;,&#x27;st&#x27;]],add:{l:&#x27;أضف تصنيفًا&#x27;,ask:&#x27;اسم التصنيف&#x27;,mk:v=&gt;({id:&#x27;C&#x27;+Date.now(),n:v,par:&#x27;—&#x27;,pc:0,st:&#x27;active&#x27;})},a:[act(&#x27;أخفِ&#x27;,&#x27;hidden&#x27;,{show:on(&#x27;active&#x27;)}),act(&#x27;أظهر&#x27;,&#x27;active&#x27;,{show:on(&#x27;hidden&#x27;)})],sup:0},
+ {g:&#x27;المبيعات&#x27;,k:&#x27;requests&#x27;,l:&#x27;طلبات الشراء&#x27;,d:&#x27;راجع الدفع ثم اعتمد لإصدار كود التفعيل.&#x27;,cols:[[&#x27;id&#x27;,&#x27;الطلب&#x27;,&#x27;ltr&#x27;],[&#x27;b&#x27;,&#x27;المشتري&#x27;],[&#x27;p&#x27;,&#x27;المنتج&#x27;],[&#x27;a&#x27;,&#x27;المبلغ&#x27;,&#x27;m&#x27;],[&#x27;st&#x27;,&#x27;الحالة&#x27;,&#x27;st&#x27;],[&#x27;at&#x27;,&#x27;الوقت&#x27;,&#x27;t&#x27;]],a:[act(&#x27;اعتمد وأصدر الكود&#x27;,&#x27;approved&#x27;,{show:on(&#x27;pending&#x27;),ok:&#x27;صدر الكود وأُرسل للمشتري&#x27;}),act(&#x27;ارفض&#x27;,&#x27;rejected&#x27;,{show:on(&#x27;pending&#x27;),reason:&#x27;سبب الرفض&#x27;,danger:1})]},
+ {k:&#x27;codes&#x27;,l:&#x27;أكواد الشراء&#x27;,d:&#x27;متابعة الأكواد الصادرة وإلغاؤها.&#x27;,cols:[[&#x27;id&#x27;,&#x27;الكود&#x27;,&#x27;ltr&#x27;],[&#x27;p&#x27;,&#x27;المنتج&#x27;],[&#x27;b&#x27;,&#x27;المشتري&#x27;],[&#x27;st&#x27;,&#x27;الحالة&#x27;,&#x27;st&#x27;],[&#x27;at&#x27;,&#x27;صدر&#x27;,&#x27;t&#x27;]],a:[act(&#x27;ألغِ&#x27;,&#x27;revoked&#x27;,{show:on(&#x27;active&#x27;),reason:&#x27;سبب الإلغاء&#x27;,danger:1}),act(&#x27;أعد الإرسال&#x27;,null,{show:on(&#x27;active&#x27;),ok:&#x27;أُعيد إرسال الكود للمشتري&#x27;})]},
+ {g:&#x27;التنزيلات&#x27;,k:&#x27;downloads&#x27;,l:&#x27;جلسات التنزيل&#x27;,d:&#x27;جلسات التنزيل وعدد المحاولات المستهلكة.&#x27;,cols:[[&#x27;id&#x27;,&#x27;الجلسة&#x27;,&#x27;ltr&#x27;],[&#x27;b&#x27;,&#x27;المشتري&#x27;],[&#x27;p&#x27;,&#x27;المنتج&#x27;],[&#x27;at_&#x27;,&#x27;المحاولات&#x27;,&#x27;ltr&#x27;],[&#x27;st&#x27;,&#x27;الحالة&#x27;,&#x27;st&#x27;]],a:[act(&#x27;مدّد 24 ساعة&#x27;,null,{show:on(&#x27;active&#x27;),ok:&#x27;تم تمديد الجلسة 24 ساعة&#x27;}),act(&#x27;أنهِ الجلسة&#x27;,&#x27;revoked&#x27;,{show:on(&#x27;active&#x27;),reason:&#x27;سبب الإنهاء&#x27;,danger:1})]},
+ {k:&#x27;compensation&#x27;,l:&#x27;طلبات التعويض&#x27;,d:&#x27;محاولات فاشلة يطلب المشتري تعويضها.&#x27;,cols:[[&#x27;id&#x27;,&#x27;الطلب&#x27;,&#x27;ltr&#x27;],[&#x27;b&#x27;,&#x27;المشتري&#x27;],[&#x27;p&#x27;,&#x27;المنتج&#x27;],[&#x27;why&#x27;,&#x27;السبب&#x27;],[&#x27;st&#x27;,&#x27;الحالة&#x27;,&#x27;st&#x27;]],a:[act(&#x27;اعتمد التعويض&#x27;,&#x27;approved&#x27;,{show:on(&#x27;pending&#x27;),ok:&#x27;أُضيفت محاولة للمشتري&#x27;}),act(&#x27;ارفض&#x27;,&#x27;rejected&#x27;,{show:on(&#x27;pending&#x27;),reason:&#x27;سبب الرفض&#x27;,danger:1})]},
+ {k:&#x27;exceptions&#x27;,l:&#x27;استثناءات المحاولات&#x27;,d:&#x27;محاولات إضافية تحتاج قرار المدير الأعلى.&#x27;,cols:[[&#x27;id&#x27;,&#x27;الاستثناء&#x27;,&#x27;ltr&#x27;],[&#x27;b&#x27;,&#x27;المشتري&#x27;],[&#x27;p&#x27;,&#x27;المنتج&#x27;],[&#x27;x&#x27;,&#x27;المطلوب&#x27;],[&#x27;st&#x27;,&#x27;الحالة&#x27;,&#x27;st&#x27;]],a:[act(&#x27;وافق&#x27;,&#x27;approved&#x27;,{show:on(&#x27;pending&#x27;),su:1}),act(&#x27;ارفض&#x27;,&#x27;rejected&#x27;,{show:on(&#x27;pending&#x27;),su:1,reason:&#x27;سبب الرفض&#x27;,danger:1})],sup:0},
+ {g:&#x27;المالية&#x27;,k:&#x27;payouts&#x27;,l:&#x27;طلبات السحب&#x27;,d:&#x27;مراجعة مستحقات البائعين وصرفها.&#x27;,cols:[[&#x27;id&#x27;,&#x27;الطلب&#x27;,&#x27;ltr&#x27;],[&#x27;s&#x27;,&#x27;البائع&#x27;],[&#x27;a&#x27;,&#x27;المبلغ&#x27;,&#x27;m&#x27;],[&#x27;st&#x27;,&#x27;الحالة&#x27;,&#x27;st&#x27;]],a:[act(&#x27;وافق&#x27;,&#x27;approved&#x27;,{show:on(&#x27;pending&#x27;)}),act(&#x27;سجّل الصرف&#x27;,&#x27;paid&#x27;,{show:on(&#x27;approved&#x27;),ok:&#x27;سُجّل الصرف وأُبلغ البائع&#x27;}),act(&#x27;ارفض&#x27;,&#x27;rejected&#x27;,{show:on(&#x27;pending&#x27;),reason:&#x27;سبب الرفض&#x27;,danger:1})],sup:0},
+ {g:&#x27;التفاعل&#x27;,k:&#x27;reviews&#x27;,l:&#x27;التقييمات&#x27;,d:&#x27;إخفاء التقييمات المخالفة.&#x27;,cols:[[&#x27;p&#x27;,&#x27;المنتج&#x27;],[&#x27;b&#x27;,&#x27;المراجع&#x27;],[&#x27;r&#x27;,&#x27;التقييم&#x27;,&#x27;stars&#x27;],[&#x27;t&#x27;,&#x27;النص&#x27;],[&#x27;st&#x27;,&#x27;الحالة&#x27;,&#x27;st&#x27;]],a:[act(&#x27;أخفِ&#x27;,&#x27;hidden&#x27;,{show:on(&#x27;published&#x27;),reason:&#x27;سبب الإخفاء&#x27;,danger:1}),act(&#x27;أظهر&#x27;,&#x27;published&#x27;,{show:on(&#x27;hidden&#x27;)})]},
+ {k:&#x27;reports&#x27;,l:&#x27;البلاغات&#x27;,d:&#x27;بلاغات المشترين عن منتجات وبائعين.&#x27;,cols:[[&#x27;id&#x27;,&#x27;البلاغ&#x27;,&#x27;ltr&#x27;],[&#x27;e&#x27;,&#x27;الجهة&#x27;],[&#x27;who&#x27;,&#x27;المبلِّغ&#x27;],[&#x27;why&#x27;,&#x27;السبب&#x27;],[&#x27;st&#x27;,&#x27;الحالة&#x27;,&#x27;st&#x27;]],a:[act(&#x27;تم الحل&#x27;,&#x27;resolved&#x27;,{show:on(&#x27;open&#x27;),reason:&#x27;ملاحظة الحل&#x27;}),act(&#x27;ارفض البلاغ&#x27;,&#x27;dismissed&#x27;,{show:on(&#x27;open&#x27;),reason:&#x27;سبب الرفض&#x27;})]},
+ {g:&#x27;الأمان&#x27;,k:&#x27;redeem&#x27;,l:&#x27;محاولات التفعيل&#x27;,d:&#x27;محاولات إدخال الأكواد، والحظر بعد تكرار الفشل.&#x27;,cols:[[&#x27;ip&#x27;,&#x27;عنوان IP&#x27;,&#x27;ltr&#x27;],[&#x27;c&#x27;,&#x27;بادئة الكود&#x27;,&#x27;ltr&#x27;],[&#x27;r&#x27;,&#x27;النتيجة&#x27;,&#x27;st&#x27;],[&#x27;at&#x27;,&#x27;الوقت&#x27;,&#x27;t&#x27;]],a:[act(&#x27;ارفع الحظر&#x27;,&#x27;ok&#x27;,{show:on(&#x27;blocked&#x27;)})]},
+ {g:&#x27;النظام&#x27;,k:&#x27;audit&#x27;,l:&#x27;سجل التدقيق&#x27;,sup:0},
+ {k:&#x27;backups&#x27;,l:&#x27;النسخ الاحتياطي&#x27;,d:&#x27;نسخ قاعدة البيانات اليومية واليدوية.&#x27;,cols:[[&#x27;id&#x27;,&#x27;النسخة&#x27;,&#x27;ltr&#x27;],[&#x27;kb&#x27;,&#x27;الحجم&#x27;,&#x27;ltr&#x27;],[&#x27;ty&#x27;,&#x27;النوع&#x27;,&#x27;st&#x27;],[&#x27;at&#x27;,&#x27;التاريخ&#x27;,&#x27;t&#x27;]],add:{l:&#x27;نسخة يدوية الآن&#x27;,mk:()=&gt;({id:&#x27;bk-&#x27;+String(Date.now()).slice(-4),kb:&#x27;48 MB&#x27;,ty:&#x27;manual&#x27;,at:Date.now()}),ok:&#x27;تم إنشاء النسخة اليدوية&#x27;},a:[act(&#x27;نزّل&#x27;,null,{ok:&#x27;بدأ تنزيل النسخة&#x27;})],sup:0},
+ {k:&#x27;settings&#x27;,l:&#x27;الإعدادات&#x27;,sup:0},
+ {k:&#x27;staff&#x27;,l:&#x27;الموظفون&#x27;,d:&#x27;أعضاء فريق الإدارة وأدوارهم.&#x27;,cols:[[&#x27;n&#x27;,&#x27;الاسم&#x27;,&#x27;b&#x27;],[&#x27;role&#x27;,&#x27;الدور&#x27;],[&#x27;st&#x27;,&#x27;الحالة&#x27;,&#x27;st&#x27;]],add:{l:&#x27;ادعُ موظفًا&#x27;,ask:&#x27;البريد الإلكتروني&#x27;,mk:v=&gt;({id:&#x27;U&#x27;+Date.now(),n:v,role:&#x27;موظف دعم&#x27;,st:&#x27;invited&#x27;})},a:[act(&#x27;أوقف&#x27;,&#x27;suspended&#x27;,{show:r=&gt;r.st===&#x27;active&#x27;&amp;&amp;r.role!==&#x27;مدير أعلى&#x27;,reason:&#x27;سبب الإيقاف&#x27;,danger:1}),act(&#x27;أعد التفعيل&#x27;,&#x27;active&#x27;,{show:on(&#x27;suspended&#x27;)})],sup:0}
+];
+const allowed=s=&gt;S.role===&#x27;super&#x27;||s.sup!==0;
+const pend=k=&gt;(S.d[k]||[]).filter(r=&gt;[&#x27;pending&#x27;,&#x27;open&#x27;,&#x27;quarantined&#x27;].includes(r.st)).length;
+const BADGE={requests:&#x27;requests&#x27;,sellers:&#x27;sellers&#x27;,compensation:&#x27;compensation&#x27;,payouts:&#x27;payouts&#x27;,reports:&#x27;reports&#x27;,quarantine:&#x27;quarantine&#x27;,exceptions:&#x27;exceptions&#x27;};
+function nav(cur){let h=&#x27;&#x27;,g=&#x27;&#x27;;SEC.forEach(s=&gt;{if(s.g)g=s.g;if(!allowed(s))return;if(s.g)h+=`&lt;p&gt;${s.g}&lt;/p&gt;`;const n=BADGE[s.k]?pend(s.k):0;h+=`&lt;a href=&quot;#/${s.k}&quot; class=&quot;${cur===s.k?&#x27;on&#x27;:&#x27;&#x27;}&quot;&gt;${s.l}${n?`&lt;i&gt;${n}&lt;/i&gt;`:&#x27;&#x27;}&lt;/a&gt;`});$(&#x27;#nav&#x27;).innerHTML=h}
+function cell(c,r){const v=r[c[0]];switch(c[2]){case&#x27;st&#x27;:return badge(v);case&#x27;m&#x27;:return m$(v);case&#x27;ltr&#x27;:return`&lt;span class=&quot;num&quot;&gt;${v}&lt;/span&gt;`;case&#x27;t&#x27;:return rel(v);case&#x27;stars&#x27;:return`&lt;span style=&quot;color:var(--amber)&quot;&gt;${stars(v)}&lt;/span&gt;`;case&#x27;b&#x27;:return`&lt;b&gt;${v}&lt;/b&gt;`;default:return v}}
+function table(s){const f=S.F[s.k]||&#x27;&#x27;;const rows=S.d[s.k];const sts=[...new Set(rows.map(r=&gt;r.st))];const list=rows.filter(r=&gt;!f||r.st===f);
+ const acts=r=&gt;s.a.filter(a=&gt;(!a.show||a.show(r))&amp;&amp;(!a.su||S.role===&#x27;super&#x27;)).map((a,i)=&gt;`&lt;button class=&quot;btn sm ${a.danger?&#x27;danger&#x27;:&#x27;ghost&#x27;}&quot; onclick=&quot;ask(&#x27;${s.k}&#x27;,&#x27;${r.id}&#x27;,${s.a.indexOf(a)})&quot;&gt;${a.l}&lt;/button&gt;`).join(&#x27;&#x27;);
+ return `${sts.length&gt;1?`&lt;div class=&quot;chips&quot;&gt;&lt;button class=&quot;chip&quot; aria-pressed=&quot;${!f}&quot; onclick=&quot;flt(&#x27;${s.k}&#x27;,&#x27;&#x27;)&quot;&gt;الكل (${rows.length})&lt;/button&gt;${sts.map(x=&gt;`&lt;button class=&quot;chip&quot; aria-pressed=&quot;${f===x}&quot; onclick=&quot;flt(&#x27;${s.k}&#x27;,&#x27;${x}&#x27;)&quot;&gt;${ST[x]?.[1]||x} (${rows.filter(r=&gt;r.st===x).length})&lt;/button&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;`:&#x27;&#x27;}
+ &lt;div class=&quot;tw&quot;&gt;&lt;table&gt;&lt;thead&gt;&lt;tr&gt;${s.cols.map(c=&gt;`&lt;th&gt;${c[1]}&lt;/th&gt;`).join(&#x27;&#x27;)}${s.a?.length?&#x27;&lt;th&gt;&lt;/th&gt;&#x27;:&#x27;&#x27;}&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;${list.length?list.map(r=&gt;`&lt;tr&gt;${s.cols.map(c=&gt;`&lt;td&gt;${cell(c,r)}&lt;/td&gt;`).join(&#x27;&#x27;)}${s.a?.length?`&lt;td class=&quot;ac&quot;&gt;${acts(r)}&lt;/td&gt;`:&#x27;&#x27;}&lt;/tr&gt;`).join(&#x27;&#x27;):`&lt;tr&gt;&lt;td class=&quot;empty&quot; colspan=&quot;9&quot;&gt;لا توجد عناصر بهذه الحالة.&lt;/td&gt;&lt;/tr&gt;`}&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;`}
+const V={
+ overview(){const q=[[&#x27;requests&#x27;,&#x27;طلبات شراء بانتظار المراجعة&#x27;],[&#x27;sellers&#x27;,&#x27;بائعون بانتظار الاعتماد&#x27;],[&#x27;compensation&#x27;,&#x27;طلبات تعويض&#x27;],[&#x27;payouts&#x27;,&#x27;طلبات سحب&#x27;],[&#x27;reports&#x27;,&#x27;بلاغات مفتوحة&#x27;],[&#x27;quarantine&#x27;,&#x27;ملفات معزولة&#x27;]].filter(x=&gt;allowed(SEC.find(s=&gt;s.k===x[0])));
+  return `&lt;h1&gt;لوحة التحكم&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;ما يحتاج قرارك الآن.&lt;/p&gt;${S.role===&#x27;support&#x27;?&#x27;&lt;div class=&quot;note&quot;&gt;تتصفح بصلاحية موظف دعم: بعض الأقسام (المالية، الإعدادات، سجل التدقيق) غير ظاهرة لك.&lt;/div&gt;&#x27;:&#x27;&#x27;}
+  &lt;div class=&quot;stats&quot;&gt;${q.map(([k,l])=&gt;{const n=k===&#x27;payouts&#x27;?S.d.payouts.filter(r=&gt;r.st===&#x27;pending&#x27;).length:pend(k);return `&lt;a class=&quot;stat ${n?&#x27;&#x27;:&#x27;z&#x27;}&quot; href=&quot;#/${k}&quot;&gt;&lt;div class=&quot;v&quot;&gt;${n}&lt;/div&gt;&lt;span&gt;${l}&lt;/span&gt;&lt;/a&gt;`}).join(&#x27;&#x27;)}&lt;/div&gt;
+  ${allowed(SEC.find(s=&gt;s.k===&#x27;audit&#x27;))?`&lt;h2&gt;آخر الإجراءات&lt;/h2&gt;${V.audit(5,1)}`:&#x27;&#x27;}`},
+ audit(n=99,mini){const rows=S.audit.slice(0,n);const t=`&lt;div class=&quot;tw&quot;&gt;&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;الوقت&lt;/th&gt;&lt;th&gt;المنفِّذ&lt;/th&gt;&lt;th&gt;الإجراء&lt;/th&gt;&lt;th&gt;العنصر&lt;/th&gt;&lt;th&gt;ملاحظة&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;${rows.map(r=&gt;`&lt;tr&gt;&lt;td&gt;${rel(r.at)}&lt;/td&gt;&lt;td&gt;${r.who}&lt;/td&gt;&lt;td&gt;${r.act}&lt;/td&gt;&lt;td&gt;&lt;span class=&quot;num&quot;&gt;${r.t}&lt;/span&gt;&lt;/td&gt;&lt;td class=&quot;mute&quot;&gt;${r.note||&#x27;—&#x27;}&lt;/td&gt;&lt;/tr&gt;`).join(&#x27;&#x27;)}&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;`;return mini?t:`&lt;h1&gt;سجل التدقيق&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;كل إجراء إداري يُسجَّل هنا ولا يمكن حذفه.&lt;/p&gt;${t}`},
+ settings(){const tabs=[[&#x27;general&#x27;,&#x27;عام&#x27;],[&#x27;security&#x27;,&#x27;الأمان&#x27;],[&#x27;downloads&#x27;,&#x27;التنزيلات&#x27;]];
+  const P={general:`&lt;label&gt;اسم المنصة&lt;/label&gt;&lt;input class=&quot;in&quot; value=&quot;إلكترونيات&quot;&gt;&lt;div class=&quot;grid2&quot;&gt;&lt;div&gt;&lt;label&gt;بريد التواصل&lt;/label&gt;&lt;input class=&quot;in&quot; dir=&quot;ltr&quot; value=&quot;support@example.com&quot;&gt;&lt;/div&gt;&lt;div&gt;&lt;label&gt;هاتف التواصل&lt;/label&gt;&lt;input class=&quot;in&quot; dir=&quot;ltr&quot; value=&quot;01000000000&quot;&gt;&lt;/div&gt;&lt;/div&gt;&lt;label&gt;الحد الأدنى لسعر المنتج (ج.م)&lt;/label&gt;&lt;input class=&quot;in&quot; dir=&quot;ltr&quot; value=&quot;50&quot; style=&quot;max-width:200px&quot;&gt;`,
+  security:`&lt;div class=&quot;sw&quot;&gt;&lt;span&gt;إلزام الموظفين بالتحقق بخطوتين&lt;/span&gt;&lt;input type=&quot;checkbox&quot; checked&gt;&lt;/div&gt;&lt;div class=&quot;grid2&quot;&gt;&lt;div&gt;&lt;label&gt;عدد محاولات التفعيل الفاشلة قبل الحظر&lt;/label&gt;&lt;input class=&quot;in&quot; dir=&quot;ltr&quot; value=&quot;5&quot;&gt;&lt;/div&gt;&lt;div&gt;&lt;label&gt;مدة الحظر (دقيقة)&lt;/label&gt;&lt;input class=&quot;in&quot; dir=&quot;ltr&quot; value=&quot;15&quot;&gt;&lt;/div&gt;&lt;/div&gt;`,
+  downloads:`&lt;div class=&quot;grid2&quot;&gt;&lt;div&gt;&lt;label&gt;محاولات التنزيل لكل كود&lt;/label&gt;&lt;input class=&quot;in&quot; dir=&quot;ltr&quot; value=&quot;3&quot;&gt;&lt;/div&gt;&lt;div&gt;&lt;label&gt;صلاحية الكود (ساعة)&lt;/label&gt;&lt;input class=&quot;in&quot; dir=&quot;ltr&quot; value=&quot;48&quot;&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;sw&quot;&gt;&lt;span&gt;علامة مائية على المعاينات&lt;/span&gt;&lt;input type=&quot;checkbox&quot; checked&gt;&lt;/div&gt;`};
+  return `&lt;h1&gt;الإعدادات&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;تُسجَّل كل تعديلات الإعدادات في سجل التدقيق.&lt;/p&gt;&lt;div class=&quot;tabs&quot; role=&quot;tablist&quot;&gt;${tabs.map(([k,l])=&gt;`&lt;button role=&quot;tab&quot; aria-selected=&quot;${S.tab===k}&quot; onclick=&quot;S.tab=&#x27;${k}&#x27;;route()&quot;&gt;${l}&lt;/button&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;&lt;form class=&quot;f box&quot; onsubmit=&quot;event.preventDefault();log(&#x27;تعديل — الإعدادات&#x27;,&#x27;تبويب: ${tabs.find(t=&gt;t[0]===S.tab)[1]}&#x27;,&#x27;&#x27;);toast(&#x27;تم حفظ الإعدادات&#x27;);route()&quot;&gt;${P[S.tab]}&lt;p style=&quot;margin:16px 0 0&quot;&gt;&lt;button class=&quot;btn&quot;&gt;احفظ التغييرات&lt;/button&gt;&lt;/p&gt;&lt;/form&gt;`}
+};
+function page(s){const addB=s.add?`&lt;button class=&quot;btn&quot; onclick=&quot;addRow(&#x27;${s.k}&#x27;)&quot;&gt;${s.add.l}&lt;/button&gt;`:&#x27;&#x27;;return `&lt;div class=&quot;vh&quot;&gt;&lt;div&gt;&lt;h1&gt;${s.l}&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;${s.d}&lt;/p&gt;&lt;/div&gt;${addB}&lt;/div&gt;${table(s)}`}
+function log(act,t,note){S.audit.unshift({at:Date.now(),who:S.role===&#x27;super&#x27;?&#x27;عمر فاروق&#x27;:&#x27;ليلى حسني&#x27;,act,t,note})}
+function modal(o){$(&#x27;#md&#x27;).innerHTML=`&lt;div class=&quot;ov&quot; onclick=&quot;if(event.target===this)closeM()&quot;&gt;&lt;form class=&quot;md&quot; role=&quot;dialog&quot; aria-modal=&quot;true&quot; aria-label=&quot;${o.title}&quot; onsubmit=&quot;event.preventDefault()&quot;&gt;&lt;h3&gt;${o.title}&lt;/h3&gt;${o.text?`&lt;p&gt;${o.text}&lt;/p&gt;`:&#x27;&#x27;}${o.ask?`&lt;label for=&quot;mi&quot; class=&quot;mute&quot;&gt;${o.ask}&lt;/label&gt;&lt;input class=&quot;in&quot; id=&quot;mi&quot; autofocus&gt;`:&#x27;&#x27;}&lt;div class=&quot;err&quot; id=&quot;me&quot;&gt;&lt;/div&gt;&lt;div class=&quot;vh&quot;&gt;&lt;button class=&quot;btn ${o.danger?&#x27;danger&#x27;:&#x27;&#x27;}&quot; id=&quot;mok&quot;&gt;${o.ok||&#x27;تأكيد&#x27;}&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;btn ghost&quot; onclick=&quot;closeM()&quot;&gt;إلغاء&lt;/button&gt;&lt;/div&gt;&lt;/form&gt;&lt;/div&gt;`;
+ $(&#x27;#mok&#x27;).onclick=()=&gt;{const v=o.ask?$(&#x27;#mi&#x27;).value.trim():&#x27;&#x27;;if(o.ask&amp;&amp;!v){$(&#x27;#mi&#x27;).classList.add(&#x27;bad&#x27;);$(&#x27;#me&#x27;).textContent=&#x27;هذا الحقل مطلوب.&#x27;;return}closeM();o.go(v)};$(&#x27;#mi&#x27;)?.focus()}
+const closeM=()=&gt;$(&#x27;#md&#x27;).innerHTML=&#x27;&#x27;;
+document.addEventListener(&#x27;keydown&#x27;,e=&gt;{if(e.key===&#x27;Escape&#x27;)closeM()});
+function ask(k,id,i){const s=SEC.find(x=&gt;x.k===k),r=S.d[k].find(x=&gt;x.id===id),a=s.a[i];
+ modal({title:`${a.l}؟`,text:`${r.n||r.id||r.f||r.ip}`,ask:a.reason,danger:a.danger,ok:a.l,go:v=&gt;{if(a.st)r.st=a.st;if(a.st===&#x27;approved&#x27;&amp;&amp;k===&#x27;requests&#x27;)S.d.codes.unshift({id:&#x27;N&#x27;+Math.random().toString(36).slice(2,6).toUpperCase(),p:r.p,b:r.b,st:&#x27;active&#x27;,at:Date.now()});log(`${a.l} — ${s.l}`,r.id||r.n||r.f||r.ip,v);toast(a.ok||`تم: ${a.l}`);route()}})}
+function addRow(k){const s=SEC.find(x=&gt;x.k===k),a=s.add;const go=v=&gt;{S.d[k].unshift(a.mk(v));log(`${a.l} — ${s.l}`,v||&#x27;—&#x27;,&#x27;&#x27;);toast(a.ok||&#x27;تمت الإضافة&#x27;);route()};a.ask?modal({title:a.l,ask:a.ask,ok:&#x27;أضف&#x27;,go}):go(&#x27;&#x27;)}
+function flt(k,v){S.F[k]=v;route()}
+function setRole(r){S.role=r;if(!allowed(SEC.find(s=&gt;s.k===(location.hash.split(&#x27;/&#x27;)[1]||&#x27;overview&#x27;))))location.hash=&#x27;#/overview&#x27;;route()}
+function toast(m){const t=$(&#x27;#toast&#x27;);t.textContent=m;t.classList.add(&#x27;on&#x27;);clearTimeout(toast.h);toast.h=setTimeout(()=&gt;t.classList.remove(&#x27;on&#x27;),2600)}
+function route(){let k=location.hash.split(&#x27;/&#x27;)[1]||&#x27;overview&#x27;,s=SEC.find(x=&gt;x.k===k);if(!s||!allowed(s)){s=SEC[0];k=&#x27;overview&#x27;}
+ $(&#x27;#v&#x27;).innerHTML=V[k]?V[k]():page(s);nav(k)}
+addEventListener(&#x27;hashchange&#x27;,()=&gt;{route();scrollTo(0,0)});route();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+<script>
+const R=['visitor','buyer','seller','admin'];
+function show(r){if(!R.includes(r))r='visitor';
+ R.forEach(k=>{const f=document.getElementById('f-'+k),t=document.getElementById('t-'+k),on=k===r;
+  if(on&&!f.srcdoc)f.srcdoc=f.dataset.doc;f.hidden=!on;t.setAttribute('aria-selected',on)});
+ if(location.hash!=='#'+r){try{location.hash=r}catch(e){}}document.title='إلكترونيات — '+document.getElementById('t-'+r).firstChild.textContent}
+document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(b)show(b.dataset.r)});
+document.querySelector('.tabs').addEventListener('keydown',e=>{const i=R.findIndex(k=>document.getElementById('t-'+k).getAttribute('aria-selected')==='true');
+ if(e.key==='ArrowLeft'||e.key==='ArrowRight'){const n=R[(i+(e.key==='ArrowLeft'?1:R.length-1))%R.length];show(n);document.getElementById('t-'+n).focus()}});
+addEventListener('message',e=>{if(e.data&&R.includes(e.data.go))show(e.data.go)});
+addEventListener('hashchange',()=>show(location.hash.slice(1)));
+show(location.hash.slice(1));
+</script>
+</body>
+</html>

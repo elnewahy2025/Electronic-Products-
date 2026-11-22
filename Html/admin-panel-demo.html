@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>لوحة الإدارة — عرض تصميم</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+:root{--paper:#f3f5f7;--card:#fff;--ink:#0f1b26;--mute:#5d6b78;--line:#d8dee4;--blue:#1457d9;--blue-ink:#fff;--green:#17855b;--amber:#b87800;--red:#c93030;--soft:#e9eef5;--pcb:#0d3b32;--gbg:#dff3ea;--abg:#fbefd2;--rbg:#fbe3e3;--bbg:#dfe9fc;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--paper:#0c1219;--card:#141d27;--ink:#e8eef4;--mute:#92a1af;--line:#26323f;--blue:#6f9bff;--blue-ink:#0c1219;--green:#4cc796;--amber:#f0b73a;--red:#ff7b7b;--soft:#1b2733;--pcb:#0a2a24;--gbg:#12372b;--abg:#3a2d0c;--rbg:#3d1a1a;--bbg:#18284a;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 14.5px/1.65 "IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}a{color:inherit;text-decoration:none}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px;border-radius:6px}
+.num{direction:ltr;unicode-bidi:isolate;display:inline-block}
+header{background:var(--pcb);color:#e8f5f0;position:sticky;top:0;z-index:20}
+.bar{padding:0 20px;height:56px;display:flex;align-items:center;gap:14px}
+.logo{font-weight:700;font-size:17px}.logo small{font-weight:500;color:#9ccbbd;font-size:13px;margin-inline-start:10px;border-inline-start:1px solid #3d7a6a;padding-inline-start:10px}
+.sp{flex:1}.bar select{background:#ffffff18;border:1px solid #3d7a6a;color:#fff;border-radius:8px;padding:5px 10px}.bar option{color:#000}
+.shell{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 56px)}
+aside{background:var(--card);border-inline-end:1px solid var(--line);padding:14px 12px}
+aside nav{position:sticky;top:70px;max-height:calc(100vh - 80px);overflow:auto}
+aside p{font-size:12px;color:var(--mute);margin:14px 8px 4px;font-weight:600}aside p:first-child{margin-top:0}
+aside a{display:flex;justify-content:space-between;padding:6px 10px;border-radius:8px;color:var(--mute);font-weight:500;font-size:14px}
+aside a:hover{background:var(--soft);color:var(--ink)}aside a.on{background:var(--ink);color:var(--paper)}
+aside a i{font-style:normal;background:var(--red);color:#fff;border-radius:99px;font-size:11px;min-width:19px;text-align:center;padding:0 5px}
+main{padding:24px 28px 60px;min-width:0}
+h1{font-size:22px;margin:0 0 2px}.sub{color:var(--mute);margin:0 0 16px}
+h2{font-size:16px;margin:22px 0 10px}
+.vh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.btn{border:0;border-radius:8px;padding:7px 15px;font-weight:600;cursor:pointer;background:var(--blue);color:var(--blue-ink)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}.btn.danger{background:var(--red);color:#fff}
+.btn.sm{padding:3px 10px;font-size:13px}.btn:disabled{opacity:.45;cursor:default}
+.badge{font-size:12px;font-weight:600;padding:1px 9px;border-radius:99px;white-space:nowrap}
+.g{background:var(--gbg);color:var(--green)}.a{background:var(--abg);color:var(--amber)}.r{background:var(--rbg);color:var(--red)}.b{background:var(--bbg);color:var(--blue)}.n{background:var(--soft);color:var(--mute)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:2px 13px;cursor:pointer;font-size:13px}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tw{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:start;font-weight:600;color:var(--mute);font-size:12.5px;padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:middle}tr:last-child td{border:0}
+td.ac{white-space:nowrap;text-align:end}td.ac .btn{margin-inline-start:5px}
+.empty{padding:28px;text-align:center;color:var(--mute)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+a.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;display:block}
+a.stat:hover{border-color:var(--blue)}.stat .v{font-size:27px;font-weight:700;line-height:1.3}.stat span{color:var(--mute);font-size:13px}
+.stat.z .v{color:var(--mute)}.stat:not(.z) .v{color:var(--amber)}
+.mute{color:var(--mute);font-size:13px}.note{background:var(--abg);border:1px solid var(--amber);border-radius:10px;padding:9px 14px;margin-bottom:14px;font-size:13.5px}
+.f label{display:block;font-size:13px;font-weight:500;margin:10px 0 3px}
+.in{width:100%;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:8px 11px}.in.bad{border-color:var(--red)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.tabs button{background:none;border:0;padding:8px 14px;cursor:pointer;color:var(--mute);border-bottom:2px solid transparent;font-weight:500}
+.tabs button[aria-selected=true]{color:var(--ink);border-color:var(--blue)}
+.sw{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.sw input[type=checkbox]{width:38px;height:22px;accent-color:var(--green)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ov{position:fixed;inset:0;background:#0009;display:grid;place-items:center;z-index:40;padding:16px}
+.md{background:var(--card);border-radius:14px;padding:20px;width:min(440px,100%)}.md h3{margin:0 0 6px}.md p{margin:0 0 10px;color:var(--mute)}
+.md .vh{margin-top:14px;justify-content:flex-start}.err{color:var(--red);font-size:13px;min-height:18px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translate(-50%,30px);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;z-index:60}.toast.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:860px){.shell{grid-template-columns:1fr}aside nav{position:static;max-height:none;display:flex;gap:4px;overflow-x:auto}aside p{display:none}aside a{white-space:nowrap;gap:8px}main{padding:18px 14px}.grid2{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header><div class="bar"><span class="logo">إلكترونيات<small>لوحة الإدارة</small></span><span class="sp"></span><label for="role" class="mute" style="color:#9ccbbd">الدور:</label><select id="role" onchange="setRole(this.value)"><option value="super">مدير أعلى</option><option value="support">موظف دعم</option></select></div></header>
+<div class="shell"><aside><nav id="nav"></nav></aside><main id="v"></main></div>
+<div class="toast" id="toast" role="status"></div><div id="md"></div>
+<script>
+const $=s=>document.querySelector(s),now=Date.now(),H=36e5,D=24*H;
+const rel=t=>{const m=Math.round((Date.now()-t)/6e4);if(m<1)return'الآن';if(m<60)return`قبل ${m} دقيقة`;const h=Math.round(m/60);return h<24?`قبل ${h} ساعة`:`قبل ${Math.round(h/24)} يومًا`};
+const ST={pending:['a','قيد المراجعة'],approved:['g','معتمد'],rejected:['r','مرفوض'],suspended:['r','موقوف'],active:['g','فعّال'],revoked:['r','ملغى'],used:['n','مستخدم'],expired:['n','منتهي'],published:['g','منشور'],paused:['a','موقوف مؤقتًا'],hidden:['n','مخفي'],open:['a','مفتوح'],resolved:['g','تم الحل'],dismissed:['n','مرفوض البلاغ'],paid:['g','تم الصرف'],quarantined:['r','معزول'],released:['g','أُفرج عنه'],ok:['g','ناجح'],failed:['a','فاشل'],blocked:['r','محظور'],completed:['b','مكتمل'],partial:['a','جزئي'],compensated:['g','عُوّض'],enabled:['g','مفعّل'],disabled:['n','معطّل'],auto:['n','تلقائي'],manual:['b','يدوي'],invited:['a','مدعو']};
+const badge=k=>`<span class="badge ${ST[k]?.[0]||'n'}">${ST[k]?.[1]||k}</span>`;
+const m$=n=>`<span class="num">${n.toLocaleString('en')}</span> ج.م`;
+const stars=n=>'★'.repeat(n)+'☆'.repeat(5-n);
+const T=(id,at)=>now-at;
+const D0={
+ sellers:[{id:'S1',n:'م. هدى سمير',e:'hoda@mail.com',pr:3,st:'approved'},{id:'S2',n:'ستوديو أمبير',e:'amp@mail.com',pr:0,st:'pending'},{id:'S3',n:'ورشة النيل',e:'nile@mail.com',pr:5,st:'approved'},{id:'S4',n:'م. كريم عادل',e:'karim@mail.com',pr:2,st:'suspended'}],
+ products:[{id:'P1',n:'لوحة ESP32 للتحكم المنزلي',s:'م. هدى سمير',pr:450,st:'published'},{id:'P2',n:'مكتبة رموز وبصمات KiCad',s:'ورشة النيل',pr:180,st:'published'},{id:'P3',n:'مضخم صوت Class-D',s:'ستوديو أمبير',pr:520,st:'paused'}],
+ filetypes:[{id:'gerber',mime:'application/octet-stream',mb:50,st:'enabled'},{id:'pdf',mime:'application/pdf',mb:100,st:'enabled'},{id:'zip',mime:'application/zip',mb:500,st:'enabled'},{id:'exe',mime:'application/x-msdownload',mb:0,st:'disabled'}],
+ quarantine:[{id:'Q1',f:'old-sample.zip',s:'ورشة النيل',why:'محتوى تنفيذي داخل أرشيف',st:'quarantined'},{id:'Q2',f:'fw-test.bin',s:'م. كريم عادل',why:'توقيع ملف لا يطابق الامتداد',st:'quarantined'}],
+ categories:[{id:'C1',n:'لوحات PCB',par:'—',pc:12,st:'active'},{id:'C2',n:'لوحات متحكمات',par:'لوحات PCB',pc:7,st:'active'},{id:'C3',n:'برمجيات مدمجة',par:'—',pc:6,st:'active'},{id:'C4',n:'دورات ووثائق',par:'—',pc:9,st:'hidden'}],
+ requests:[{id:'REQ-2B81DE',b:'منى عبد الله',p:'مكتبة رموز وبصمات KiCad',a:180,st:'pending',at:now-2*H},{id:'REQ-7F3A9C',b:'أحمد طارق',p:'لوحة ESP32 للتحكم المنزلي',a:450,st:'approved',at:now-5*H},{id:'REQ-51E7B2',b:'يوسف حسن',p:'مضخم صوت Class-D',a:520,st:'rejected',at:now-3*D}],
+ codes:[{id:'K7QF',p:'لوحة ESP32 للتحكم المنزلي',b:'أحمد طارق',st:'active',at:now-4*H},{id:'M2XD',p:'فيرموير STM32',b:'منى عبد الله',st:'used',at:now-9*D},{id:'T9LB',p:'مصدر تغذية 5V / 3A',b:'سارة علي',st:'expired',at:now-3*D}],
+ downloads:[{id:'DL-104',b:'أحمد طارق',p:'لوحة ESP32 للتحكم المنزلي',at_:'0 / 3',st:'active'},{id:'DL-097',b:'منى عبد الله',p:'فيرموير STM32',at_:'1 / 3',st:'completed'},{id:'DL-091',b:'سارة علي',p:'مصدر تغذية 5V / 3A',at_:'2 / 3',st:'partial'}],
+ compensation:[{id:'CP-12',b:'سارة علي',p:'مصدر تغذية 5V / 3A',why:'انقطع التنزيل عند 55%',st:'pending'},{id:'CP-11',b:'خالد محمود',p:'دورة تصميم PCB',why:'ملف تالف بعد الفك',st:'approved'}],
+ exceptions:[{id:'EX-5',b:'خالد محمود',p:'دورة تصميم PCB',x:'+2 محاولة',st:'pending'},{id:'EX-4',b:'نور سعيد',p:'مضخم Class-D',x:'+1 محاولة',st:'approved'}],
+ payouts:[{id:'PO-31',s:'م. هدى سمير',a:1500,st:'pending'},{id:'PO-30',s:'ورشة النيل',a:2400,st:'approved'},{id:'PO-29',s:'م. كريم عادل',a:800,st:'paid'}],
+ reviews:[{id:'RV-8',p:'لوحة ESP32 للتحكم المنزلي',b:'منى ع.',r:5,t:'ملفات مرتبة وجاهزة للمصنع.',st:'published'},{id:'RV-7',p:'مضخم صوت Class-D',b:'مجهول',r:1,t:'نصب واحتيال (نص مسيء مختصر).',st:'published'}],
+ reports:[{id:'RP-6',e:'منتج: مكتبة KiCad',who:'أحمد ط.',why:'ملف لا يطابق الوصف',st:'open'},{id:'RP-5',e:'بائع: ستوديو أمبير',who:'سارة ع.',why:'إعلان مضلل',st:'resolved'}],
+ redeem:[{id:'R5',ip:'41.33.12.8',c:'K7QF',r:'ok',at:now-4*H},{id:'R4',ip:'197.55.2.91',c:'AB12',r:'failed',at:now-3*H},{id:'R3',ip:'197.55.2.91',c:'AB13',r:'failed',at:now-3*H},{id:'R2',ip:'197.55.2.91',c:'ZZ90',r:'blocked',at:now-2*H}],
+ backups:[{id:'bk-0622',kb:'48 MB',ty:'auto',at:now-18*H},{id:'bk-0621',kb:'47 MB',ty:'auto',at:now-42*H},{id:'bk-0618',kb:'45 MB',ty:'manual',at:now-4*D}],
+ staff:[{id:'U1',n:'عمر فاروق',role:'مدير أعلى',st:'active'},{id:'U2',n:'ليلى حسني',role:'موظف دعم',st:'active'},{id:'U3',n:'تامر علي',role:'موظف دعم',st:'invited'}]
+};
+const S={role:'super',d:structuredClone(D0),F:{},tab:'general',
+ audit:[{at:now-30*H,who:'عمر فاروق',act:'اعتماد — البائعون',t:'م. هدى سمير',note:''},{at:now-20*H,who:'ليلى حسني',act:'اعتماد — طلبات الشراء',t:'REQ-7F3A9C',note:'تم تأكيد الدفع هاتفيًا'},{at:now-3*D,who:'عمر فاروق',act:'رفض — طلبات الشراء',t:'REQ-51E7B2',note:'لم يتم الدفع'}]};
+const act=(l,st,o={})=>({l,st,...o});
+const on=s=>r=>r.st===s;
+const SEC=[
+ {g:'الرئيسية',k:'overview',l:'لوحة التحكم'},
+ {g:'البائعون والمنتجات',k:'sellers',l:'البائعون',d:'اعتماد البائعين الجدد وإيقاف المخالفين.',cols:[['n','البائع','b'],['e','البريد','ltr'],['pr','المنتجات','ltr'],['st','الحالة','st']],a:[act('اعتمد','approved',{show:on('pending')}),act('ارفض','rejected',{show:on('pending'),reason:'سبب الرفض',danger:1}),act('أوقف','suspended',{show:on('approved'),reason:'سبب الإيقاف',danger:1}),act('أعد التفعيل','approved',{show:on('suspended')})]},
+ {k:'products',l:'المنتجات',d:'مراجعة المنتجات المنشورة على المنصة.',cols:[['n','المنتج','b'],['s','البائع'],['pr','السعر','m'],['st','الحالة','st']],a:[act('أوقف النشر','paused',{show:on('published'),reason:'سبب الإيقاف',danger:1}),act('أعد النشر','published',{show:r=>r.st==='paused'})]},
+ {k:'filetypes',l:'أنواع الملفات',d:'الامتدادات المسموح برفعها وحدودها.',cols:[['id','الامتداد','ltr'],['mime','النوع','ltr'],['mb','الحد (MB)','ltr'],['st','الحالة','st']],add:{l:'أضف نوعًا',ask:'الامتداد (مثل stl)',mk:v=>({id:v.toLowerCase(),mime:'application/octet-stream',mb:50,st:'enabled'})},a:[act('عطّل','disabled',{show:on('enabled')}),act('فعّل','enabled',{show:on('disabled')})],sup:0},
+ {k:'quarantine',l:'الملفات المعزولة',d:'ملفات أوقفها الفحص الآلي.',cols:[['f','الملف','ltr'],['s','البائع'],['why','السبب'],['st','الحالة','st']],a:[act('أفرج','released',{show:on('quarantined')}),act('احذف نهائيًا','revoked',{show:on('quarantined'),reason:'سبب الحذف',danger:1,su:1})]},
+ {k:'categories',l:'التصنيفات',d:'شجرة تصنيفات المتجر.',cols:[['n','التصنيف','b'],['par','الأب'],['pc','المنتجات','ltr'],['st','الحالة','st']],add:{l:'أضف تصنيفًا',ask:'اسم التصنيف',mk:v=>({id:'C'+Date.now(),n:v,par:'—',pc:0,st:'active'})},a:[act('أخفِ','hidden',{show:on('active')}),act('أظهر','active',{show:on('hidden')})],sup:0},
+ {g:'المبيعات',k:'requests',l:'طلبات الشراء',d:'راجع الدفع ثم اعتمد لإصدار كود التفعيل.',cols:[['id','الطلب','ltr'],['b','المشتري'],['p','المنتج'],['a','المبلغ','m'],['st','الحالة','st'],['at','الوقت','t']],a:[act('اعتمد وأصدر الكود','approved',{show:on('pending'),ok:'صدر الكود وأُرسل للمشتري'}),act('ارفض','rejected',{show:on('pending'),reason:'سبب الرفض',danger:1})]},
+ {k:'codes',l:'أكواد الشراء',d:'متابعة الأكواد الصادرة وإلغاؤها.',cols:[['id','الكود','ltr'],['p','المنتج'],['b','المشتري'],['st','الحالة','st'],['at','صدر','t']],a:[act('ألغِ','revoked',{show:on('active'),reason:'سبب الإلغاء',danger:1}),act('أعد الإرسال',null,{show:on('active'),ok:'أُعيد إرسال الكود للمشتري'})]},
+ {g:'التنزيلات',k:'downloads',l:'جلسات التنزيل',d:'جلسات التنزيل وعدد المحاولات المستهلكة.',cols:[['id','الجلسة','ltr'],['b','المشتري'],['p','المنتج'],['at_','المحاولات','ltr'],['st','الحالة','st']],a:[act('مدّد 24 ساعة',null,{show:on('active'),ok:'تم تمديد الجلسة 24 ساعة'}),act('أنهِ الجلسة','revoked',{show:on('active'),reason:'سبب الإنهاء',danger:1})]},
+ {k:'compensation',l:'طلبات التعويض',d:'محاولات فاشلة يطلب المشتري تعويضها.',cols:[['id','الطلب','ltr'],['b','المشتري'],['p','المنتج'],['why','السبب'],['st','الحالة','st']],a:[act('اعتمد التعويض','approved',{show:on('pending'),ok:'أُضيفت محاولة للمشتري'}),act('ارفض','rejected',{show:on('pending'),reason:'سبب الرفض',danger:1})]},
+ {k:'exceptions',l:'استثناءات المحاولات',d:'محاولات إضافية تحتاج قرار المدير الأعلى.',cols:[['id','الاستثناء','ltr'],['b','المشتري'],['p','المنتج'],['x','المطلوب'],['st','الحالة','st']],a:[act('وافق','approved',{show:on('pending'),su:1}),act('ارفض','rejected',{show:on('pending'),su:1,reason:'سبب الرفض',danger:1})],sup:0},
+ {g:'المالية',k:'payouts',l:'طلبات السحب',d:'مراجعة مستحقات البائعين وصرفها.',cols:[['id','الطلب','ltr'],['s','البائع'],['a','المبلغ','m'],['st','الحالة','st']],a:[act('وافق','approved',{show:on('pending')}),act('سجّل الصرف','paid',{show:on('approved'),ok:'سُجّل الصرف وأُبلغ البائع'}),act('ارفض','rejected',{show:on('pending'),reason:'سبب الرفض',danger:1})],sup:0},
+ {g:'التفاعل',k:'reviews',l:'التقييمات',d:'إخفاء التقييمات المخالفة.',cols:[['p','المنتج'],['b','المراجع'],['r','التقييم','stars'],['t','النص'],['st','الحالة','st']],a:[act('أخفِ','hidden',{show:on('published'),reason:'سبب الإخفاء',danger:1}),act('أظهر','published',{show:on('hidden')})]},
+ {k:'reports',l:'البلاغات',d:'بلاغات المشترين عن منتجات وبائعين.',cols:[['id','البلاغ','ltr'],['e','الجهة'],['who','المبلِّغ'],['why','السبب'],['st','الحالة','st']],a:[act('تم الحل','resolved',{show:on('open'),reason:'ملاحظة الحل'}),act('ارفض البلاغ','dismissed',{show:on('open'),reason:'سبب الرفض'})]},
+ {g:'الأمان',k:'redeem',l:'محاولات التفعيل',d:'محاولات إدخال الأكواد، والحظر بعد تكرار الفشل.',cols:[['ip','عنوان IP','ltr'],['c','بادئة الكود','ltr'],['r','النتيجة','st'],['at','الوقت','t']],a:[act('ارفع الحظر','ok',{show:on('blocked')})]},
+ {g:'النظام',k:'audit',l:'سجل التدقيق',sup:0},
+ {k:'backups',l:'النسخ الاحتياطي',d:'نسخ قاعدة البيانات اليومية واليدوية.',cols:[['id','النسخة','ltr'],['kb','الحجم','ltr'],['ty','النوع','st'],['at','التاريخ','t']],add:{l:'نسخة يدوية الآن',mk:()=>({id:'bk-'+String(Date.now()).slice(-4),kb:'48 MB',ty:'manual',at:Date.now()}),ok:'تم إنشاء النسخة اليدوية'},a:[act('نزّل',null,{ok:'بدأ تنزيل النسخة'})],sup:0},
+ {k:'settings',l:'الإعدادات',sup:0},
+ {k:'staff',l:'الموظفون',d:'أعضاء فريق الإدارة وأدوارهم.',cols:[['n','الاسم','b'],['role','الدور'],['st','الحالة','st']],add:{l:'ادعُ موظفًا',ask:'البريد الإلكتروني',mk:v=>({id:'U'+Date.now(),n:v,role:'موظف دعم',st:'invited'})},a:[act('أوقف','suspended',{show:r=>r.st==='active'&&r.role!=='مدير أعلى',reason:'سبب الإيقاف',danger:1}),act('أعد التفعيل','active',{show:on('suspended')})],sup:0}
+];
+const allowed=s=>S.role==='super'||s.sup!==0;
+const pend=k=>(S.d[k]||[]).filter(r=>['pending','open','quarantined'].includes(r.st)).length;
+const BADGE={requests:'requests',sellers:'sellers',compensation:'compensation',payouts:'payouts',reports:'reports',quarantine:'quarantine',exceptions:'exceptions'};
+function nav(cur){let h='',g='';SEC.forEach(s=>{if(s.g)g=s.g;if(!allowed(s))return;if(s.g)h+=`<p>${s.g}</p>`;const n=BADGE[s.k]?pend(s.k):0;h+=`<a href="#/${s.k}" class="${cur===s.k?'on':''}">${s.l}${n?`<i>${n}</i>`:''}</a>`});$('#nav').innerHTML=h}
+function cell(c,r){const v=r[c[0]];switch(c[2]){case'st':return badge(v);case'm':return m$(v);case'ltr':return`<span class="num">${v}</span>`;case't':return rel(v);case'stars':return`<span style="color:var(--amber)">${stars(v)}</span>`;case'b':return`<b>${v}</b>`;default:return v}}
+function table(s){const f=S.F[s.k]||'';const rows=S.d[s.k];const sts=[...new Set(rows.map(r=>r.st))];const list=rows.filter(r=>!f||r.st===f);
+ const acts=r=>s.a.filter(a=>(!a.show||a.show(r))&&(!a.su||S.role==='super')).map((a,i)=>`<button class="btn sm ${a.danger?'danger':'ghost'}" onclick="ask('${s.k}','${r.id}',${s.a.indexOf(a)})">${a.l}</button>`).join('');
+ return `${sts.length>1?`<div class="chips"><button class="chip" aria-pressed="${!f}" onclick="flt('${s.k}','')">الكل (${rows.length})</button>${sts.map(x=>`<button class="chip" aria-pressed="${f===x}" onclick="flt('${s.k}','${x}')">${ST[x]?.[1]||x} (${rows.filter(r=>r.st===x).length})</button>`).join('')}</div>`:''}
+ <div class="tw"><table><thead><tr>${s.cols.map(c=>`<th>${c[1]}</th>`).join('')}${s.a?.length?'<th></th>':''}</tr></thead><tbody>${list.length?list.map(r=>`<tr>${s.cols.map(c=>`<td>${cell(c,r)}</td>`).join('')}${s.a?.length?`<td class="ac">${acts(r)}</td>`:''}</tr>`).join(''):`<tr><td class="empty" colspan="9">لا توجد عناصر بهذه الحالة.</td></tr>`}</tbody></table></div>`}
+const V={
+ overview(){const q=[['requests','طلبات شراء بانتظار المراجعة'],['sellers','بائعون بانتظار الاعتماد'],['compensation','طلبات تعويض'],['payouts','طلبات سحب'],['reports','بلاغات مفتوحة'],['quarantine','ملفات معزولة']].filter(x=>allowed(SEC.find(s=>s.k===x[0])));
+  return `<h1>لوحة التحكم</h1><p class="sub">ما يحتاج قرارك الآن.</p>${S.role==='support'?'<div class="note">تتصفح بصلاحية موظف دعم: بعض الأقسام (المالية، الإعدادات، سجل التدقيق) غير ظاهرة لك.</div>':''}
+  <div class="stats">${q.map(([k,l])=>{const n=k==='payouts'?S.d.payouts.filter(r=>r.st==='pending').length:pend(k);return `<a class="stat ${n?'':'z'}" href="#/${k}"><div class="v">${n}</div><span>${l}</span></a>`}).join('')}</div>
+  ${allowed(SEC.find(s=>s.k==='audit'))?`<h2>آخر الإجراءات</h2>${V.audit(5,1)}`:''}`},
+ audit(n=99,mini){const rows=S.audit.slice(0,n);const t=`<div class="tw"><table><thead><tr><th>الوقت</th><th>المنفِّذ</th><th>الإجراء</th><th>العنصر</th><th>ملاحظة</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${rel(r.at)}</td><td>${r.who}</td><td>${r.act}</td><td><span class="num">${r.t}</span></td><td class="mute">${r.note||'—'}</td></tr>`).join('')}</tbody></table></div>`;return mini?t:`<h1>سجل التدقيق</h1><p class="sub">كل إجراء إداري يُسجَّل هنا ولا يمكن حذفه.</p>${t}`},
+ settings(){const tabs=[['general','عام'],['security','الأمان'],['downloads','التنزيلات']];
+  const P={general:`<label>اسم المنصة</label><input class="in" value="إلكترونيات"><div class="grid2"><div><label>بريد التواصل</label><input class="in" dir="ltr" value="support@example.com"></div><div><label>هاتف التواصل</label><input class="in" dir="ltr" value="01000000000"></div></div><label>الحد الأدنى لسعر المنتج (ج.م)</label><input class="in" dir="ltr" value="50" style="max-width:200px">`,
+  security:`<div class="sw"><span>إلزام الموظفين بالتحقق بخطوتين</span><input type="checkbox" checked></div><div class="grid2"><div><label>عدد محاولات التفعيل الفاشلة قبل الحظر</label><input class="in" dir="ltr" value="5"></div><div><label>مدة الحظر (دقيقة)</label><input class="in" dir="ltr" value="15"></div></div>`,
+  downloads:`<div class="grid2"><div><label>محاولات التنزيل لكل كود</label><input class="in" dir="ltr" value="3"></div><div><label>صلاحية الكود (ساعة)</label><input class="in" dir="ltr" value="48"></div></div><div class="sw"><span>علامة مائية على المعاينات</span><input type="checkbox" checked></div>`};
+  return `<h1>الإعدادات</h1><p class="sub">تُسجَّل كل تعديلات الإعدادات في سجل التدقيق.</p><div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" aria-selected="${S.tab===k}" onclick="S.tab='${k}';route()">${l}</button>`).join('')}</div><form class="f box" onsubmit="event.preventDefault();log('تعديل — الإعدادات','تبويب: ${tabs.find(t=>t[0]===S.tab)[1]}','');toast('تم حفظ الإعدادات');route()">${P[S.tab]}<p style="margin:16px 0 0"><button class="btn">احفظ التغييرات</button></p></form>`}
+};
+function page(s){const addB=s.add?`<button class="btn" onclick="addRow('${s.k}')">${s.add.l}</button>`:'';return `<div class="vh"><div><h1>${s.l}</h1><p class="sub">${s.d}</p></div>${addB}</div>${table(s)}`}
+function log(act,t,note){S.audit.unshift({at:Date.now(),who:S.role==='super'?'عمر فاروق':'ليلى حسني',act,t,note})}
+function modal(o){$('#md').innerHTML=`<div class="ov" onclick="if(event.target===this)closeM()"><form class="md" role="dialog" aria-modal="true" aria-label="${o.title}" onsubmit="event.preventDefault()"><h3>${o.title}</h3>${o.text?`<p>${o.text}</p>`:''}${o.ask?`<label for="mi" class="mute">${o.ask}</label><input class="in" id="mi" autofocus>`:''}<div class="err" id="me"></div><div class="vh"><button class="btn ${o.danger?'danger':''}" id="mok">${o.ok||'تأكيد'}</button><button type="button" class="btn ghost" onclick="closeM()">إلغاء</button></div></form></div>`;
+ $('#mok').onclick=()=>{const v=o.ask?$('#mi').value.trim():'';if(o.ask&&!v){$('#mi').classList.add('bad');$('#me').textContent='هذا الحقل مطلوب.';return}closeM();o.go(v)};$('#mi')?.focus()}
+const closeM=()=>$('#md').innerHTML='';
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
+function ask(k,id,i){const s=SEC.find(x=>x.k===k),r=S.d[k].find(x=>x.id===id),a=s.a[i];
+ modal({title:`${a.l}؟`,text:`${r.n||r.id||r.f||r.ip}`,ask:a.reason,danger:a.danger,ok:a.l,go:v=>{if(a.st)r.st=a.st;if(a.st==='approved'&&k==='requests')S.d.codes.unshift({id:'N'+Math.random().toString(36).slice(2,6).toUpperCase(),p:r.p,b:r.b,st:'active',at:Date.now()});log(`${a.l} — ${s.l}`,r.id||r.n||r.f||r.ip,v);toast(a.ok||`تم: ${a.l}`);route()}})}
+function addRow(k){const s=SEC.find(x=>x.k===k),a=s.add;const go=v=>{S.d[k].unshift(a.mk(v));log(`${a.l} — ${s.l}`,v||'—','');toast(a.ok||'تمت الإضافة');route()};a.ask?modal({title:a.l,ask:a.ask,ok:'أضف',go}):go('')}
+function flt(k,v){S.F[k]=v;route()}
+function setRole(r){S.role=r;if(!allowed(SEC.find(s=>s.k===(location.hash.split('/')[1]||'overview'))))location.hash='#/overview';route()}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2600)}
+function route(){let k=location.hash.split('/')[1]||'overview',s=SEC.find(x=>x.k===k);if(!s||!allowed(s)){s=SEC[0];k='overview'}
+ $('#v').innerHTML=V[k]?V[k]():page(s);nav(k)}
+addEventListener('hashchange',()=>{route();scrollTo(0,0)});route();
+</script>
+</body>
+</html>
