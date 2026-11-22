@@ -62,6 +62,8 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           title: cleanTitle,
+          short_description: shortDescription.trim() || null,
+          description: description.trim() || null,
           category_name: catName,
           variant,
           action: 'preview',
@@ -69,7 +71,11 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error ?? 'تعذّر توليد معاينة الغلاف.');
+        if (json.error === 'AI_COVER_NOT_CONFIGURED') {
+          setError('لتوليد أغلفة حقيقية معبّرة بالذكاء الاصطناعي، يرجى إضافة GEMINI_API_KEY في ملف .env.local ثم إعادة تشغيل الخادم.');
+        } else {
+          setError(json.error ?? 'تعذّر توليد معاينة الغلاف.');
+        }
         return;
       }
       setAutoPreview({
@@ -88,16 +94,13 @@ export function ProductForm({ mode, productId, initial, categories, minPrice, mi
     if (!autoPreview) return;
     setApprovingAuto(true);
     setError(null);
-    const catName = categories.find(c => c.id === categoryId)?.name ?? null;
 
     try {
       const res = await fetch('/api/seller/images/auto-cover', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          title: title.trim(),
-          category_name: catName,
-          variant: autoPreview.variant,
+          preview_data_url: autoPreview.dataUrl,
           action: 'approve',
         }),
       });
