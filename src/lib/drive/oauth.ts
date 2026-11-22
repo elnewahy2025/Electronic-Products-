@@ -6,6 +6,25 @@ export const DRIVE_SCOPES = [
   'https://www.googleapis.com/auth/userinfo.email',
 ];
 
+function getClientId(): string {
+  const id = process.env.GOOGLE_DRIVE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+  if (!id) throw new Error('GOOGLE_DRIVE_NOT_CONFIGURED');
+  return id;
+}
+
+function getClientSecret(): string {
+  const secret = process.env.GOOGLE_DRIVE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+  if (!secret) throw new Error('GOOGLE_DRIVE_NOT_CONFIGURED');
+  return secret;
+}
+
+function getRedirectUri(): string {
+  return (
+    process.env.GOOGLE_DRIVE_REDIRECT_URI ||
+    `${process.env.NEXT_PUBLIC_APP_URL}/api/seller/drive/callback`
+  );
+}
+
 export function buildDriveAuthUrl(statePayload: { sellerId: string }): {
   url: string;
   state: string;
@@ -17,8 +36,8 @@ export function buildDriveAuthUrl(statePayload: { sellerId: string }): {
   });
 
   const params = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID!,
-    redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/seller/drive/callback`,
+    client_id: getClientId(),
+    redirect_uri: getRedirectUri(),
     response_type: 'code',
     scope: DRIVE_SCOPES.join(' '),
     access_type: 'offline',
@@ -68,9 +87,9 @@ export async function exchangeDriveCode(code: string): Promise<{
 }> {
   const params = new URLSearchParams({
     code,
-    client_id: process.env.GOOGLE_CLIENT_ID!,
-    client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-    redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/seller/drive/callback`,
+    client_id: getClientId(),
+    client_secret: getClientSecret(),
+    redirect_uri: getRedirectUri(),
     grant_type: 'authorization_code',
   });
 
