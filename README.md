@@ -1,72 +1,72 @@
-# منصة بيع المنتجات الرقمية (Electronic Products Platform)
+# Digital Products Marketplace Platform (Electronic Products Platform)
 
-منصة عربية متعددة البائعين لبيع وتسليم المنتجات الرقمية بأمان عالٍ، مبنية باستخدام **Next.js 14 (App Router)** و **Supabase (PostgreSQL + Auth + RLS + Storage)** مع ربط مباشر بحسابات **Google Drive** الخاصة بالبائعين.
+A high-security Arabic multi-vendor platform for selling and delivering digital products, built with **Next.js 14 (App Router)** and **Supabase (PostgreSQL + Auth + RLS + Storage)** with direct integration to sellers' **Google Drive** accounts.
 
-## المميزات الأساسية
-- **رفع مباشر إلى Google Drive (Direct-to-Drive Resumable Upload):** الملفات تُرفع مباشرة من متصفح البائع إلى حسابات Google Drive المربوطة دون المرور عبر خوادم Vercel، مع توزيع تلقائي للحصص (`quota`) ودعم استئناف الرفع.
-- **فحص تلقائي ومعاينات موسومة بعلامة مائية:** فحص التوقيع الرقمي للملفات (`Magic Bytes`) وعزل الملفات المشبوهة، مع توليد معاينات موسومة بعلامة مائية قطرية (`{platform_name} — نسخة غير مرخصة`) بينما يُسلَّم الملف الأصلي للمشتري نظيفًا بدون علامة مائية.
-- **نظام أكواد الشراء وجلسات التنزيل المحمية:**
-  - أكواد شراء فريدة مخزنة ببصمة `HMAC-SHA256` مع حماية ضد التخمين (`Rate Limiting`) وسجل محاولات التفعيل.
-  - جلسات تنزيل محددة بـ 4 ساعات (قابلة للتعديل من Super Admin) وحد أقصى 3 محاولات تنزيل مكتملة لكل منتج (ZIP كامل أو اكتمال الملفات المنفردة).
-  - دعم الجلسات الجزئية (`ExpiredPartial`) وجلسات التعويض الإدارية (بحد أقصى 3 جلسات تعويضية لكل كود منتج `code_id`) وطلبات استثناء المحاولات بقرار حصري من `Super Admin`.
-  - منع كامل لإلغاء أو سحب الأكواد أو الجلسات بعد تأكيد التسليم أو بدء التنزيل، حتى من قِبل `Super Admin`.
-- **الإدارة المالية وتعدد العملات:** دعم `USD, EGP, SAR, KWD` مع تثبيت سعر الصرف لحظة الشراء فقط، ومحافظ البائعين وطلبات السحب (بحد أدنى افتراضي 100 دولار).
-- **نظام صلاحيات دقيق وسجل تدقيق غير قابل للتعديل (`Append-Only Audit Log`):** مصادقة ثنائية (`2FA / TOTP`) إلزامية للأدوار الإدارية، وسياسات `Row-Level Security (RLS)` شاملة، وسجل تدقيق محمي ضد الحذف أو التعديل.
+## Core Features
+- **Direct-to-Drive Resumable Upload:** Files are uploaded directly from the seller's browser to linked Google Drive accounts without passing through Vercel servers, featuring automatic quota distribution (`quota`) and resumable upload support.
+- **Automated Scanning and Watermarked Previews:** Digital signature inspection (`Magic Bytes`) and quarantine of suspicious files, with generation of diagonally watermarked previews (`{platform_name} — Unlicensed Copy`), while the original file is delivered cleanly to the buyer without a watermark.
+- **Purchase Code System and Protected Download Sessions:**
+  - Unique purchase codes stored as `HMAC-SHA256` hashes with brute-force protection (`Rate Limiting`) and a redemption attempts log.
+  - Download sessions limited to 4 hours (configurable by Super Admin) and a maximum of 3 completed download attempts per product (full ZIP or completion of all individual files).
+  - Support for partial sessions (`ExpiredPartial`), administrative compensation sessions (up to a maximum of 3 compensation sessions per product code `code_id`), and attempt exception requests decided exclusively by `Super Admin`.
+  - Complete prevention of revoking or canceling codes or sessions after delivery confirmation or download start, even by `Super Admin`.
+- **Financial Management and Multi-Currency Support:** Support for `USD, EGP, SAR, KWD` with exchange rate snapshotting strictly at the moment of purchase, seller wallets, and payout requests (with a default minimum threshold of 100 USD).
+- **Granular Permissions System and Immutable Audit Log (`Append-Only Audit Log`):** Mandatory two-factor authentication (`2FA / TOTP`) for administrative roles, comprehensive `Row-Level Security (RLS)` policies, and an audit log protected against deletion or modification.
 
-## الوثائق المرجعية (`docs/`)
-| الوثيقة | المحتوى |
+## Reference Documentation (`docs/`)
+| Document | Contents |
 |---|---|
-| [`docs/01-requirements-final.md`](docs/01-requirements-final.md) | وثيقة المتطلبات النهائية الكاملة والملحق التنفيذي المغلق |
-| [`docs/02-erd-dictionary.md`](docs/02-erd-dictionary.md) | مخطط العلاقات (`Mermaid ERD`) وقاموس البيانات والقيود وآلات الحالة |
-| [`docs/03-settings-tables.md`](docs/03-settings-tables.md) | تصميم جداول الإعدادات الأحد عشر المنفصلة (`Singleton Settings Tables`) |
-| [`docs/04-permissions-matrix.md`](docs/04-permissions-matrix.md) | مصفوفة الصلاحيات الكاملة (الإدارة + **مصفوفة صلاحيات مسار التنزيل والتعويض والاستثناء** + التقييمات) |
-| [`docs/05-audit-events.md`](docs/05-audit-events.md) | قاموس أحداث سجل التدقيق (`audit_logs`) وقواعد الحماية والأرشفة |
-| [`docs/06-testing-checklist.md`](docs/06-testing-checklist.md) | قائمة الاختبارات الإلزامية قبل الإطلاق |
-| [`docs/07-implementation-plan.md`](docs/07-implementation-plan.md) | خطة التنفيذ المرحلية المحدّثة (0–14) وخريطة الترحيلات (`001`–`035`) والنقاط المتبقية |
-| [`docs/08-rls-matrix.md`](docs/08-rls-matrix.md) | مصفوفة `RLS` التفصيلية لكل جدول، العروض الآمنة، المشغلات، وتحصين دوال `SECURITY DEFINER` |
-| [`docs/drive-upload-flow.md`](docs/drive-upload-flow.md) | تدفق ربط Google Drive والرفع المباشر القابل للاستئناف وإدارة الحصص |
-| [`docs/scan-preview-flow.md`](docs/scan-preview-flow.md) | خط أنابيب الفحص التلقائي، العزل، وتوليد المعاينات الموسومة بالعلامة المائية |
-| [`docs/download-service-contract.md`](docs/download-service-contract.md) | عقد خدمة بث التنزيل المستقلة (`Download Streaming Service`) |
-| [`docs/redeem-hardening.md`](docs/redeem-hardening.md) | تحصين نقطة تفعيل الأكواد (`/api/redeem`) وحدود المحاولات ونموذج التهديدات |
-| [`docs/categories-management.md`](docs/categories-management.md) | إدارة التصنيفات الهرمية والحماية من الحلقات |
-| [`docs/notifications.md`](docs/notifications.md) | نظام الإشعارات الفورية ومشغلات قاعدة البيانات التلقائية |
-| [`docs/admin-notifications.md`](docs/admin-notifications.md) | إشعارات الإدارة الموجهة حسب الصلاحية ومسار `/notifications` الموحّد (`030_admin_notifications.sql`) |
-| [`docs/email-notifications.md`](docs/email-notifications.md) | إشعارات البريد الإلكتروني الحقيقية (`email_outbox` + `nodemailer`/Resend + ملخص الإدارة اليومي `035_email_notifications.sql`) |
-| [`docs/storefront-ux.md`](docs/storefront-ux.md) | تحسينات المتجر: صور الغلاف ومعرض الصور، `Breadcrumbs`، المنتجات المشابهة، و`Skeletons` (`029_storefront_ux.sql`) |
-| [`docs/seller-reviews.md`](docs/seller-reviews.md) | إدارة تقييمات البائع (`/seller/reviews`)، الإحصائيات التجميعية، والرد على التقييمات (`028_seller_reviews.sql`) |
-| [`docs/seller-orders.md`](docs/seller-orders.md) | صفحة مبيعات البائع (`/seller/orders`)، تقنيع هوية المشتري، وحساب الصافي بعد العمولة (`032_seller_orders.sql`) |
-| [`docs/security-review.md`](docs/security-review.md) | المراجعة الأمنية الشاملة، الثغرات المكتشفة وإصلاحاتها في `027_security_hardening.sql` |
-| [`docs/security-headers.md`](docs/security-headers.md) | ترويسات الأمان على مستوى المتصفح (`CSP + Nonce`, `HSTS`, `Permissions-Policy`, `/api/csp-report`) |
-| [`docs/performance.md`](docs/performance.md) | مراجعة الأداء: الفهارس (`pg_trgm`)، حل `N+1`، `unstable_cache`، و`Suspense` streaming (`031_performance_indexes.sql`) |
+| [`docs/01-requirements-final.md`](docs/01-requirements-final.md) | Complete final requirements document and locked executive addendum |
+| [`docs/02-erd-dictionary.md`](docs/02-erd-dictionary.md) | Entity-Relationship Diagram (`Mermaid ERD`), data dictionary, constraints, and state machines |
+| [`docs/03-settings-tables.md`](docs/03-settings-tables.md) | Design of the eleven separate settings tables (`Singleton Settings Tables`) |
+| [`docs/04-permissions-matrix.md`](docs/04-permissions-matrix.md) | Full permissions matrix (Administration + **Download, Compensation, and Exception Flow Permissions Matrix** + Reviews) |
+| [`docs/05-audit-events.md`](docs/05-audit-events.md) | Audit log (`audit_logs`) event dictionary, protection rules, and archiving |
+| [`docs/06-testing-checklist.md`](docs/06-testing-checklist.md) | Mandatory pre-launch testing checklist |
+| [`docs/07-implementation-plan.md`](docs/07-implementation-plan.md) | Updated phased implementation plan (0–14), migration map (`001`–`035`), and remaining items |
+| [`docs/08-rls-matrix.md`](docs/08-rls-matrix.md) | Detailed `RLS` matrix for every table, safe views, triggers, and `SECURITY DEFINER` function hardening |
+| [`docs/drive-upload-flow.md`](docs/drive-upload-flow.md) | Google Drive linking flow, direct resumable upload, and quota management |
+| [`docs/scan-preview-flow.md`](docs/scan-preview-flow.md) | Automated scanning pipeline, quarantine, and watermarked preview generation |
+| [`docs/download-service-contract.md`](docs/download-service-contract.md) | Independent download streaming service contract (`Download Streaming Service`) |
+| [`docs/redeem-hardening.md`](docs/redeem-hardening.md) | Hardening of the code redemption endpoint (`/api/redeem`), attempt limits, and threat model |
+| [`docs/categories-management.md`](docs/categories-management.md) | Hierarchical categories management and cycle prevention |
+| [`docs/notifications.md`](docs/notifications.md) | Instant notifications system and automatic database triggers |
+| [`docs/admin-notifications.md`](docs/admin-notifications.md) | Permission-targeted admin notifications and unified `/notifications` route (`030_admin_notifications.sql`) |
+| [`docs/email-notifications.md`](docs/email-notifications.md) | Real email notifications (`email_outbox` + `nodemailer`/Resend + daily admin digest `035_email_notifications.sql`) |
+| [`docs/storefront-ux.md`](docs/storefront-ux.md) | Storefront enhancements: cover images and gallery, `Breadcrumbs`, similar products, and `Skeletons` (`029_storefront_ux.sql`) |
+| [`docs/seller-reviews.md`](docs/seller-reviews.md) | Seller reviews management (`/seller/reviews`), aggregated statistics, and replying to reviews (`028_seller_reviews.sql`) |
+| [`docs/seller-orders.md`](docs/seller-orders.md) | Seller sales page (`/seller/orders`), buyer identity masking, and net calculation after commission (`032_seller_orders.sql`) |
+| [`docs/security-review.md`](docs/security-review.md) | Comprehensive security review, discovered vulnerabilities, and their fixes in `027_security_hardening.sql` |
+| [`docs/security-headers.md`](docs/security-headers.md) | Browser-level security headers (`CSP + Nonce`, `HSTS`, `Permissions-Policy`, `/api/csp-report`) |
+| [`docs/performance.md`](docs/performance.md) | Performance review: indexes (`pg_trgm`), `N+1` resolution, `unstable_cache`, and `Suspense` streaming (`031_performance_indexes.sql`) |
 
-## هيكل المشروع
+## Project Structure
 ```text
-├── docs/                     # وثائق المتطلبات، ERD، مصفوفة الصلاحيات وRLS، العقود، والأمان والأداء
+├── docs/                     # Requirements, ERD, permissions & RLS matrices, contracts, security, and performance docs
 ├── supabase/
-│   ├── config.toml           # إعدادات Supabase المحلية
-│   └── migrations/           # ملفات قاعدة البيانات (001 إلى 037)
+│   ├── config.toml           # Local Supabase configuration
+│   └── migrations/           # Database migration files (001 to 037)
 ├── src/
-│   ├── app/                  # صفحات ومسارات Next.js App Router و API Routes
-│   ├── components/           # مكونات الواجهة (Storefront, Buyer, Seller, Admin)
-│   └── lib/                  # الخدمات الخادمية، المصادقة، التشفير، وربط Google Drive
-└── tests/e2e/                # اختبارات Playwright الشاملة (01 إلى 04)
+│   ├── app/                  # Next.js App Router pages, layouts, and API Routes
+│   ├── components/           # UI components (Storefront, Buyer, Seller, Admin)
+│   └── lib/                  # Server services, authentication, encryption, and Google Drive integration
+└── tests/e2e/                # End-to-end Playwright tests (01 to 04)
 ```
 
-## التشغيل المحلي
-1. انسخ ملف البيئة `.env.example` إلى `.env.local` واضبط متغيرات Supabase و Google OAuth ومفاتيح التشفير:
+## Local Setup & Running
+1. Copy the environment file `.env.example` to `.env.local` and configure Supabase, Google OAuth, and encryption key variables:
    ```bash
    cp .env.example .env.local
    ```
-2. ثبّت الحزم وشغّل خادم التطوير:
+2. Install packages and start the development server:
    ```bash
    pnpm install
    pnpm dev
    ```
-3. لتطبيق قاعدة البيانات على Supabase:
+3. To apply the database migrations to Supabase:
    ```bash
    pnpm db:push
    ```
-4. لتشغيل اختبارات النهاية إلى النهاية (Playwright E2E):
+4. To run End-to-End (Playwright E2E) tests:
    ```bash
    cp .env.test.example .env.test
    pnpm test:e2e
