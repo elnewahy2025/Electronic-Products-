@@ -13,7 +13,7 @@ export default async function SellerDetailPage({ params }: { params: { id: strin
   const db = await createClient();
   const { data: seller } = await db
     .from('seller_profiles')
-    .select('*, profiles!inner(email, phone, full_name, avatar_url, created_at)')
+    .select('*, profiles:profiles!seller_profiles_profile_id_fkey(email, phone, full_name, avatar_url, created_at)')
     .eq('profile_id', params.id)
     .single();
 

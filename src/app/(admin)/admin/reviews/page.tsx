@@ -8,7 +8,7 @@ export default async function ReviewsPage({ searchParams }: { searchParams: { st
     .select(`
       id, rating, body, status, created_at, delete_reason,
       products!inner(id, title, slug, seller_id),
-      profiles!inner(email)
+      profiles:profiles!reviews_buyer_id_fkey(email)
     `)
     .order('created_at', { ascending: false })
     .limit(100);
