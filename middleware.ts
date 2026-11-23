@@ -260,6 +260,6 @@ export const config = {
      *  - static image/font files
      *  - API routes (no HTML served, headers harmless but skip anyway)
      */
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|sw.js|manifest.webmanifest|api/.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf)$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf)$).*)',
+    '/((?!_next/static|_next/image|supabase/|favicon.ico|robots.txt|sitemap.xml|sw.js|manifest.webmanifest|api/.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf)$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf)$).*)',
   ],
 };

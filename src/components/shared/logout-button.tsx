@@ -23,7 +23,7 @@ export function LogoutButton({
     try {
       await Promise.allSettled([
         fetch('/api/auth/signout', { method: 'POST' }),
-        createClient().auth.signOut(),
+        createClient().auth.signOut({ scope: 'local' }),
       ]);
     } finally {
       // Full page navigation clears all in-memory client state and avoids stale RSC/webpack chunk swaps across route groups

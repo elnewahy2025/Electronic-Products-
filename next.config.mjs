@@ -22,6 +22,17 @@ const nextConfig = {
     serverComponentsExternalPackages: ['sharp', 'canvas', 'pdf-to-img', 'nodemailer'],
   },
 
+  async rewrites() {
+    const target = process.env.SUPABASE_PROXY_TARGET;
+    if (!target) return [];
+    return [
+      {
+        source: '/supabase/:path*',
+        destination: `${target.replace(/\/$/, '')}/:path*`,
+      },
+    ];
+  },
+
   async headers() {
     return [
       // Belt-and-braces: headers that are static (no nonce needed).
