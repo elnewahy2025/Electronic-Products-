@@ -18,7 +18,8 @@ export default async function HomePage() {
   ]);
 
   return (
-    <>
+    // Static wrapper keeps Next's scroll/focus handler off the sticky header.
+    <div>
       <SiteHeader />
 
       {/* Compact Brand-Surface Hero — keeps products visible above the fold on mobile & desktop */}
@@ -194,6 +195,6 @@ export default async function HomePage() {
           <span>الدفع يتم بعد مراجعة الإدارة واعتماد الطلب.</span>
         </div>
       </footer>
-    </>
+    </div>
   );
 }

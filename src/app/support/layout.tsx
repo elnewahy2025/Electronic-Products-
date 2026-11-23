@@ -24,24 +24,24 @@ export default async function SupportLayout({ children }: { children: React.Reac
 
     if (seller?.status === 'approved') {
       return (
-        <>
+        <div>
           <SiteHeader />
           <div className="flex">
             <SellerSidebar email={user.email} displayName={seller.display_name} />
             <div className="flex-1 min-w-0">{children}</div>
           </div>
-        </>
+        </div>
       );
     }
   }
 
   return (
-    <>
+    <div>
       <SiteHeader />
       <div className="flex">
         <AccountSidebar email={user.email} />
         <div className="flex-1 min-w-0">{children}</div>
       </div>
-    </>
+    </div>
   );
 }

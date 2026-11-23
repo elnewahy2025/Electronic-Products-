@@ -18,7 +18,8 @@ export default async function PendingSellerPage() {
   if (seller.status === 'approved') redirect('/seller');
 
   return (
-    <>
+    // Static wrapper keeps Next's scroll/focus handler off the sticky header.
+    <div>
       <SiteHeader />
       <main className="container max-w-lg py-16">
         <div className="ui-box p-8 text-center space-y-5">
@@ -83,6 +84,6 @@ export default async function PendingSellerPage() {
           </div>
         </div>
       </main>
-    </>
+    </div>
   );
 }
