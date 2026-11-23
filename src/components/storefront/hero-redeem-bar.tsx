@@ -20,9 +20,9 @@ export function HeroRedeemBar() {
   return (
     <form
       onSubmit={onSubmit}
-      className="inline-flex flex-wrap items-center gap-2.5 mt-5 rounded-[10px] border border-dashed border-[#6fb09d] bg-white/10 px-3.5 py-2 text-sm text-[#e8f5f0]"
+      className="inline-flex items-center justify-between sm:justify-start gap-2 rounded-lg border border-dashed border-[#6fb09d] bg-white/10 px-2.5 py-1.5 text-xs text-[#e8f5f0]"
     >
-      <span>لديك كود شراء؟</span>
+      <span className="whitespace-nowrap">كود شراء؟</span>
       <input
         type="text"
         value={code}
@@ -31,11 +31,11 @@ export function HeroRedeemBar() {
         maxLength={24}
         dir="ltr"
         aria-label="كود الشراء"
-        className="w-36 bg-transparent border-0 border-b border-[#6fb09d] px-1 py-0.5 text-left font-mono tracking-wider text-white placeholder:text-[#7fb4a4] focus:outline-none focus:border-white"
+        className="w-28 sm:w-32 bg-black/20 rounded border border-[#6fb09d]/60 px-2 py-1 text-left font-mono text-xs tracking-wider text-white placeholder:text-[#7fb4a4] focus:outline-none focus:border-white"
       />
       <button
         type="submit"
-        className="rounded-[7px] bg-[#e8a317] text-[#201400] px-3.5 py-1.5 text-xs font-bold hover:brightness-95 active:scale-[0.98] transition"
+        className="rounded-md bg-[#e8a317] text-[#201400] px-3 py-1 text-xs font-bold hover:brightness-95 active:scale-[0.98] transition shrink-0"
       >
         فعّل
       </button>

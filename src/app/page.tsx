@@ -21,66 +21,67 @@ export default async function HomePage() {
     <>
       <SiteHeader />
 
-      {/* Brand-Surface Hero (Preserves platform's digital-products identity) */}
-      <section className="bg-brand text-brand-foreground relative overflow-hidden">
+      {/* Compact Brand-Surface Hero — keeps products visible above the fold on mobile & desktop */}
+      <section className="bg-brand text-brand-foreground relative overflow-hidden border-b border-white/10">
         <svg
-          className="absolute inset-0 w-full h-full opacity-15 pointer-events-none"
-          viewBox="0 0 800 320"
+          className="absolute inset-0 w-full h-full opacity-10 pointer-events-none"
+          viewBox="0 0 800 180"
           preserveAspectRatio="xMidYMid slice"
           aria-hidden="true"
         >
           <defs>
-            <pattern id="ep-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#8ed8c1" strokeWidth="0.8" />
+            <pattern id="ep-grid" width="36" height="36" patternUnits="userSpaceOnUse">
+              <path d="M 36 0 L 0 0 0 36" fill="none" stroke="#8ed8c1" strokeWidth="0.7" />
             </pattern>
           </defs>
-          <rect width="800" height="320" fill="url(#ep-grid)" />
+          <rect width="800" height="180" fill="url(#ep-grid)" />
         </svg>
 
-        <div className="container relative py-14 md:py-16">
-          <h1 className="text-3xl md:text-[42px] font-bold leading-snug max-w-2xl">
-            منتجات رقمية من بائعين موثوقين
-          </h1>
-          <p className="mt-3 text-[#b4d3c8] max-w-xl text-[15.5px] leading-relaxed">
-            عروض تقديمية، تحضيرات دروس، فيديوهات، ومواد تعليمية — تصفح وعاين قبل الشراء،
-            وستصلك رسالة بكود التفعيل بعد مراجعة الإدارة.
-          </p>
+        <div className="container relative py-5 sm:py-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="space-y-1 max-w-2xl">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-xl sm:text-2xl md:text-[26px] font-bold leading-tight">
+                  منتجات رقمية من بائعين موثوقين
+                </h1>
+                {stats.total > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/10 border border-white/15 px-2.5 py-0.5 text-[11px] text-[#b4d3c8]">
+                    <b className="ui-num text-white">{stats.total}</b> منتج جاهز للتنزيل
+                  </span>
+                )}
+              </div>
+              <p className="text-[#b4d3c8] text-xs sm:text-sm leading-relaxed">
+                عروض تقديمية، تحضيرات دروس، ومواد تعليمية — عاين قبل الشراء واستلم كود التفعيل فوراً.
+              </p>
+            </div>
 
-          <form
-            action="/products"
-            method="GET"
-            className="mt-6 max-w-xl relative"
-          >
-            <input
-              type="search"
-              name="q"
-              placeholder="ابحث عن منتج رقمي أو تصنيف..."
-              className="w-full rounded-xl bg-white text-[#0f1b26] placeholder:text-[#5d6b78] py-3.5 pe-4 ps-12 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-[#e8a317]"
-            />
-            <button
-              type="submit"
-              aria-label="بحث"
-              className="absolute start-3 top-1/2 -translate-y-1/2 text-[#0f1b26] p-1"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="7" />
-                <path d="m20 20-4-4" />
-              </svg>
-            </button>
-          </form>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
+              <form action="/products" method="GET" className="relative sm:w-56 md:w-64">
+                <input
+                  type="search"
+                  name="q"
+                  placeholder="ابحث عن منتج أو تصنيف..."
+                  className="w-full rounded-lg bg-card/95 text-foreground placeholder:text-muted-foreground border border-white/15 py-2 pe-3 ps-9 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#e8a317]"
+                />
+                <button
+                  type="submit"
+                  aria-label="بحث"
+                  className="absolute start-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m20 20-4-4" />
+                  </svg>
+                </button>
+              </form>
 
-          <div className="flex flex-wrap items-center gap-4">
-            <HeroRedeemBar />
-            {stats.total > 0 && (
-              <span className="mt-5 text-xs text-[#9ccbbd]">
-                <b className="ui-num text-white">{stats.total}</b> منتج منشور وجاهز للتنزيل
-              </span>
-            )}
+              <HeroRedeemBar />
+            </div>
           </div>
         </div>
       </section>
 
-      <main className="container py-10 pb-16 space-y-12">
+      <main className="container py-6 sm:py-8 pb-14 space-y-10">
         {/* Featured */}
         {featured.length > 0 && (
           <section className="space-y-4">
