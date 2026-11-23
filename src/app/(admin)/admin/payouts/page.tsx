@@ -2,6 +2,20 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { PayoutActions } from './payout-actions';
 
+const STATUS_META: Record<string, { label: string; className: string }> = {
+  requested: { label: 'مطلوب', className: 'ui-badge ui-badge-amber' },
+  approved: { label: 'معتمد', className: 'ui-badge ui-badge-blue' },
+  paid: { label: 'تم الصرف', className: 'ui-badge ui-badge-green' },
+  rejected: { label: 'مرفوض', className: 'ui-badge ui-badge-red' },
+};
+
+const METHOD_LABELS: Record<string, string> = {
+  bank_transfer: 'تحويل بنكي',
+  vodafone_cash: 'فودافون كاش',
+  paypal: 'PayPal',
+  wise: 'Wise',
+};
+
 export default async function PayoutsPage({
   searchParams,
 }: {
@@ -22,10 +36,17 @@ export default async function PayoutsPage({
   const { data } = await q;
 
   return (
-    <main className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold">طلبات السحب</h1>
-        <div className="flex gap-2 text-xs">
+    <main className="p-6 md:p-8 space-y-6">
+      <header className="pb-5 border-b border-border">
+        <p className="text-xs font-medium text-primary mb-1">المالية</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">طلبات السحب</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          مراجعة طلبات سحب البائعين واعتمادها وتأكيد تحويل المبالغ.
+        </p>
+      </header>
+
+      <section className="ui-box">
+        <nav className="flex flex-wrap items-center gap-2" aria-label="تصفية طلبات السحب">
           {[
             { k: '', label: 'الكل' },
             { k: 'requested', label: 'مطلوب' },
@@ -41,40 +62,61 @@ export default async function PayoutsPage({
               {f.label}
             </Link>
           ))}
-        </div>
-      </div>
+        </nav>
+      </section>
 
-      <div className="border rounded overflow-hidden">
+      <section className="ui-table-wrap">
         <table className="w-full text-sm">
-          <thead className="bg-muted">
+          <thead className="bg-muted/60 text-xs text-muted-foreground">
             <tr>
-              <th className="text-right p-3">البائع</th>
-              <th className="text-right p-3">المبلغ</th>
-              <th className="text-right p-3">الطريقة</th>
-              <th className="text-right p-3">الحالة</th>
-              <th className="text-right p-3">التاريخ</th>
-              <th className="p-3"></th>
+              <th className="text-right font-semibold px-3.5 py-2.5">البائع</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">المبلغ</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">الطريقة</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">الحالة</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">التاريخ</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">إجراءات</th>
             </tr>
           </thead>
-          <tbody>
-            {(data ?? []).map((p: any) => (
-              <tr key={p.id} className="border-t">
-                <td className="p-3">{p.seller_profiles.display_name}</td>
-                <td className="p-3">{Number(p.amount).toFixed(2)} {p.currency}</td>
-                <td className="p-3 text-xs">{p.method}</td>
-                <td className="p-3 text-xs">{p.status}</td>
-                <td className="p-3 text-xs text-muted-foreground">
-                  {new Date(p.requested_at).toLocaleDateString('ar')}
-                </td>
-                <td className="p-3">
-                  <PayoutActions payoutId={p.id} status={p.status} />
+          <tbody className="divide-y divide-border/70">
+            {(data ?? []).map((p: any) => {
+              const meta = STATUS_META[p.status] ?? {
+                label: p.status ?? '—',
+                className: 'ui-badge ui-badge-neutral',
+              };
+              return (
+                <tr key={p.id} className="hover:bg-muted/20 transition-colors">
+                  <td className="px-3.5 py-3 text-sm text-foreground">
+                    {p.seller_profiles.display_name}
+                  </td>
+                  <td className="px-3.5 py-3 text-sm text-foreground">
+                    <span className="ui-num font-semibold">{Number(p.amount).toFixed(2)}</span>{' '}
+                    <span className="text-xs text-muted-foreground">{p.currency}</span>
+                  </td>
+                  <td className="px-3.5 py-3 text-xs text-muted-foreground">
+                    {METHOD_LABELS[p.method] ?? p.method ?? '—'}
+                  </td>
+                  <td className="px-3.5 py-3">
+                    <span className={meta.className}>{meta.label}</span>
+                  </td>
+                  <td className="px-3.5 py-3 text-xs text-muted-foreground">
+                    <span className="ui-num">{new Date(p.requested_at).toLocaleDateString('ar')}</span>
+                  </td>
+                  <td className="px-3.5 py-3">
+                    <PayoutActions payoutId={p.id} status={p.status} />
+                  </td>
+                </tr>
+              );
+            })}
+            {!data?.length && (
+              <tr>
+                <td colSpan={6} className="p-10 text-center text-sm text-muted-foreground">
+                  لا توجد طلبات سحب لعرضها.
                 </td>
               </tr>
-            ))}
-            {!data?.length && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">لا توجد طلبات</td></tr>}
+            )}
           </tbody>
         </table>
-      </div>
+      </section>
     </main>
   );
 }

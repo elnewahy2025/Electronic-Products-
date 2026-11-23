@@ -30,7 +30,7 @@ export function StaffInvite() {
   return (
     <form
       onSubmit={submit}
-      className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4"
+      className="ui-box space-y-4"
     >
       <div>
         <h2 className="font-semibold text-base text-foreground">إضافة عضو جديد</h2>
@@ -40,20 +40,21 @@ export function StaffInvite() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="block text-xs font-medium text-foreground">البريد الإلكتروني</label>
+        <label className="block text-xs font-medium text-muted-foreground">البريد الإلكتروني</label>
         <input
           type="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
           placeholder="member@company.com"
           dir="ltr"
+          autoComplete="email"
           className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
           required
         />
       </div>
 
       <div className="space-y-1.5">
-        <label className="block text-xs font-medium text-foreground">الدور المبدئي</label>
+        <label className="block text-xs font-medium text-muted-foreground">الدور المبدئي</label>
         <select
           value={role}
           onChange={e => setRole(e.target.value)}
@@ -68,17 +69,16 @@ export function StaffInvite() {
       <button
         type="submit"
         disabled={busy}
-        className="w-full bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-primary/90 active:scale-[0.99] transition disabled:opacity-50"
+        className="w-full bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-sm font-medium transition-colors hover:bg-primary/90 disabled:opacity-50"
       >
         {busy ? 'جارٍ الإضافة...' : 'إضافة إلى الفريق'}
       </button>
 
       {msg && (
         <div
-          className={`text-xs rounded-xl px-3.5 py-2.5 border ${
-            msg.type === 'ok'
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-              : 'bg-red-50 text-red-800 border-red-200'
+          role="status"
+          className={`rounded-xl border border-border bg-muted/40 px-3.5 py-2.5 text-sm ${
+            msg.type === 'ok' ? 'text-success' : 'text-destructive'
           }`}
         >
           {msg.text}

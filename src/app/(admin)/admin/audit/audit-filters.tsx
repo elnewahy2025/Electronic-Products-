@@ -19,33 +19,59 @@ export function AuditFilters() {
   }
 
   return (
-    <div className="border rounded p-4 flex flex-wrap gap-2 items-end">
-      <div>
-        <label className="block text-xs mb-1">الحدث</label>
-        <input
-          value={action}
-          onChange={e => setAction(e.target.value)}
-          placeholder="code.issued"
-          className="border rounded p-2 text-sm w-48"
-        />
+    <section className="ui-box" aria-label="تصفية سجل التدقيق">
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="w-full sm:w-auto space-y-1.5">
+          <label htmlFor="audit-action" className="block text-xs font-medium text-muted-foreground">
+            الحدث
+          </label>
+          <input
+            id="audit-action"
+            value={action}
+            onChange={e => setAction(e.target.value)}
+            placeholder="code.issued"
+            className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          />
+        </div>
+        <div className="w-full sm:w-auto space-y-1.5">
+          <label htmlFor="audit-from" className="block text-xs font-medium text-muted-foreground">
+            من
+          </label>
+          <input
+            id="audit-from"
+            type="date"
+            value={from}
+            onChange={e => setFrom(e.target.value)}
+            className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          />
+        </div>
+        <div className="w-full sm:w-auto space-y-1.5">
+          <label htmlFor="audit-to" className="block text-xs font-medium text-muted-foreground">
+            إلى
+          </label>
+          <input
+            id="audit-to"
+            type="date"
+            value={to}
+            onChange={e => setTo(e.target.value)}
+            className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={apply}
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          تطبيق
+        </button>
+        <button
+          type="button"
+          onClick={() => router.push('/admin/audit')}
+          className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+        >
+          مسح
+        </button>
       </div>
-      <div>
-        <label className="block text-xs mb-1">من</label>
-        <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="border rounded p-2 text-sm" />
-      </div>
-      <div>
-        <label className="block text-xs mb-1">إلى</label>
-        <input type="date" value={to} onChange={e => setTo(e.target.value)} className="border rounded p-2 text-sm" />
-      </div>
-      <button onClick={apply} className="bg-primary text-primary-foreground rounded px-4 py-2 text-sm">
-        تطبيق
-      </button>
-      <button
-        onClick={() => router.push('/admin/audit')}
-        className="border rounded px-4 py-2 text-sm"
-      >
-        مسح
-      </button>
-    </div>
+    </section>
   );
 }

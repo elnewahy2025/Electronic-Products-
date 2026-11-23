@@ -54,7 +54,7 @@ export function BackupSettingsForm({ initial }: Props) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="ui-box space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground block">
@@ -63,7 +63,7 @@ export function BackupSettingsForm({ initial }: Props) {
           <select
             value={schedule}
             onChange={e => setSchedule(e.target.value as any)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="daily">يومي (كل 24 ساعة)</option>
             <option value="weekly">أسبوعي (كل 7 أيام)</option>
@@ -81,7 +81,7 @@ export function BackupSettingsForm({ initial }: Props) {
             max={3650}
             value={retentionDays}
             onChange={e => setRetentionDays(Number(e.target.value))}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="ui-num w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             dir="ltr"
           />
         </div>
@@ -96,7 +96,7 @@ export function BackupSettingsForm({ initial }: Props) {
             max={365}
             value={restoreFreq}
             onChange={e => setRestoreFreq(Number(e.target.value))}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="ui-num w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             dir="ltr"
           />
         </div>
@@ -108,7 +108,7 @@ export function BackupSettingsForm({ initial }: Props) {
             type="checkbox"
             checked={includeFiles}
             onChange={e => setIncludeFiles(e.target.checked)}
-            className="rounded border-border text-primary focus:ring-primary"
+            className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
           />
           <span>تضمين بيانات الملفات</span>
         </label>
@@ -118,22 +118,22 @@ export function BackupSettingsForm({ initial }: Props) {
             type="checkbox"
             checked={manualEnabled}
             onChange={e => setManualEnabled(e.target.checked)}
-            className="rounded border-border text-primary focus:ring-primary"
+            className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
           />
           <span>تفعيل التشغيل اليدوي</span>
         </label>
       </div>
 
-      <div className="flex items-center gap-3 pt-1">
+      <div className="flex flex-wrap items-center gap-3 pt-1">
         <button
           type="submit"
           disabled={busy}
-          className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 active:scale-[0.98] transition disabled:opacity-50"
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
           {busy ? 'جارٍ الحفظ...' : 'حفظ إعدادات النسخ الاحتياطي'}
         </button>
         {notice && (
-          <p className={`text-xs ${notice.type === 'ok' ? 'text-emerald-700' : 'text-red-700'}`}>
+          <p className={`text-sm ${notice.type === 'ok' ? 'text-success' : 'text-destructive'}`}>
             {notice.text}
           </p>
         )}

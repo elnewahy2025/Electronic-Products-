@@ -1,6 +1,13 @@
 import { createClient } from '@/lib/supabase/server';
 import { IssueExceptionForm } from './issue-form';
 
+const STATUS_META: Record<string, { label: string; className: string }> = {
+  pending: { label: 'قيد المراجعة', className: 'ui-badge ui-badge-amber' },
+  approved: { label: 'معتمد', className: 'ui-badge ui-badge-green' },
+  fulfilled: { label: 'تم التنفيذ', className: 'ui-badge ui-badge-green' },
+  rejected: { label: 'مرفوض', className: 'ui-badge ui-badge-red' },
+};
+
 export default async function ExceptionsPage() {
   const db = await createClient();
 
@@ -15,37 +22,65 @@ export default async function ExceptionsPage() {
     .limit(100);
 
   return (
-    <main className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">استثناءات المحاولات</h1>
+    <main className="p-6 md:p-8 space-y-6">
+      <header className="pb-5 border-b border-border">
+        <p className="text-xs font-medium text-primary mb-1">الأمان والتنزيل</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">استثناءات المحاولات</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          مراجعة طلبات زيادة محاولات التنزيل وإصدار استثناءات يدوية موثّقة في سجل التدقيق.
+        </p>
+      </header>
 
       <IssueExceptionForm />
 
-      <section>
-        <h2 className="font-semibold mb-2">الطلبات السابقة</h2>
-        <div className="border rounded overflow-hidden">
+      <section className="space-y-3">
+        <h2 className="text-base font-bold text-foreground">الطلبات السابقة</h2>
+        <div className="ui-table-wrap">
           <table className="w-full text-sm">
-            <thead className="bg-muted">
+            <thead className="bg-muted/60 text-xs text-muted-foreground">
               <tr>
-                <th className="text-right p-3">المنتج</th>
-                <th className="text-right p-3">الكود</th>
-                <th className="text-right p-3">المحاولات الممنوحة</th>
-                <th className="text-right p-3">السبب</th>
-                <th className="text-right p-3">الحالة</th>
-                <th className="text-right p-3">التاريخ</th>
+                <th className="text-right font-semibold px-3.5 py-2.5">المنتج</th>
+                <th className="text-right font-semibold px-3.5 py-2.5">الكود</th>
+                <th className="text-right font-semibold px-3.5 py-2.5">المحاولات الممنوحة</th>
+                <th className="text-right font-semibold px-3.5 py-2.5">السبب</th>
+                <th className="text-right font-semibold px-3.5 py-2.5">الحالة</th>
+                <th className="text-right font-semibold px-3.5 py-2.5">التاريخ</th>
               </tr>
             </thead>
-            <tbody>
-              {(data ?? []).map((row: any) => (
-                <tr key={row.id} className="border-t">
-                  <td className="p-3">{row.purchase_codes.order_items.products.title}</td>
-                  <td className="p-3 font-mono text-xs">{row.purchase_codes.code_prefix}</td>
-                  <td className="p-3">{row.granted_attempts ?? '—'}</td>
-                  <td className="p-3 text-xs">{row.reason}</td>
-                  <td className="p-3 text-xs">{row.status}</td>
-                  <td className="p-3 text-xs text-muted-foreground">{new Date(row.created_at).toLocaleDateString('ar')}</td>
+            <tbody className="divide-y divide-border/70">
+              {(data ?? []).map((row: any) => {
+                const meta = STATUS_META[row.status] ?? {
+                  label: row.status ?? '—',
+                  className: 'ui-badge ui-badge-neutral',
+                };
+                return (
+                  <tr key={row.id} className="hover:bg-muted/20 transition-colors">
+                    <td className="px-3.5 py-3 text-sm text-foreground">
+                      {row.purchase_codes.order_items.products.title}
+                    </td>
+                    <td className="px-3.5 py-3 text-sm text-foreground">
+                      <span className="ui-num font-mono text-xs">{row.purchase_codes.code_prefix}</span>
+                    </td>
+                    <td className="px-3.5 py-3 text-sm text-foreground">
+                      <span className="ui-num">{row.granted_attempts ?? '—'}</span>
+                    </td>
+                    <td className="px-3.5 py-3 text-sm text-muted-foreground">{row.reason}</td>
+                    <td className="px-3.5 py-3">
+                      <span className={meta.className}>{meta.label}</span>
+                    </td>
+                    <td className="px-3.5 py-3 text-xs text-muted-foreground">
+                      <span className="ui-num">{new Date(row.created_at).toLocaleDateString('ar')}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+              {!data?.length && (
+                <tr>
+                  <td colSpan={6} className="p-10 text-center text-sm text-muted-foreground">
+                    لا توجد طلبات استثناء بعد.
+                  </td>
                 </tr>
-              ))}
-              {!data?.length && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">لا توجد طلبات</td></tr>}
+              )}
             </tbody>
           </table>
         </div>

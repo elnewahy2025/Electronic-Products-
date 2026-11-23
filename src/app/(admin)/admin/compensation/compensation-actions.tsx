@@ -20,24 +20,27 @@ export function CompensationActions({ requestId }: { requestId: string }) {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center justify-end gap-2">
       <input
         value={reason}
         onChange={e => setReason(e.target.value)}
         placeholder="السبب"
-        className="border rounded p-1 text-xs w-32"
+        aria-label="سبب قرار التعويض"
+        className="w-full sm:w-auto bg-background border border-border rounded-lg px-2.5 py-1 text-xs"
       />
       <button
+        type="button"
         onClick={() => decide('approve')}
         disabled={busy || reason.length < 3}
-        className="bg-green-600 text-white rounded px-2 py-1 text-xs disabled:opacity-50"
+        className="rounded-lg bg-success-soft px-2.5 py-1 text-xs font-medium text-success transition hover:opacity-90 disabled:opacity-50"
       >
         موافقة
       </button>
       <button
+        type="button"
         onClick={() => decide('reject')}
         disabled={busy || reason.length < 3}
-        className="bg-red-600 text-white rounded px-2 py-1 text-xs disabled:opacity-50"
+        className="rounded-lg bg-destructive px-2.5 py-1 text-xs font-medium text-destructive-foreground transition hover:opacity-90 disabled:opacity-50"
       >
         رفض
       </button>

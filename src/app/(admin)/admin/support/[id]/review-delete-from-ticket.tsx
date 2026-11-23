@@ -46,42 +46,49 @@ export function ReviewDeleteFromTicket({ ticketId, review }: Props) {
 
   if (review.status === 'deleted') {
     return (
-      <div role="status" className="rounded-xl border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
+      <div role="status" className="ui-box text-sm text-muted-foreground">
         تم حذف هذا التقييم بالفعل.
       </div>
     );
   }
 
   return (
-    <section className="rounded-xl border border-border bg-card p-4 space-y-3" aria-labelledby="review-delete-heading">
+    <section className="ui-box space-y-4" aria-labelledby="review-delete-heading">
       <div className="space-y-1">
-        <h2 id="review-delete-heading" className="text-sm font-semibold">التقييم المرتبط بالطلب</h2>
+        <h2 id="review-delete-heading" className="text-sm font-semibold text-foreground">
+          التقييم المرتبط بالطلب
+        </h2>
         <p className="text-xs text-muted-foreground">
-          {review.product_title} — <span dir="ltr">{review.buyer_email}</span> — {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+          {review.product_title} — <span className="ui-num" dir="ltr">{review.buyer_email}</span> —{' '}
+          <span className="text-warning ui-num" dir="ltr">
+            {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+          </span>
         </p>
-        {review.body && <p className="text-sm">{review.body}</p>}
+        {review.body && <p className="text-sm text-foreground">{review.body}</p>}
       </div>
 
-      <label className="block text-xs font-medium text-muted-foreground" htmlFor="review-delete-reason">
-        سبب الحذف (إلزامي)
-      </label>
-      <input
-        id="review-delete-reason"
-        value={reason}
-        onChange={e => setReason(e.target.value)}
-        minLength={3}
-        maxLength={1000}
-        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-        placeholder="اذكر سبب حذف التقييم بعد مراجعة تذكرة البائع"
-      />
+      <div className="space-y-1.5">
+        <label className="block text-xs font-medium text-muted-foreground" htmlFor="review-delete-reason">
+          سبب الحذف (إلزامي)
+        </label>
+        <input
+          id="review-delete-reason"
+          value={reason}
+          onChange={e => setReason(e.target.value)}
+          minLength={3}
+          maxLength={1000}
+          className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          placeholder="اذكر سبب حذف التقييم بعد مراجعة تذكرة البائع"
+        />
+      </div>
 
-      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
       <button
         type="button"
         onClick={submit}
         disabled={busy || reason.trim().length < 3}
-        className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground disabled:opacity-50"
+        className="rounded-xl bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:opacity-50"
       >
         {busy ? 'جارٍ الحذف...' : 'حذف التقييم بعد المراجعة'}
       </button>

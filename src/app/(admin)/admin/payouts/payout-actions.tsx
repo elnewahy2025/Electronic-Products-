@@ -22,17 +22,26 @@ export function PayoutActions({ payoutId, status }: { payoutId: string; status: 
 
   if (status === 'requested') {
     return (
-      <div className="flex gap-1 items-center">
-        <button onClick={() => call('approve')} disabled={busy} className="text-xs bg-green-600 text-white rounded px-2 py-0.5 disabled:opacity-50">
+      <div className="flex flex-wrap items-center justify-end gap-1.5">
+        <button
+          onClick={() => call('approve')}
+          disabled={busy}
+          className="ui-badge ui-badge-green rounded-lg px-2.5 py-1 text-xs font-medium hover:opacity-90 disabled:opacity-50"
+        >
           موافقة
         </button>
         <input
           value={reason}
           onChange={e => setReason(e.target.value)}
           placeholder="سبب الرفض"
-          className="border rounded px-1 py-0.5 text-xs w-28"
+          aria-label="سبب الرفض"
+          className="w-28 min-w-0 bg-background border border-border rounded-lg px-2.5 py-1 text-xs"
         />
-        <button onClick={() => call('reject', { reason })} disabled={busy || reason.length < 3} className="text-xs bg-red-600 text-white rounded px-2 py-0.5 disabled:opacity-50">
+        <button
+          onClick={() => call('reject', { reason })}
+          disabled={busy || reason.length < 3}
+          className="ui-badge ui-badge-red rounded-lg px-2.5 py-1 text-xs font-medium hover:opacity-90 disabled:opacity-50"
+        >
           رفض
         </button>
       </div>
@@ -41,14 +50,19 @@ export function PayoutActions({ payoutId, status }: { payoutId: string; status: 
 
   if (status === 'approved') {
     return (
-      <div className="flex gap-1 items-center">
+      <div className="flex flex-wrap items-center justify-end gap-1.5">
         <input
           value={ref}
           onChange={e => setRef(e.target.value)}
           placeholder="مرجع التحويل"
-          className="border rounded px-1 py-0.5 text-xs w-28"
+          aria-label="مرجع التحويل"
+          className="w-28 min-w-0 bg-background border border-border rounded-lg px-2.5 py-1 text-xs"
         />
-        <button onClick={() => call('paid', { reference: ref })} disabled={busy || ref.length < 3} className="text-xs bg-primary text-primary-foreground rounded px-2 py-0.5 disabled:opacity-50">
+        <button
+          onClick={() => call('paid', { reference: ref })}
+          disabled={busy || ref.length < 3}
+          className="rounded-lg bg-primary text-primary-foreground px-2.5 py-1 text-xs font-medium transition-colors hover:bg-primary/90 disabled:opacity-50"
+        >
           تأكيد الدفع
         </button>
       </div>

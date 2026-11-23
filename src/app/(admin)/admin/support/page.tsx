@@ -1,11 +1,18 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 
-const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  open: { label: 'مفتوحة', cls: 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300' },
-  pending: { label: 'قيد المتابعة', cls: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300' },
-  closed: { label: 'مغلقة', cls: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300' },
+const STATUS_META: Record<string, { label: string; badge: string }> = {
+  open: { label: 'مفتوحة', badge: 'ui-badge ui-badge-green' },
+  pending: { label: 'قيد المتابعة', badge: 'ui-badge ui-badge-amber' },
+  closed: { label: 'مغلقة', badge: 'ui-badge ui-badge-neutral' },
 };
+
+const FILTERS = [
+  { k: '', label: 'الكل' },
+  { k: 'open', label: 'مفتوحة' },
+  { k: 'pending', label: 'قيد المتابعة' },
+  { k: 'closed', label: 'مغلقة' },
+];
 
 export default async function AdminSupportPage({
   searchParams,
@@ -28,72 +35,70 @@ export default async function AdminSupportPage({
   const { data: tickets } = await query;
 
   return (
-    <main className="p-6 max-w-6xl space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3 border-b border-border pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">تذاكر الدعم الفني</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            متابعة والرد على استفسارات المشترين والبائعين.
-          </p>
-        </div>
+    <main className="p-6 md:p-8 space-y-6">
+      <header className="pb-5 border-b border-border">
+        <p className="text-xs font-medium text-primary mb-1">خدمة العملاء</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+          تذاكر الدعم الفني
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          متابعة والرد على استفسارات المشترين والبائعين.
+        </p>
+      </header>
 
-        <div className="flex items-center gap-2 text-xs">
-          {[
-            { k: '', label: 'الكل' },
-            { k: 'open', label: 'مفتوحة' },
-            { k: 'pending', label: 'قيد المتابعة' },
-            { k: 'closed', label: 'مغلقة' },
-          ].map(f => (
+      <section className="ui-box flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <nav className="flex flex-wrap items-center gap-2" aria-label="تصفية التذاكر حسب الحالة">
+          {FILTERS.map(f => (
             <Link
               key={f.k}
               href={f.k ? `/admin/support?status=${f.k}` : '/admin/support'}
-              className={`px-3 py-1.5 rounded-lg border transition ${
-                (statusFilter ?? '') === f.k
-                  ? 'bg-primary text-primary-foreground border-primary font-medium'
-                  : 'border-border bg-card hover:bg-muted/60'
-              }`}
+              className={`ui-chip ${(statusFilter ?? '') === f.k ? 'ui-chip-active' : ''}`}
             >
               {f.label}
             </Link>
           ))}
-        </div>
-      </div>
+        </nav>
+        <p className="text-xs text-muted-foreground">
+          التذاكر المعروضة:{' '}
+          <span className="ui-num font-semibold text-foreground">{tickets?.length ?? 0}</span>
+        </p>
+      </section>
 
-      <div className="rounded-2xl border border-border bg-card overflow-x-auto shadow-sm">
+      <section className="ui-table-wrap">
         <table className="w-full text-sm">
-          <thead className="bg-muted/70">
+          <thead className="bg-muted/60 text-xs text-muted-foreground">
             <tr>
-              <th className="text-right p-3">الموضوع</th>
-              <th className="text-right p-3">صاحب التذكرة</th>
-              <th className="text-right p-3">الحالة</th>
-              <th className="text-right p-3">آخر تحديث</th>
-              <th className="text-right p-3"></th>
+              <th className="text-right font-semibold px-3.5 py-2.5">الموضوع</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">صاحب التذكرة</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">الحالة</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">آخر تحديث</th>
+              <th className="px-3.5 py-2.5" />
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border/70">
             {(tickets ?? []).map((t: any) => {
-              const st = STATUS_BADGE[t.status] ?? STATUS_BADGE.open;
+              const st = STATUS_META[t.status] ?? STATUS_META.open;
               return (
-                <tr key={t.id} className="border-t border-border hover:bg-muted/20">
-                  <td className="p-3 font-medium text-foreground">{t.subject}</td>
-                  <td className="p-3 text-xs">
-                    <div className="font-medium">{t.profiles?.full_name ?? '—'}</div>
-                    <div className="text-muted-foreground font-mono" dir="ltr">
+                <tr key={t.id} className="hover:bg-muted/20 transition-colors">
+                  <td className="px-3.5 py-3 font-medium text-foreground">{t.subject}</td>
+                  <td className="px-3.5 py-3 text-xs">
+                    <div className="font-medium text-foreground">
+                      {t.profiles?.full_name ?? '—'}
+                    </div>
+                    <div className="text-muted-foreground ui-num" dir="ltr">
                       {t.profiles?.email ?? '—'}
                     </div>
                   </td>
-                  <td className="p-3 text-xs">
-                    <span className={`px-2.5 py-0.5 rounded-full border ${st.cls}`}>
-                      {st.label}
-                    </span>
+                  <td className="px-3.5 py-3">
+                    <span className={st.badge}>{st.label}</span>
                   </td>
-                  <td className="p-3 text-xs text-muted-foreground">
+                  <td className="px-3.5 py-3 text-xs text-muted-foreground ui-num">
                     {new Date(t.updated_at).toLocaleString('ar')}
                   </td>
-                  <td className="p-3 text-left">
+                  <td className="px-3.5 py-3 text-left">
                     <Link
                       href={`/admin/support/${t.id}`}
-                      className="text-xs font-medium text-primary hover:underline"
+                      className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-muted"
                     >
                       عرض والرد ←
                     </Link>
@@ -103,14 +108,14 @@ export default async function AdminSupportPage({
             })}
             {!tickets?.length && (
               <tr>
-                <td colSpan={5} className="p-8 text-center text-muted-foreground text-sm">
-                  لا توجد تذاكر مطابقة.
+                <td colSpan={5} className="p-10 text-center text-sm text-muted-foreground">
+                  لا توجد تذاكر مطابقة للفلاتر الحالية.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-      </div>
+      </section>
     </main>
   );
 }

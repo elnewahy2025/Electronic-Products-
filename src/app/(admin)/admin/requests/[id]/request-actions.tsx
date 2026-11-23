@@ -55,51 +55,66 @@ export function RequestActions({ requestId }: { requestId: string }) {
 
   if (issued) {
     return (
-      <div className="border-2 border-yellow-400 bg-yellow-50 rounded p-4 space-y-3">
-        <h3 className="font-bold text-yellow-900">أكواد صادرة (تُعرض مرة واحدة فقط!)</h3>
-        <p className="text-xs text-yellow-800">انسخها الآن وأرسلها للمشتري قبل مغادرة الصفحة.</p>
+      <section className="ui-box space-y-3">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h3 className="font-bold text-foreground">أكواد صادرة (تُعرض مرة واحدة فقط!)</h3>
+            <p className="text-xs text-muted-foreground mt-1">انسخها الآن وأرسلها للمشتري قبل مغادرة الصفحة.</p>
+          </div>
+          <span className="ui-badge ui-badge-amber">يتطلب نسخًا فوريًا</span>
+        </div>
         <div className="space-y-2">
           {issued.map(c => (
-            <div key={c.code_id} className="bg-card rounded p-2 flex justify-between items-center">
-              <code className="font-mono text-base">{c.plaintext}</code>
+            <div
+              key={c.code_id}
+              className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-2.5"
+            >
+              <code className="font-mono text-base text-foreground ui-num">{c.plaintext}</code>
               <button
+                type="button"
                 onClick={() => navigator.clipboard.writeText(c.plaintext)}
-                className="text-xs bg-yellow-600 text-white rounded px-2 py-1"
+                className="rounded-lg border border-border bg-muted px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/80"
               >
                 نسخ
               </button>
             </div>
           ))}
         </div>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="border rounded p-4 space-y-3">
+    <section className="ui-box space-y-3">
       <button
+        type="button"
         onClick={approve}
         disabled={busy}
-        className="bg-green-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50"
+        className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
       >
         {busy ? 'جارٍ المعالجة...' : 'الموافقة وإصدار الأكواد'}
       </button>
-      <div className="border-t pt-3 space-y-2">
+      <div className="border-t border-border pt-3 space-y-2">
+        <label htmlFor="request-reject-reason" className="block text-xs font-medium text-muted-foreground">
+          سبب الرفض (إلزامي)
+        </label>
         <input
+          id="request-reject-reason"
           value={reason}
           onChange={e => setReason(e.target.value)}
           placeholder="سبب الرفض (إلزامي)"
-          className="w-full border rounded p-2 text-sm"
+          className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm"
         />
         <button
+          type="button"
           onClick={reject}
           disabled={busy || reason.length < 3}
-          className="bg-red-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50"
+          className="rounded-xl bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors hover:opacity-90 disabled:opacity-50"
         >
           رفض الطلب
         </button>
       </div>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-    </div>
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+    </section>
   );
 }

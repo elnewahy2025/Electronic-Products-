@@ -1,6 +1,26 @@
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { RequestActions } from './request-actions';
+
+type BadgeTone = 'green' | 'amber' | 'red' | 'blue' | 'neutral';
+
+const STATUS_META: Record<string, { label: string; tone: BadgeTone }> = {
+  created: { label: 'منشأ', tone: 'blue' },
+  pending: { label: 'قيد المراجعة', tone: 'amber' },
+  approved: { label: 'معتمد', tone: 'green' },
+  rejected: { label: 'مرفوض', tone: 'red' },
+  cancelled: { label: 'ملغى', tone: 'neutral' },
+  completed: { label: 'مكتمل', tone: 'green' },
+};
+
+const CODE_STATUS_META: Record<string, { label: string; tone: BadgeTone }> = {
+  issued: { label: 'صادر', tone: 'blue' },
+  delivered: { label: 'تم التسليم', tone: 'green' },
+  redeemed: { label: 'مُفعّل', tone: 'green' },
+  expired: { label: 'منتهي', tone: 'red' },
+  revoked: { label: 'ملغى', tone: 'red' },
+};
 
 export default async function RequestDetailPage({ params }: { params: { id: string } }) {
   const db = await createClient();
@@ -21,35 +41,71 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
   if (!req) notFound();
 
   const alreadyApproved = ['approved', 'completed'].includes(req.status);
+  const statusMeta = STATUS_META[req.status] ?? { label: 'غير معروف', tone: 'neutral' as const };
 
   return (
-    <main className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">طلب #{req.id.slice(0, 8)}</h1>
-        <div className="mt-2 space-y-1 text-sm">
-          <p><span className="text-muted-foreground">البريد:</span> {req.customer_email ?? '—'}</p>
-          <p><span className="text-muted-foreground">الهاتف:</span> {req.customer_phone ?? '—'}</p>
-          {req.full_name && <p><span className="text-muted-foreground">الاسم:</span> {req.full_name}</p>}
-          {req.buyer_id && (
-            <p className="text-xs text-blue-700">
-              مرتبط بحساب مسجّل
-              {req.customer_email && (
-                <span className="text-muted-foreground">
-                  {' '}(إن كان البريد مختلفًا عن بريد الحساب، تحقق قبل الإرسال)
-                </span>
-              )}
+    <main className="p-6 md:p-8 space-y-6">
+      <header className="pb-5 border-b border-border">
+        <p className="text-xs font-medium text-primary mb-1">المبيعات</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+          تفاصيل طلب الشراء <span className="ui-num">#{req.id.slice(0, 8)}</span>
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          مراجعة بيانات المشتري والبنود والأكواد المرتبطة بهذا الطلب واتخاذ القرار المناسب.
+        </p>
+        <Link
+          href="/admin/requests"
+          className="mt-3 inline-flex items-center text-xs font-medium text-primary hover:underline"
+        >
+          العودة إلى طلبات الشراء
+        </Link>
+      </header>
+
+      <section className="ui-box space-y-3 text-sm">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <p className="text-foreground">
+            <span className="text-muted-foreground">البريد:</span>{' '}
+            <span className="ui-num" dir="ltr">{req.customer_email ?? '—'}</span>
+          </p>
+          <p className="text-foreground">
+            <span className="text-muted-foreground">الهاتف:</span>{' '}
+            <span className="ui-num" dir="ltr">{req.customer_phone ?? '—'}</span>
+          </p>
+          {req.full_name && (
+            <p className="text-foreground">
+              <span className="text-muted-foreground">الاسم:</span> {req.full_name}
             </p>
           )}
         </div>
-        <p className="mt-2">الحالة: <b>{req.status}</b></p>
-        <p>الإجمالي: {req.total_amount} {req.currency} (~{req.amount_in_usd} USD)</p>
-        {req.notes && (
-          <div className="mt-3 border rounded p-2 bg-muted/30 text-sm">
-            <p className="text-xs text-muted-foreground mb-1">ملاحظات المشتري:</p>
-            <p className="whitespace-pre-wrap">{req.notes}</p>
-          </div>
+        {req.buyer_id && (
+          <p className="text-xs text-primary">
+            مرتبط بحساب مسجّل
+            {req.customer_email && (
+              <span className="text-muted-foreground">
+                {' '}(إن كان البريد مختلفًا عن بريد الحساب، تحقق قبل الإرسال)
+              </span>
+            )}
+          </p>
         )}
-      </div>
+        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+          <span className="text-xs text-muted-foreground">الحالة</span>
+          <span className={`ui-badge ui-badge-${statusMeta.tone}`}>{statusMeta.label}</span>
+        </div>
+        <p className="text-foreground">
+          <span className="text-muted-foreground">الإجمالي:</span>{' '}
+          <span className="ui-num font-semibold">{req.total_amount} {req.currency}</span>{' '}
+          <span className="text-xs text-muted-foreground">
+            (~<span className="ui-num">{req.amount_in_usd}</span> USD)
+          </span>
+        </p>
+      </section>
+
+      {req.notes && (
+        <section className="ui-box">
+          <p className="text-xs font-medium text-muted-foreground mb-1">ملاحظات المشتري:</p>
+          <p className="whitespace-pre-wrap text-sm text-foreground">{req.notes}</p>
+        </section>
+      )}
 
       {/* تحذير تغيّر السعر */}
       {req.purchase_request_items?.some((item: any) => {
@@ -57,41 +113,87 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
         const requestedPrice = Number(item.unit_price);
         return Math.abs(currentPrice - requestedPrice) > 0.01;
       }) && (
-        <div className="border border-orange-300 bg-orange-50 rounded p-3 text-sm text-orange-900">
-          <p className="font-medium">تنبيه: تغيّر سعر المنتج</p>
-          <p className="text-xs mt-1">
+        <section className="ui-box border-warning/40 bg-warning-soft">
+          <p className="text-sm font-semibold text-warning">تنبيه: تغيّر سعر المنتج</p>
+          <p className="mt-1 text-xs leading-relaxed text-foreground/80">
             بعض المنتجات غيّرت سعرها منذ إنشاء الطلب. عند الموافقة، سيُصدر الكود بالسعر المذكور أعلاه.
             إذا كان السعر الجديد مطلوبًا، ارفض الطلب ليُعيد المشتري الإرسال.
           </p>
-        </div>
+        </section>
       )}
 
-      <section>
-        <h2 className="font-semibold mb-2">البنود</h2>
-        <div className="border rounded divide-y text-sm">
-          {req.purchase_request_items?.map((item: any) => (
-            <div key={item.id} className="p-3 flex justify-between">
-              <span>{item.products.title}</span>
-              <span className="text-muted-foreground">{item.unit_price} {item.currency}</span>
-            </div>
-          ))}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-base font-semibold text-foreground">البنود</h2>
+          <span className="text-xs text-muted-foreground">
+            <span className="ui-num font-semibold text-foreground">{req.purchase_request_items?.length ?? 0}</span> بند
+          </span>
+        </div>
+        <div className="ui-table-wrap">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/60 text-xs text-muted-foreground">
+              <tr>
+                <th className="text-right font-semibold px-3.5 py-2.5">المنتج</th>
+                <th className="text-right font-semibold px-3.5 py-2.5">السعر</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/70">
+              {req.purchase_request_items?.map((item: any) => (
+                <tr key={item.id} className="hover:bg-muted/20 transition-colors">
+                  <td className="px-3.5 py-3 text-sm text-foreground">{item.products.title}</td>
+                  <td className="px-3.5 py-3 text-sm text-foreground ui-num">
+                    {item.unit_price} {item.currency}
+                  </td>
+                </tr>
+              ))}
+              {!req.purchase_request_items?.length && (
+                <tr>
+                  <td colSpan={2} className="p-10 text-center text-sm text-muted-foreground">
+                    لا توجد بنود لعرضها في هذا الطلب.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
 
       {alreadyApproved && req.orders?.[0]?.order_items && (
-        <section>
-          <h2 className="font-semibold mb-2">الأكواد الصادرة</h2>
-          <div className="border rounded divide-y text-sm">
-            {req.orders[0].order_items.map((oi: any) =>
-              oi.purchase_codes?.map((code: any) => (
-                <div key={code.id} className="p-3 flex justify-between">
-                  <span className="font-mono">{code.code_prefix}••••</span>
-                  <span className="text-xs text-muted-foreground">
-                    {code.status} — ينتهي {new Date(code.expires_at).toLocaleString('ar')}
-                  </span>
-                </div>
-              ))
-            )}
+        <section className="space-y-3">
+          <h2 className="text-base font-semibold text-foreground">الأكواد الصادرة</h2>
+          <div className="ui-table-wrap">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/60 text-xs text-muted-foreground">
+                <tr>
+                  <th className="text-right font-semibold px-3.5 py-2.5">الكود</th>
+                  <th className="text-right font-semibold px-3.5 py-2.5">الحالة</th>
+                  <th className="text-right font-semibold px-3.5 py-2.5">ينتهي</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/70">
+                {req.orders[0].order_items.map((oi: any) =>
+                  oi.purchase_codes?.map((code: any) => {
+                    const codeMeta = CODE_STATUS_META[code.status] ?? {
+                      label: 'غير معروف',
+                      tone: 'neutral' as const,
+                    };
+                    return (
+                      <tr key={code.id} className="hover:bg-muted/20 transition-colors">
+                        <td className="px-3.5 py-3 text-sm font-medium text-foreground font-mono ui-num">
+                          {code.code_prefix}••••
+                        </td>
+                        <td className="px-3.5 py-3">
+                          <span className={`ui-badge ui-badge-${codeMeta.tone}`}>{codeMeta.label}</span>
+                        </td>
+                        <td className="px-3.5 py-3 text-xs text-muted-foreground ui-num">
+                          {new Date(code.expires_at).toLocaleString('ar')}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </section>
       )}

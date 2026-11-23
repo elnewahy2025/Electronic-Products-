@@ -52,41 +52,55 @@ export function SettingsEditor() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2 border-b pb-2">
+    <div className="space-y-5">
+      <nav className="flex flex-wrap items-center gap-2 border-b border-border pb-3" aria-label="أقسام الإعدادات">
         {TABS.map(t => (
           <button
             key={t.key}
+            type="button"
             onClick={() => setTab(t.key)}
-            className={`text-sm px-3 py-1 rounded ${tab === t.key ? 'bg-primary text-primary-foreground' : 'border'}`}
+            className={`ui-chip ${tab === t.key ? 'ui-chip-active' : ''}`}
           >
             {t.label}
           </button>
         ))}
-      </div>
+      </nav>
 
-      {!data && <p className="text-muted-foreground">جارٍ التحميل...</p>}
+      {!data && (
+        <div className="ui-box p-10 text-center text-sm text-muted-foreground">
+          جارٍ التحميل...
+        </div>
+      )}
 
       {data && (
-        <div className="border rounded p-4 space-y-3 max-w-2xl">
-          {Object.entries(data)
-            .filter(([k]) => !['id', 'updated_by', 'updated_at'].includes(k))
-            .map(([key, value]) => (
-              <Field
-                key={key}
-                name={key}
-                value={value}
-                onChange={v => update(key, v)}
-              />
-            ))}
-          <button
-            onClick={save}
-            disabled={busy}
-            className="bg-primary text-primary-foreground rounded px-4 py-2 text-sm disabled:opacity-50"
-          >
-            {busy ? 'جارٍ الحفظ...' : 'حفظ'}
-          </button>
-          {msg && <p className={`text-sm ${msg.includes('تم') ? 'text-green-600' : 'text-red-600'}`}>{msg}</p>}
+        <div className="ui-box space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {Object.entries(data)
+              .filter(([k]) => !['id', 'updated_by', 'updated_at'].includes(k))
+              .map(([key, value]) => (
+                <Field
+                  key={key}
+                  name={key}
+                  value={value}
+                  onChange={v => update(key, v)}
+                />
+              ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-3 pt-1 border-t border-border/70">
+            <button
+              type="button"
+              onClick={save}
+              disabled={busy}
+              className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+            >
+              {busy ? 'جارٍ الحفظ...' : 'حفظ'}
+            </button>
+            {msg && (
+              <p className={`text-sm ${msg.includes('تم') ? 'text-success' : 'text-destructive'}`}>
+                {msg}
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -98,13 +112,14 @@ function Field({ name, value, onChange }: { name: string; value: unknown; onChan
 
   if (typeof value === 'boolean') {
     return (
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex items-center gap-2 text-sm text-foreground">
         <input
           type="checkbox"
           checked={value}
           onChange={e => onChange(e.target.checked)}
+          className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
         />
-        {label}
+        <span>{label}</span>
       </label>
     );
   }
@@ -112,12 +127,13 @@ function Field({ name, value, onChange }: { name: string; value: unknown; onChan
   if (typeof value === 'number') {
     return (
       <div>
-        <label className="block text-xs mb-1">{label}</label>
+        <label className="mb-1 block text-xs font-medium text-muted-foreground">{label}</label>
         <input
           type="number"
           value={value}
           onChange={e => onChange(Number(e.target.value))}
-          className="w-full border rounded p-2 text-sm"
+          className="ui-num w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          dir="ltr"
         />
       </div>
     );
@@ -126,11 +142,11 @@ function Field({ name, value, onChange }: { name: string; value: unknown; onChan
   if (Array.isArray(value)) {
     return (
       <div>
-        <label className="block text-xs mb-1">{label} (مفصولة بفاصلة)</label>
+        <label className="mb-1 block text-xs font-medium text-muted-foreground">{label} (مفصولة بفاصلة)</label>
         <input
           value={value.join(', ')}
           onChange={e => onChange(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-          className="w-full border rounded p-2 text-sm"
+          className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       </div>
     );
@@ -138,11 +154,11 @@ function Field({ name, value, onChange }: { name: string; value: unknown; onChan
 
   return (
     <div>
-      <label className="block text-xs mb-1">{label}</label>
+      <label className="mb-1 block text-xs font-medium text-muted-foreground">{label}</label>
       <input
         value={String(value ?? '')}
         onChange={e => onChange(e.target.value)}
-        className="w-full border rounded p-2 text-sm"
+        className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
       />
     </div>
   );

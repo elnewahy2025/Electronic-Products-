@@ -19,18 +19,19 @@ export function BackupActions() {
   }
 
   return (
-    <div className="border rounded p-4 space-y-2">
+    <div className="ui-box space-y-3">
       <button
+        type="button"
         onClick={trigger}
         disabled={busy}
-        className="bg-primary text-primary-foreground rounded px-4 py-2 text-sm disabled:opacity-50"
+        className="w-full sm:w-auto rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
       >
         {busy ? 'جارٍ البدء...' : 'تشغيل نسخة يدوية الآن'}
       </button>
       <p className="text-xs text-muted-foreground">
         النسخة اليدوية لا تلغي الجدول التلقائي. تُسجّل في سجل التدقيق.
       </p>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   );
 }

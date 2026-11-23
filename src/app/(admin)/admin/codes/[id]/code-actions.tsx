@@ -32,15 +32,25 @@ export function CodeActions({ codeId, status }: { codeId: string; status: string
   const canResend = (status === 'delivered' || status === 'issued') && resendAvailable;
 
   return (
-    <div className="border rounded p-4 space-y-3">
+    <section className="ui-box space-y-3">
       <div className="flex flex-wrap gap-2">
         {canConfirmDelivery && (
-          <button onClick={() => call('confirm-delivery')} disabled={busy} className="bg-blue-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50">
+          <button
+            type="button"
+            onClick={() => call('confirm-delivery')}
+            disabled={busy}
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+          >
             تأكيد التسليم يدويًا
           </button>
         )}
         {canResend && (
-          <button onClick={() => call('resend')} disabled={busy} className="border rounded px-4 py-2 text-sm disabled:opacity-50">
+          <button
+            type="button"
+            onClick={() => call('resend')}
+            disabled={busy}
+            className="rounded-xl border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/80 disabled:opacity-50"
+          >
             إعادة إرسال
           </button>
         )}
@@ -50,38 +60,52 @@ export function CodeActions({ codeId, status }: { codeId: string; status: string
           </p>
         )}
         {canReplace && (
-          <button onClick={() => call('replace')} disabled={busy || reason.length < 3} className="bg-yellow-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50">
+          <button
+            type="button"
+            onClick={() => call('replace')}
+            disabled={busy || reason.length < 3}
+            className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition hover:opacity-90 disabled:opacity-50"
+          >
             إصدار كود بديل
           </button>
         )}
       </div>
 
       {canRevoke && (
-        <div className="border-t pt-3 space-y-2">
+        <div className="border-t border-border pt-3 space-y-2">
           <p className="text-xs text-muted-foreground">
             بعد تأكيد التسليم، لا يمكن إلغاء الكود من أي دور.
           </p>
+          <label htmlFor="code-revoke-reason" className="block text-xs font-medium text-muted-foreground">
+            سبب الإلغاء أو الاستبدال (إلزامي)
+          </label>
           <input
+            id="code-revoke-reason"
             value={reason}
             onChange={e => setReason(e.target.value)}
             placeholder="سبب الإلغاء أو الاستبدال (إلزامي)"
-            className="w-full border rounded p-2 text-sm"
+            className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm"
           />
-          <button onClick={() => call('revoke')} disabled={busy || reason.length < 3} className="bg-red-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50">
+          <button
+            type="button"
+            onClick={() => call('revoke')}
+            disabled={busy || reason.length < 3}
+            className="rounded-xl bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors hover:opacity-90 disabled:opacity-50"
+          >
             إلغاء الكود (قبل التسليم فقط)
           </button>
         </div>
       )}
 
       {plaintext && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded p-3 space-y-2">
-          <p className="text-sm font-medium text-yellow-900">الكود الجديد (يظهر مرة واحدة فقط):</p>
-          <p className="font-mono text-lg text-yellow-900">{plaintext}</p>
-          <p className="text-xs text-yellow-700">انسخه الآن — لن يظهر مرة أخرى.</p>
+        <div className="rounded-xl border border-warning bg-warning-soft p-3 space-y-1.5">
+          <p className="text-sm font-semibold text-foreground">الكود الجديد (يظهر مرة واحدة فقط):</p>
+          <p className="font-mono text-lg text-foreground ui-num">{plaintext}</p>
+          <p className="text-xs text-muted-foreground">انسخه الآن — لن يظهر مرة أخرى.</p>
         </div>
       )}
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-    </div>
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+    </section>
   );
 }

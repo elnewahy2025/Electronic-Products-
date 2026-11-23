@@ -42,9 +42,9 @@ export function ExchangeRateForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4"
+      className="ui-box space-y-4"
     >
-      <h2 className="text-base font-semibold text-foreground">تسجيل سعر صرف جديد</h2>
+      <h2 className="text-base font-bold text-foreground">تسجيل سعر صرف جديد</h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground block">العملة الأساسية</label>
@@ -54,7 +54,7 @@ export function ExchangeRateForm() {
             maxLength={3}
             required
             dir="ltr"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono uppercase"
+            className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm font-mono uppercase"
           />
         </div>
         <div className="space-y-1.5">
@@ -65,7 +65,7 @@ export function ExchangeRateForm() {
             maxLength={3}
             required
             dir="ltr"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono uppercase"
+            className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm font-mono uppercase"
           />
         </div>
         <div className="space-y-1.5">
@@ -78,21 +78,21 @@ export function ExchangeRateForm() {
             onChange={e => setRate(e.target.value)}
             required
             dir="ltr"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono tabular-nums"
+            className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm ui-num"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={busy}
-          className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 active:scale-[0.98] transition disabled:opacity-50"
+          className="rounded-xl bg-primary text-primary-foreground px-4 py-2 text-sm font-medium transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
           {busy ? 'جارٍ الحفظ...' : 'إضافة السعر'}
         </button>
         {msg && (
-          <p className={`text-xs ${msg.ok ? 'text-emerald-700' : 'text-destructive'}`}>
+          <p className={`text-sm ${msg.ok ? 'text-success' : 'text-destructive'}`}>
             {msg.text}
           </p>
         )}

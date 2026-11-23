@@ -52,9 +52,9 @@ export function CommissionManager({ sellers, categories }: Props) {
   return (
     <form
       onSubmit={onSubmit}
-      className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4"
+      className="ui-box space-y-4"
     >
-      <h2 className="text-base font-semibold text-foreground">إضافة عمولة مخصصة لبائع</h2>
+      <h2 className="text-base font-bold text-foreground">إضافة عمولة مخصصة لبائع</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground block">البائع</label>
@@ -62,7 +62,7 @@ export function CommissionManager({ sellers, categories }: Props) {
             value={sellerId}
             onChange={e => setSellerId(e.target.value)}
             required
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm"
           >
             {sellers.map(s => (
               <option key={s.profile_id} value={s.profile_id}>
@@ -77,7 +77,7 @@ export function CommissionManager({ sellers, categories }: Props) {
           <select
             value={scope}
             onChange={e => setScope(e.target.value as 'global' | 'category')}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm"
           >
             <option value="global">عام (جميع منتجات البائع)</option>
             <option value="category">تصنيف محدد</option>
@@ -90,7 +90,7 @@ export function CommissionManager({ sellers, categories }: Props) {
             <select
               value={categoryId}
               onChange={e => setCategoryId(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm"
             >
               {categories.map(c => (
                 <option key={c.id} value={c.id}>
@@ -112,7 +112,7 @@ export function CommissionManager({ sellers, categories }: Props) {
             onChange={e => setRatePct(e.target.value)}
             required
             dir="ltr"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono tabular-nums"
+            className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm ui-num"
           />
         </div>
 
@@ -125,21 +125,21 @@ export function CommissionManager({ sellers, categories }: Props) {
             value={effectiveTo}
             onChange={e => setEffectiveTo(e.target.value)}
             dir="ltr"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono"
+            className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm ui-num"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={busy || sellers.length === 0}
-          className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 active:scale-[0.98] transition disabled:opacity-50"
+          className="rounded-xl bg-primary text-primary-foreground px-4 py-2 text-sm font-medium transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
           {busy ? 'جارٍ الحفظ...' : 'حفظ العمولة المخصصة'}
         </button>
         {msg && (
-          <p className={`text-xs ${msg.ok ? 'text-emerald-700' : 'text-destructive'}`}>
+          <p className={`text-sm ${msg.ok ? 'text-success' : 'text-destructive'}`}>
             {msg.text}
           </p>
         )}
@@ -164,7 +164,7 @@ export function ExpireCommissionButton({ id }: { id: string }) {
       type="button"
       onClick={expire}
       disabled={busy}
-      className="text-xs text-red-700 dark:text-red-400 hover:underline disabled:opacity-50"
+      className="ui-badge ui-badge-red rounded-lg px-2.5 py-1 text-xs font-medium hover:opacity-90 disabled:opacity-50"
     >
       {busy ? '...' : 'إنهاء الآن'}
     </button>

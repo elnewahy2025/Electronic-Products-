@@ -31,29 +31,42 @@ export function SessionActions({
   const canCompensate = ['expired', 'expired_partial', 'exhausted'].includes(status);
 
   return (
-    <div className="border rounded p-4 space-y-3">
-      <input
-        value={reason}
-        onChange={e => setReason(e.target.value)}
-        placeholder="السبب (إلزامي)"
-        className="w-full border rounded p-2 text-sm"
-      />
+    <section className="ui-box space-y-3">
+      <div className="space-y-2">
+        <label htmlFor="session-reason" className="block text-xs font-medium text-muted-foreground">
+          السبب (إلزامي)
+        </label>
+        <input
+          id="session-reason"
+          value={reason}
+          onChange={e => setReason(e.target.value)}
+          placeholder="السبب (إلزامي)"
+          className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm"
+        />
+      </div>
 
       {canExtend && (
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            value={hours}
-            onChange={e => setHours(e.target.value)}
-            placeholder="ساعات إضافية"
-            min="1"
-            max="168"
-            className="border rounded p-2 text-sm w-32"
-          />
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="space-y-2 flex-1 min-w-[10rem]">
+            <label htmlFor="session-hours" className="block text-xs font-medium text-muted-foreground">
+              ساعات إضافية
+            </label>
+            <input
+              id="session-hours"
+              type="number"
+              value={hours}
+              onChange={e => setHours(e.target.value)}
+              placeholder="ساعات إضافية"
+              min="1"
+              max="168"
+              className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm ui-num"
+            />
+          </div>
           <button
+            type="button"
             onClick={() => call('extend', { extra_hours: parseInt(hours, 10) })}
             disabled={busy || !hours || parseInt(hours, 10) <= 0}
-            className="bg-blue-600 text-white rounded px-3 py-2 text-sm disabled:opacity-50"
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             تمديد
           </button>
@@ -62,9 +75,10 @@ export function SessionActions({
 
       {canCompensate && (
         <button
+          type="button"
           onClick={() => call('compensate')}
           disabled={busy || reason.length < 3}
-          className="bg-green-600 text-white rounded px-3 py-2 text-sm disabled:opacity-50"
+          className="rounded-xl bg-success-soft px-4 py-2 text-sm font-medium text-success transition hover:opacity-90 disabled:opacity-50"
         >
           فتح جلسة تعويضية (لا تستهلك محاولة)
         </button>
@@ -72,21 +86,22 @@ export function SessionActions({
 
       {canRevoke && (
         <button
+          type="button"
           onClick={() => call('revoke')}
           disabled={busy || reason.length < 3}
-          className="bg-red-600 text-white rounded px-3 py-2 text-sm disabled:opacity-50"
+          className="rounded-xl bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors hover:opacity-90 disabled:opacity-50"
         >
           إلغاء الجلسة (قبل بدء التسليم فقط)
         </button>
       )}
 
       {hasDelivery && (
-        <p className="text-xs text-red-600">
+        <p className="text-sm text-destructive">
           بدأ التسليم في هذه الجلسة — لا يمكن إلغاؤها من أي دور.
         </p>
       )}
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-    </div>
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+    </section>
   );
 }

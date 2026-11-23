@@ -70,6 +70,14 @@ const GROUP_LABEL: Record<string, string> = {
   audit: 'سجل التدقيق',
 };
 
+const MEMBER_STATUS_LABEL: Record<string, string> = {
+  active: 'نشطة',
+  suspended: 'موقوفة',
+  revoked: 'ملغية',
+  removed: 'مزالة',
+  pending: 'قيد الانتظار',
+};
+
 function groupKey(code: string): string {
   return code.split('.')[0] ?? 'other';
 }
@@ -222,24 +230,34 @@ export function StaffEditor({
 
   return (
     <div className="space-y-6">
+      <header className="pb-5 border-b border-border">
+        <p className="text-xs font-medium text-primary mb-1">إدارة الفريق والصلاحيات</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+          إدارة صلاحيات العضو
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          مراجعة الدور الوظيفي والصلاحيات الفعّالة لهذا الحساب وضبط التخصيصات الفردية.
+        </p>
+      </header>
+
       {!canEdit && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl px-4 py-3 text-sm flex items-center gap-2.5">
-          <svg className="w-4 h-4 shrink-0 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <div className="ui-box flex items-center gap-2.5 text-sm">
+          <svg className="w-4 h-4 shrink-0 text-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <span>أنت تعرض هذه الصفحة بوضع القراءة فقط. تعديل الأدوار والصلاحيات محصور بـ Super Admin.</span>
+          <span className="text-warning">
+            أنت تعرض هذه الصفحة بوضع القراءة فقط. تعديل الأدوار والصلاحيات محصور بـ Super Admin.
+          </span>
         </div>
       )}
 
       {feedback && (
         <div
           role="status"
-          className={`rounded-xl px-4 py-3 text-sm border flex items-center justify-between gap-3 ${
-            feedback.type === 'ok'
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-              : 'bg-red-50 border-red-200 text-red-900'
+          className={`ui-box flex items-center justify-between gap-3 text-sm ${
+            feedback.type === 'ok' ? 'text-success' : 'text-destructive'
           }`}
         >
           <span>{feedback.text}</span>
@@ -255,23 +273,21 @@ export function StaffEditor({
 
       {/* Asymmetric 12-column Studio Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left/Right Sticky Identity & Role Column (4 cols) */}
+        {/* Identity & Role Column */}
         <aside className="lg:col-span-4 space-y-5 lg:sticky lg:top-6">
           {/* Profile Identity Card */}
-          <section className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-5">
+          <section className="ui-box space-y-5">
             <div className="flex items-start gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-accent text-accent-foreground font-bold text-sm flex items-center justify-center shrink-0 border border-primary/15">
+              <div className="w-12 h-12 rounded-2xl bg-accent text-accent-foreground font-bold text-sm flex items-center justify-center shrink-0 border border-primary/15 ui-num">
                 {getInitials(detail.full_name, detail.email)}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-lg font-bold text-foreground leading-snug truncate">
+                  <h2 className="text-lg font-bold text-foreground leading-snug truncate">
                     {detail.full_name || detail.email}
-                  </h1>
+                  </h2>
                   {detail.is_self && (
-                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
-                      أنت
-                    </span>
+                    <span className="ui-badge ui-badge-neutral">أنت</span>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground font-mono truncate mt-0.5" dir="ltr">
@@ -281,26 +297,15 @@ export function StaffEditor({
             </div>
 
             <div className="flex items-center gap-2 flex-wrap pt-1">
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg bg-accent text-accent-foreground border border-primary/15">
+              <span className="ui-badge ui-badge-blue">
                 {currentRoleLabel}
               </span>
-              <span
-                className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border ${
-                  detail.status === 'active'
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    : 'bg-red-50 text-red-800 border-red-200'
-                }`}
-              >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    detail.status === 'active' ? 'bg-emerald-500' : 'bg-red-500'
-                  }`}
-                />
+              <span className={`ui-badge ${detail.status === 'active' ? 'ui-badge-green' : 'ui-badge-red'}`}>
                 {detail.status === 'active' ? 'حساب نشط' : detail.status === 'suspended' ? 'موقوف' : 'محذوف'}
               </span>
               {detail.member_status && detail.member_status !== 'active' && (
-                <span className="text-xs px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
-                  العضوية: {detail.member_status}
+                <span className="ui-badge ui-badge-amber">
+                  العضوية: {MEMBER_STATUS_LABEL[detail.member_status] ?? detail.member_status}
                 </span>
               )}
             </div>
@@ -309,7 +314,7 @@ export function StaffEditor({
             <div className="pt-4 border-t border-border/70 space-y-2.5">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">نطاق الصلاحيات الفعّالة</span>
-                <span className="font-mono font-semibold text-foreground tabular-nums">
+                <span className="font-semibold text-foreground ui-num">
                   {effectiveCount} / {totalCount}
                 </span>
               </div>
@@ -319,14 +324,14 @@ export function StaffEditor({
                   style={{ width: `${coveragePct}%` }}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2 pt-1 text-xs tabular-nums">
+              <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
                 <div className="bg-muted/50 rounded-xl px-3 py-2">
                   <span className="text-muted-foreground block text-[11px]">موروثة من الدور</span>
-                  <span className="font-semibold text-foreground">{inheritedCount}</span>
+                  <span className="font-semibold text-foreground ui-num">{inheritedCount}</span>
                 </div>
                 <div className="bg-accent/50 rounded-xl px-3 py-2">
                   <span className="text-accent-foreground/80 block text-[11px]">تخصيص فردي</span>
-                  <span className="font-semibold text-accent-foreground">{overrideCount}</span>
+                  <span className="font-semibold text-accent-foreground ui-num">{overrideCount}</span>
                 </div>
               </div>
             </div>
@@ -334,7 +339,7 @@ export function StaffEditor({
             {detail.granted_at && (
               <p className="text-[11px] text-muted-foreground pt-2 border-t border-border/60">
                 عضو في الفريق منذ{' '}
-                <span className="font-medium text-foreground">
+                <span className="font-medium text-foreground ui-num">
                   {new Date(detail.granted_at).toLocaleDateString('ar-EG', {
                     year: 'numeric',
                     month: 'long',
@@ -346,7 +351,7 @@ export function StaffEditor({
           </section>
 
           {/* Role Assignment Card */}
-          <section className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4">
+          <section className="ui-box space-y-4">
             <div>
               <h2 className="font-semibold text-sm text-foreground">الدور الوظيفي</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -377,7 +382,7 @@ export function StaffEditor({
                           selected ? 'border-primary bg-primary' : 'border-muted-foreground/40'
                         }`}
                       >
-                        {selected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        {selected && <span className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
                       </span>
                     </div>
                     {meta.desc && (
@@ -394,7 +399,7 @@ export function StaffEditor({
               type="button"
               onClick={changeRole}
               disabled={!canEdit || busyRole || roleCode === detail.role_code}
-              className="w-full bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-primary/90 active:scale-[0.99] transition disabled:opacity-40"
+              className="w-full bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-sm font-medium transition-colors hover:bg-primary/90 disabled:opacity-40"
             >
               {busyRole ? 'جارٍ التحديث...' : 'حفظ تغيير الدور'}
             </button>
@@ -402,9 +407,9 @@ export function StaffEditor({
 
           {/* Danger Zone Card */}
           {!detail.is_self && detail.member_status === 'active' && (
-            <section className="bg-card border border-red-200 rounded-2xl p-5 shadow-sm space-y-3">
+            <section className="ui-box space-y-3 border-destructive/30">
               <div>
-                <h2 className="font-semibold text-sm text-red-800">إزالة العضوية الإدارية</h2>
+                <h2 className="font-semibold text-sm text-destructive">إزالة العضوية الإدارية</h2>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                   يُحوّل الحساب إلى مشترٍ عادي ويسحب كافة الصلاحيات الفردية مع تسجيل الإجراء في سجل التدقيق.
                 </p>
@@ -415,7 +420,7 @@ export function StaffEditor({
                   type="button"
                   onClick={() => setShowRemoveConfirm(true)}
                   disabled={!canEdit}
-                  className="w-full text-red-700 bg-red-50 hover:bg-red-100/80 border border-red-200 rounded-xl px-4 py-2.5 text-sm font-medium transition disabled:opacity-50"
+                  className="w-full bg-destructive text-destructive-foreground rounded-xl px-4 py-2.5 text-sm font-medium transition-colors hover:bg-destructive/90 disabled:opacity-50"
                 >
                   إزالة من الفريق
                 </button>
@@ -425,7 +430,7 @@ export function StaffEditor({
                     value={removeReason}
                     onChange={e => setRemoveReason(e.target.value)}
                     placeholder="اكتب سبب الإزالة (3 أحرف على الأقل)"
-                    className="w-full bg-background border border-red-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
+                    className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     minLength={3}
                   />
                   <div className="grid grid-cols-2 gap-2">
@@ -433,7 +438,7 @@ export function StaffEditor({
                       type="button"
                       onClick={removeStaff}
                       disabled={busyRemove || removeReason.trim().length < 3}
-                      className="bg-red-600 text-white rounded-xl px-3 py-2 text-xs font-medium hover:bg-red-700 transition disabled:opacity-50"
+                      className="bg-destructive text-destructive-foreground rounded-xl px-3 py-2 text-xs font-medium transition-colors hover:bg-destructive/90 disabled:opacity-50"
                     >
                       {busyRemove ? 'جارٍ الإزالة...' : 'تأكيد الإزالة'}
                     </button>
@@ -443,7 +448,7 @@ export function StaffEditor({
                         setShowRemoveConfirm(false);
                         setRemoveReason('');
                       }}
-                      className="border border-border rounded-xl px-3 py-2 text-xs font-medium hover:bg-muted transition"
+                      className="bg-muted text-foreground rounded-xl border border-border px-3 py-2 text-xs font-medium transition-colors hover:bg-muted/80"
                     >
                       إلغاء
                     </button>
@@ -454,10 +459,10 @@ export function StaffEditor({
           )}
         </aside>
 
-        {/* Main Permissions Workspace (8 cols) */}
-        <section className="lg:col-span-8 bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+        {/* Main Permissions Workspace */}
+        <section className="lg:col-span-8 ui-box">
           {/* Toolbar */}
-          <div className="p-5 border-b border-border space-y-4">
+          <div className="pb-4 border-b border-border space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="font-bold text-base text-foreground">مصفوفة الصلاحيات التفصيلية</h2>
@@ -465,7 +470,7 @@ export function StaffEditor({
                   تحكّم في الصلاحيات الفردية الإضافية لكل نطاق، مع تمييز واضح للصلاحيات الموروثة من الدور.
                 </p>
               </div>
-              <span className="text-xs font-mono text-muted-foreground tabular-nums bg-muted px-2.5 py-1 rounded-lg self-start">
+              <span className="text-xs text-muted-foreground ui-num rounded-lg bg-muted px-2.5 py-1 self-start">
                 {filteredPermissions.length} صلاحية معروضة
               </span>
             </div>
@@ -478,6 +483,7 @@ export function StaffEditor({
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
+                  aria-hidden="true"
                 >
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -487,11 +493,12 @@ export function StaffEditor({
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="ابحث بكود الصلاحية أو الوصف أو النطاق..."
+                  aria-label="بحث في الصلاحيات"
                   className="w-full bg-background border border-border rounded-xl pr-10 pl-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
                 />
               </div>
 
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+              <div className="flex flex-wrap items-center gap-2" role="group" aria-label="تصفية الصلاحيات">
                 {(
                   [
                     { key: 'all', label: 'الكل' },
@@ -505,11 +512,7 @@ export function StaffEditor({
                     key={tab.key}
                     type="button"
                     onClick={() => setFilter(tab.key)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
-                      filter === tab.key
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted/70 text-muted-foreground hover:text-foreground hover:bg-muted'
-                    }`}
+                    className={`ui-chip ${filter === tab.key ? 'ui-chip-active' : ''}`}
                   >
                     {tab.label}
                   </button>
@@ -520,7 +523,7 @@ export function StaffEditor({
 
           {/* Grouped Permissions List */}
           {grouped.length === 0 ? (
-            <div className="p-12 text-center space-y-2">
+            <div className="p-10 text-center space-y-2">
               <p className="text-sm font-medium text-foreground">لا توجد صلاحيات مطابقة للبحث</p>
               <button
                 type="button"
@@ -528,23 +531,23 @@ export function StaffEditor({
                   setSearch('');
                   setFilter('all');
                 }}
-                className="text-xs text-primary hover:underline"
+                className="text-xs font-medium text-primary hover:underline"
               >
                 إعادة ضبط الفلاتر
               </button>
             </div>
           ) : (
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-border/70">
               {grouped.map(([group, perms]) => {
                 const groupActive = perms.filter(p => p.effective).length;
                 return (
                   <div key={group}>
-                    <div className="px-5 py-2.5 bg-muted/45 flex items-center justify-between">
+                    <div className="px-3 py-2.5 bg-muted/60 rounded-lg flex items-center justify-between gap-3 flex-wrap">
                       <span className="text-xs font-semibold text-foreground">
                         {GROUP_LABEL[group] ?? group}
                       </span>
-                      <span className="text-[11px] font-mono text-muted-foreground tabular-nums">
-                        {groupActive}/{perms.length} مفعّلة
+                      <span className="text-[11px] text-muted-foreground">
+                        <span className="ui-num">{groupActive}/{perms.length}</span> مفعّلة
                       </span>
                     </div>
 
@@ -554,15 +557,15 @@ export function StaffEditor({
                         return (
                           <div
                             key={p.code}
-                            className={`px-5 py-3.5 flex items-center justify-between gap-4 transition-colors ${
-                              p.effective ? 'bg-card' : 'bg-background/30'
-                            } hover:bg-muted/25`}
+                            className={`px-1 py-3.5 flex items-center justify-between gap-4 rounded-lg transition-colors hover:bg-muted/20 ${
+                              p.effective ? 'bg-card' : 'bg-background/40'
+                            }`}
                           >
                             <div className="min-w-0 flex-1 space-y-0.5">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <code
                                   dir="ltr"
-                                  className={`text-xs font-mono font-semibold px-2 py-0.5 rounded-md ${
+                                  className={`ui-num font-mono text-xs font-semibold px-2 py-0.5 rounded-md ${
                                     p.effective
                                       ? 'bg-accent/60 text-accent-foreground'
                                       : 'bg-muted text-muted-foreground'
@@ -571,12 +574,12 @@ export function StaffEditor({
                                   {p.code}
                                 </code>
                                 {p.from_role && (
-                                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200/80">
+                                  <span className="ui-badge ui-badge-neutral text-[11px]">
                                     موروثة من الدور
                                   </span>
                                 )}
                                 {p.has_override && (
-                                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                  <span className="ui-badge ui-badge-green text-[11px]">
                                     منح فردي
                                   </span>
                                 )}
@@ -601,12 +604,14 @@ export function StaffEditor({
                                 disabled={!canEdit || isBusy}
                                 onClick={() => toggleOverride(p)}
                                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-45 ${
-                                  p.has_override ? 'bg-primary' : 'bg-slate-200'
+                                  p.has_override ? 'bg-primary' : 'bg-muted'
                                 }`}
                               >
                                 <span
-                                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ${
-                                    p.has_override ? '-translate-x-5' : 'translate-x-0'
+                                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full shadow-sm ring-0 transition-transform duration-200 ${
+                                    p.has_override
+                                      ? '-translate-x-5 bg-primary-foreground'
+                                      : 'translate-x-0 bg-background'
                                   }`}
                                 />
                               </button>

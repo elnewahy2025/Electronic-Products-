@@ -2,10 +2,10 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 
 const SEVERITY_BADGE: Record<string, { label: string; cls: string }> = {
-  low: { label: 'منخفضة', cls: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300' },
-  medium: { label: 'متوسطة', cls: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300' },
-  high: { label: 'مرتفعة', cls: 'bg-orange-50 text-orange-800 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300' },
-  critical: { label: 'حرجة', cls: 'bg-red-50 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-300' },
+  low: { label: 'منخفضة', cls: 'ui-badge-neutral' },
+  medium: { label: 'متوسطة', cls: 'ui-badge-blue' },
+  high: { label: 'مرتفعة', cls: 'ui-badge-amber' },
+  critical: { label: 'حرجة', cls: 'ui-badge-red' },
 };
 
 export default async function AdminSecurityEventsPage({
@@ -29,16 +29,19 @@ export default async function AdminSecurityEventsPage({
   const { data: events } = await query;
 
   return (
-    <main className="p-6 max-w-6xl space-y-6">
-      <div className="flex items-start justify-between flex-wrap gap-3 border-b border-border pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">أحداث الأمان (`security_events`)</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            مراقبة الأحداث الأمنية والتنبيهات المسجّلة عبر المنصة.
-          </p>
-        </div>
+    <main className="p-6 md:p-8 space-y-6">
+      <header className="pb-5 border-b border-border">
+        <p className="text-xs font-medium text-primary mb-1">المراقبة والأمان</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+          أحداث الأمان
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          مراقبة الأحداث الأمنية والتنبيهات المسجّلة عبر المنصة.
+        </p>
+      </header>
 
-        <div className="flex items-center gap-2 text-xs">
+      <section className="ui-box">
+        <nav className="flex flex-wrap items-center gap-2" aria-label="تصفية الأحداث حسب الخطورة">
           {[
             { k: '', label: 'الكل' },
             { k: 'critical', label: 'حرجة' },
@@ -49,53 +52,47 @@ export default async function AdminSecurityEventsPage({
             <Link
               key={f.k}
               href={f.k ? `/admin/security-events?severity=${f.k}` : '/admin/security-events'}
-              className={`px-3 py-1.5 rounded-lg border transition ${
-                (sev ?? '') === f.k
-                  ? 'bg-primary text-primary-foreground border-primary font-medium'
-                  : 'border-border bg-card hover:bg-muted/60'
-              }`}
+              className={`ui-chip ${(sev ?? '') === f.k ? 'ui-chip-active' : ''}`}
             >
               {f.label}
             </Link>
           ))}
-        </div>
-      </div>
+        </nav>
+      </section>
 
-      <div className="rounded-2xl border border-border bg-card overflow-x-auto shadow-sm">
+      <section className="ui-table-wrap">
         <table className="w-full text-sm">
-          <thead className="bg-muted/70">
+          <thead className="bg-muted/60 text-xs text-muted-foreground">
             <tr>
-              <th className="text-right p-3">التوقيت</th>
-              <th className="text-right p-3">النوع</th>
-              <th className="text-right p-3">الخطورة</th>
-              <th className="text-right p-3">المستخدم</th>
-              <th className="text-right p-3">IP</th>
-              <th className="text-right p-3">التفاصيل</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">التوقيت</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">النوع</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">الخطورة</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">المستخدم</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">IP</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">التفاصيل</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border/70">
             {(events ?? []).map((ev: any) => {
               const badge = SEVERITY_BADGE[ev.severity] ?? SEVERITY_BADGE.medium;
               return (
-                <tr key={ev.id} className="border-t border-border">
-                  <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">
-                    {new Date(ev.created_at).toLocaleString('ar')}
+                <tr key={ev.id} className="hover:bg-muted/20 transition-colors">
+                  <td className="px-3.5 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                    <span className="ui-num">{new Date(ev.created_at).toLocaleString('ar')}</span>
                   </td>
-                  <td className="p-3 text-xs font-mono" dir="ltr">
+                  <td className="px-3.5 py-3 text-xs font-mono" dir="ltr">
                     {ev.type}
                   </td>
-                  <td className="p-3 text-xs">
-                    <span className={`px-2 py-0.5 rounded-full border ${badge.cls}`}>
-                      {badge.label}
-                    </span>
+                  <td className="px-3.5 py-3 text-xs">
+                    <span className={`ui-badge ${badge.cls}`}>{badge.label}</span>
                   </td>
-                  <td className="p-3 text-xs font-mono text-muted-foreground" dir="ltr">
+                  <td className="px-3.5 py-3 text-xs font-mono text-muted-foreground" dir="ltr">
                     {ev.profiles?.email ?? '—'}
                   </td>
-                  <td className="p-3 text-xs font-mono text-muted-foreground" dir="ltr">
+                  <td className="px-3.5 py-3 text-xs text-muted-foreground ui-num" dir="ltr">
                     {ev.ip ?? '—'}
                   </td>
-                  <td className="p-3 text-xs font-mono text-muted-foreground max-w-xs truncate" dir="ltr">
+                  <td className="px-3.5 py-3 text-xs font-mono text-muted-foreground max-w-xs truncate" dir="ltr">
                     {ev.details ? JSON.stringify(ev.details) : '—'}
                   </td>
                 </tr>
@@ -103,14 +100,14 @@ export default async function AdminSecurityEventsPage({
             })}
             {!events?.length && (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-muted-foreground text-sm">
+                <td colSpan={6} className="p-10 text-center text-sm text-muted-foreground">
                   لا توجد أحداث أمان مسجّلة.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-      </div>
+      </section>
     </main>
   );
 }

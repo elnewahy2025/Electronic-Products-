@@ -16,13 +16,13 @@ export default async function StaffDetailPage({ params }: { params: { id: string
   const canEdit = me?.role === 'super_admin';
 
   return (
-    <main className="p-6 md:p-8 max-w-6xl mx-auto space-y-6">
+    <main className="p-6 md:p-8 space-y-6">
       <nav aria-label="breadcrumb" className="flex items-center gap-2 text-xs text-muted-foreground">
         <Link href="/admin" className="hover:text-foreground transition-colors">
           لوحة الإدارة
         </Link>
         <span className="opacity-40">/</span>
-        <Link href="/admin/staff" className="hover:text-foreground transition-colors">
+        <Link href="/admin/staff" className="text-primary hover:underline transition-colors">
           الموظفون
         </Link>
         <span className="opacity-40">/</span>

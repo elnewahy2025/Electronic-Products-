@@ -2,15 +2,15 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 
 const RESULT_LABELS: Record<string, { label: string; cls: string }> = {
-  success: { label: 'نجح', cls: 'bg-green-100 text-green-800' },
-  not_found: { label: 'كود خاطئ', cls: 'bg-red-100 text-red-800' },
-  expired: { label: 'منتهي', cls: 'bg-orange-100 text-orange-800' },
-  revoked: { label: 'ملغى', cls: 'bg-red-100 text-red-800' },
-  already_redeemed: { label: 'مُفعّل مسبقًا', cls: 'bg-yellow-100 text-yellow-800' },
-  not_delivered: { label: 'لم يُسلَّم', cls: 'bg-gray-100 text-gray-800' },
-  forbidden: { label: 'غير مصرح', cls: 'bg-red-100 text-red-800' },
-  rate_limited: { label: 'Rate limited', cls: 'bg-purple-100 text-purple-800' },
-  error: { label: 'خطأ', cls: 'bg-gray-100 text-gray-800' },
+  success: { label: 'نجح', cls: 'ui-badge-green' },
+  not_found: { label: 'كود خاطئ', cls: 'ui-badge-red' },
+  expired: { label: 'منتهي', cls: 'ui-badge-red' },
+  revoked: { label: 'ملغى', cls: 'ui-badge-red' },
+  already_redeemed: { label: 'مُفعّل مسبقًا', cls: 'ui-badge-amber' },
+  not_delivered: { label: 'لم يُسلَّم', cls: 'ui-badge-amber' },
+  forbidden: { label: 'غير مصرح', cls: 'ui-badge-red' },
+  rate_limited: { label: 'تجاوز حد المحاولات', cls: 'ui-badge-amber' },
+  error: { label: 'خطأ', cls: 'ui-badge-red' },
 };
 
 export default async function RedeemAttemptsPage({
@@ -43,74 +43,103 @@ export default async function RedeemAttemptsPage({
   const successes24h = (stats ?? []).filter((r: any) => r.result === 'success').length;
 
   return (
-    <main className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">محاولات تفعيل الأكواد</h1>
+    <main className="p-6 md:p-8 space-y-6">
+      <header className="pb-5 border-b border-border">
+        <p className="text-xs font-medium text-primary mb-1">الأمان ومحاولات التفعيل</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+          محاولات تفعيل الأكواد
+        </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          آخر 24 ساعة: {successes24h} ناجحة، {failures24h} فاشلة
+          سجل محاولات تفعيل أكواد الشراء، مع مؤشرات سريعة لآخر 24 ساعة.
         </p>
-      </div>
 
-      <div className="flex gap-2 flex-wrap text-sm">
-        <Link href="/admin/redeem-attempts" className="border rounded px-3 py-1">الكل</Link>
-        {Object.entries(RESULT_LABELS).map(([k, v]) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
+          <div className="ui-stat">
+            <div className="text-2xl font-bold leading-tight ui-num text-success">{successes24h}</div>
+            <span className="text-[13px] text-muted-foreground mt-1 block">محاولات ناجحة (24 ساعة)</span>
+          </div>
+          <div className="ui-stat">
+            <div className="text-2xl font-bold leading-tight ui-num text-destructive">{failures24h}</div>
+            <span className="text-[13px] text-muted-foreground mt-1 block">محاولات فاشلة (24 ساعة)</span>
+          </div>
+        </div>
+      </header>
+
+      <section className="ui-box">
+        <nav className="flex flex-wrap items-center gap-2" aria-label="تصفية المحاولات حسب النتيجة">
           <Link
-            key={k}
-            href={`/admin/redeem-attempts?result=${k}`}
-            className={`border rounded px-3 py-1 ${searchParams.result === k ? 'bg-accent' : ''}`}
+            href="/admin/redeem-attempts"
+            className={`ui-chip ${!searchParams.result ? 'ui-chip-active' : ''}`}
           >
-            {v.label}
+            الكل
           </Link>
-        ))}
-      </div>
+          {Object.entries(RESULT_LABELS).map(([k, v]) => (
+            <Link
+              key={k}
+              href={`/admin/redeem-attempts?result=${k}`}
+              className={`ui-chip ${searchParams.result === k ? 'ui-chip-active' : ''}`}
+            >
+              {v.label}
+            </Link>
+          ))}
+        </nav>
+      </section>
 
-      <div className="border rounded overflow-hidden">
+      <section className="ui-table-wrap">
         <table className="w-full text-sm">
-          <thead className="bg-muted">
+          <thead className="bg-muted/60 text-xs text-muted-foreground">
             <tr>
-              <th className="text-right p-3">التاريخ</th>
-              <th className="text-right p-3">النتيجة</th>
-              <th className="text-right p-3">المستخدم</th>
-              <th className="text-right p-3">IP</th>
-              <th className="text-right p-3">بادئة الكود</th>
-              <th className="text-right p-3">السبب</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">التاريخ</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">النتيجة</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">المستخدم</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">IP</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">بادئة الكود</th>
+              <th className="text-right font-semibold px-3.5 py-2.5">السبب</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border/70">
             {(data ?? []).map((row: any) => {
-              const r = RESULT_LABELS[row.result] ?? { label: row.result, cls: 'bg-gray-100' };
+              const r = RESULT_LABELS[row.result] ?? { label: row.result, cls: 'ui-badge-neutral' };
               return (
-                <tr key={row.id} className="border-t">
-                  <td className="p-3 text-xs text-muted-foreground">
-                    {new Date(row.created_at).toLocaleString('ar')}
+                <tr key={row.id} className="hover:bg-muted/20 transition-colors">
+                  <td className="px-3.5 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                    <span className="ui-num">{new Date(row.created_at).toLocaleString('ar')}</span>
                   </td>
-                  <td className="p-3">
-                    <span className={`text-xs px-2 py-0.5 rounded ${r.cls}`}>{r.label}</span>
+                  <td className="px-3.5 py-3 text-xs">
+                    <span className={`ui-badge ${r.cls}`}>{r.label}</span>
                   </td>
-                  <td className="p-3 text-xs" dir="ltr">{row.email ?? '—'}</td>
-                  <td className="p-3 text-xs font-mono" dir="ltr">{row.ip ?? '—'}</td>
-                  <td className="p-3 text-xs font-mono" dir="ltr">{row.code_hash_prefix ?? '—'}</td>
-                  <td className="p-3 text-xs text-muted-foreground max-w-xs truncate">
+                  <td className="px-3.5 py-3 text-xs font-mono" dir="ltr">{row.email ?? '—'}</td>
+                  <td className="px-3.5 py-3 text-xs text-muted-foreground ui-num" dir="ltr">{row.ip ?? '—'}</td>
+                  <td className="px-3.5 py-3 text-xs text-muted-foreground ui-num" dir="ltr">
+                    {row.code_hash_prefix ?? '—'}
+                  </td>
+                  <td className="px-3.5 py-3 text-xs text-muted-foreground max-w-xs truncate">
                     {row.reason ?? '—'}
                   </td>
                 </tr>
               );
             })}
             {!data?.length && (
-              <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">لا توجد محاولات</td></tr>
+              <tr>
+                <td colSpan={6} className="p-10 text-center text-sm text-muted-foreground">
+                  لا توجد محاولات تفعيل لعرضها.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
-      </div>
+      </section>
 
       {totalPages > 1 && (
-        <div className="flex justify-between text-sm">
-          <span>الصفحة {page} من {totalPages}</span>
-          <div className="flex gap-2">
+        <section className="ui-box flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            الصفحة <span className="ui-num">{page}</span> من <span className="ui-num">{totalPages}</span>
+          </p>
+          <nav className="flex items-center gap-2" aria-label="التنقل بين الصفحات">
             {page > 1 && (
               <Link
                 href={`/admin/redeem-attempts?${new URLSearchParams({ ...searchParams, page: String(page - 1) })}`}
-                className="border rounded px-3 py-1"
+                className="ui-chip"
               >
                 السابق
               </Link>
@@ -118,13 +147,13 @@ export default async function RedeemAttemptsPage({
             {page < totalPages && (
               <Link
                 href={`/admin/redeem-attempts?${new URLSearchParams({ ...searchParams, page: String(page + 1) })}`}
-                className="border rounded px-3 py-1"
+                className="ui-chip"
               >
                 التالي
               </Link>
             )}
-          </div>
-        </div>
+          </nav>
+        </section>
       )}
     </main>
   );
