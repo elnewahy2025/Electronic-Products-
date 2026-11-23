@@ -179,22 +179,33 @@ export async function recordCompletion(params: {
 
   if (!session) throw new Error('SESSION_NOT_FOUND');
 
-  // Insert deliveries (idempotent via unique partial index)
+  // Insert deliveries. The unique constraint on (session_id, file_version_id)
+  // is partial (completed = true), which PostgREST cannot express as an
+  // ON CONFLICT target, so check first and ignore a duplicate-key race.
   for (const f of params.files) {
-    await admin
+    const { data: existing } = await admin
       .from('download_deliveries')
-      .upsert(
-        {
-          session_id: params.sessionId,
-          file_version_id: f.fileVersionId,
-          delivery_type: params.type === 'zip' ? 'zip' : 'single',
-          bytes_sent: f.bytesSent,
-          checksum: f.checksum ?? null,
-          completed: true,
-          delivered_at: new Date().toISOString(),
-        },
-        { onConflict: 'session_id,file_version_id', ignoreDuplicates: false }
-      );
+      .select('id')
+      .eq('session_id', params.sessionId)
+      .eq('file_version_id', f.fileVersionId)
+      .eq('completed', true)
+      .maybeSingle();
+    if (existing) continue;
+
+    const { error: deliveryError } = await admin
+      .from('download_deliveries')
+      .insert({
+        session_id: params.sessionId,
+        file_version_id: f.fileVersionId,
+        delivery_type: params.type === 'zip' ? 'zip' : 'single',
+        bytes_sent: f.bytesSent,
+        checksum: f.checksum ?? null,
+        completed: true,
+        delivered_at: new Date().toISOString(),
+      });
+    if (deliveryError && !deliveryError.message.includes('duplicate key')) {
+      throw new Error(deliveryError.message);
+    }
   }
 
   // Is the session now fully delivered?

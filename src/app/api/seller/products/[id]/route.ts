@@ -32,7 +32,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+    const message = e?.message ?? 'ERROR';
+    const status =
+      message === 'not_found' ? 404
+        : message === 'FORBIDDEN' ? 403
+          : message === 'UNAUTHENTICATED' ? 401
+            : 400;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -43,6 +49,12 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     await deleteSellerProduct(user.id, params.id);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+    const message = e?.message ?? 'ERROR';
+    const status =
+      message === 'not_found' ? 404
+        : message === 'FORBIDDEN' ? 403
+          : message === 'UNAUTHENTICATED' ? 401
+            : 400;
+    return NextResponse.json({ error: message }, { status });
   }
 }

@@ -12,7 +12,8 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') ?? '/';
+  const rawNext = searchParams.get('next') ?? '/';
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
   const reason = searchParams.get('reason');
 
   async function onSubmit(e: React.FormEvent) {
@@ -24,12 +25,27 @@ export default function LoginPage() {
       email: email.trim(),
       password,
     });
-    setBusy(false);
     if (signInError) {
+      setBusy(false);
       setError('بيانات الدخول غير صحيحة.');
       return;
     }
-    router.push(next);
+
+    // Ask the server whether this login needs a TOTP challenge and drop any
+    // MFA token left over from a previous login session.
+    const res = await fetch('/api/auth/mfa', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'begin' }),
+    }).catch(() => null);
+    const status = res?.ok ? await res.json().catch(() => null) : null;
+
+    setBusy(false);
+    if (status?.required) {
+      router.push(`/verify-mfa?next=${encodeURIComponent(next)}`);
+    } else {
+      router.push(next);
+    }
     router.refresh();
   }
 

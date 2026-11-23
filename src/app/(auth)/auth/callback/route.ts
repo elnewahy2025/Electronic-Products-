@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { MFA_COOKIE, clearMfaCookieOptions } from '@/lib/auth/mfa-session';
 
 function getSafeNext(raw: string | null): string {
   if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/';
@@ -32,9 +33,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${origin}/login?reason=no_code`);
   }
 
-  // Post-login route decision (MFA handled by middleware)
+  // Post-login route decision. A fresh password/OAuth session is aal1:
+  // clear any MFA token from a previous login and route through the
+  // challenge when policy requires it.
+  const clearMfa = (res: NextResponse) => {
+    res.cookies.set(MFA_COOKIE, '', clearMfaCookieOptions());
+    return res;
+  };
+
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.redirect(`${origin}/login`);
+  if (!user) return clearMfa(NextResponse.redirect(`${origin}/login`));
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -42,14 +50,21 @@ export async function GET(req: NextRequest) {
     .eq('id', user.id)
     .single();
 
-  if (profile?.mfa_enforced && !profile?.mfa_enabled) {
-    return NextResponse.redirect(`${origin}/verify-mfa`);
-  }
-
   const target =
     profile?.account_type === 'seller' ? '/seller'
       : profile?.account_type === 'staff' ? '/admin'
         : '/account';
 
-  return NextResponse.redirect(`${origin}${next !== '/' ? next : target}`);
+  const destination = next !== '/' ? next : target;
+
+  const mfaRequired = Boolean(
+    profile?.mfa_enforced || profile?.mfa_enabled || profile?.account_type === 'staff'
+  );
+  if (mfaRequired) {
+    return clearMfa(
+      NextResponse.redirect(`${origin}/verify-mfa?next=${encodeURIComponent(destination)}`)
+    );
+  }
+
+  return clearMfa(NextResponse.redirect(`${origin}${destination}`));
 }

@@ -7,7 +7,7 @@ const body = z.object({
   full_name: z.string().min(1).max(100).optional(),
   phone: z.string().max(20).optional(),
   avatar_url: z.string().url().max(500).optional(),
-});
+}).strict();
 
 export async function PATCH(req: NextRequest) {
   const db = await createClient();

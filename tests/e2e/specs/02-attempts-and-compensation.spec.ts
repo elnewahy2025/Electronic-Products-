@@ -88,6 +88,7 @@ test.describe('Attempts, single-file delivery, and compensation', () => {
     const { data: attempts } = await adminDb
       .from('download_attempts')
       .select('attempt_number, completed')
+      .eq('session_id', sessionId)
       .order('attempt_number');
     expect(attempts).toHaveLength(1);
     expect(attempts![0].completed).toBe(true);

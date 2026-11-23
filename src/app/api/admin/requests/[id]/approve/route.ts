@@ -6,7 +6,10 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   try {
     await requirePerm('code.issue');
     const db = await createClient();
-    const { data, error } = await db.rpc('approve_purchase_request', { p_request_id: params.id });
+    const { data, error } = await db.rpc('approve_purchase_request', {
+      p_request_id: params.id,
+      p_pepper: process.env.CODE_HASH_PEPPER,
+    });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
     return NextResponse.json({ ok: true, codes: data });

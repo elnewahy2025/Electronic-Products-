@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import type { Database } from '@/lib/supabase/types';
+import { MFA_COOKIE, readMfaSessionToken, sessionIdFromJwt } from '@/lib/auth/mfa-session';
 
 const ADMIN_PREFIXES = ['/admin'];
 const SELLER_PREFIXES = ['/seller'];
@@ -8,12 +9,20 @@ const BUYER_PREFIXES = ['/account'];
 const MFA_WHITELIST = [
   '/verify-mfa',
   '/api/auth/mfa',
+  '/api/auth/signout',
+  '/api/csp-report',
   '/login',
   '/register',
   '/auth/callback',
   '/forgot-password',
   '/reset-password',
   '/offline',
+  // Framework/static assets must never be redirected through the MFA gate,
+  // otherwise the challenge page itself cannot load its JS/CSS.
+  '/_next',
+  '/favicon.ico',
+  '/manifest.webmanifest',
+  '/sw.js',
 ];
 
 // ─── CSP builder ─────────────────────────────────────────
@@ -153,14 +162,25 @@ export async function middleware(request: NextRequest) {
       return redirectWithCsp(url, csp);
     }
 
-    const needsMfa =
-      (profile.mfa_enforced || profile.account_type === 'staff') &&
-      !profile.mfa_enabled;
+    // A password/OAuth cookie is only aal1. Once MFA is on (or required by
+    // policy/staff role), every non-whitelisted route needs a server-issued
+    // TOTP satisfaction token bound to this exact Supabase session.
+    const mfaRequired = Boolean(
+      profile.mfa_enforced || profile.mfa_enabled || profile.account_type === 'staff'
+    );
 
-    if (needsMfa && !MFA_WHITELIST.some(p => pathname.startsWith(p))) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/verify-mfa';
-      return redirectWithCsp(url, csp);
+    if (mfaRequired && !MFA_WHITELIST.some(p => pathname.startsWith(p))) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const sid = sessionIdFromJwt(sessionData.session?.access_token ?? '');
+      const token = await readMfaSessionToken(request.cookies.get(MFA_COOKIE)?.value);
+      const mfaSatisfied = Boolean(sid && token && token.sub === user.id && token.sid === sid);
+
+      if (!mfaSatisfied) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/verify-mfa';
+        url.searchParams.set('next', pathname);
+        return redirectWithCsp(url, csp);
+      }
     }
 
     const isAdminRoute = ADMIN_PREFIXES.some(p => pathname.startsWith(p));

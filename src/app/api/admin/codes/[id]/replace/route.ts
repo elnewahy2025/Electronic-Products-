@@ -16,6 +16,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const { data: newId, error } = await db.rpc('issue_replacement_code', {
       p_original_code_id: params.id,
       p_reason: parsed.data.reason,
+      p_pepper: process.env.CODE_HASH_PEPPER,
     });
     if (error) throw new Error(error.message);
 

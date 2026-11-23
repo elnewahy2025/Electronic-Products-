@@ -18,7 +18,7 @@ test.describe('Full journey: publish → request → code → redeem → downloa
     const product = await seedProductWithFiles({
       sellerId: seller.sellerId,
       categoryId: category.id,
-      title: 'E2E Product',
+      title: `E2E Product-${Date.now()}`,
       price: 25,
       currency: 'USD',
     });
@@ -41,8 +41,10 @@ test.describe('Full journey: publish → request → code → redeem → downloa
     await authenticateContext(buyerContext, buyer.email, buyer.password);
     const page = await buyerContext.newPage();
 
-    await page.goto('/products');
-    await expect(page.getByText(product.title)).toBeVisible();
+    // The unfiltered listing is cached for 60s. Search by the unique title so
+    // this assertion exercises a fresh result instead of a stale cache entry.
+    await page.goto(`/products?q=${encodeURIComponent(product.title)}`);
+    await expect(page.getByText(product.title).first()).toBeVisible();
 
     await page.goto(`/products/${product.slug}`);
     await expect(page.getByRole('heading', { name: product.title })).toBeVisible();
@@ -159,7 +161,7 @@ test.describe('Full journey: publish → request → code → redeem → downloa
 
     // Review appears on product page
     await page.goto(`/products/${product.slug}`);
-    await expect(page.getByText('منتج ممتاز، أنصح به')).toBeVisible();
+    await expect(page.getByText('منتج ممتاز، أنصح به').first()).toBeVisible();
     await expect(page.getByText('مشتري موثّق')).toBeVisible();
 
     // ─── STEP 8: buyer cannot post a second review ─

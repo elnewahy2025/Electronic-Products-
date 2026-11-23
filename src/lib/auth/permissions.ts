@@ -13,12 +13,24 @@ export const getMyPermissions = cache(async (): Promise<Set<string>> => {
 
   const supabase = await createClient();
 
+  // `store_members` → `role_permissions` is only related through `roles`, so
+  // ask PostgREST for the membership's role_id, then walk role_permissions
+  // from that table directly. The previous nested join could not be inferred
+  // and silently yielded no permissions.
+  const { data: membership } = await supabase
+    .from('store_members')
+    .select('role_id')
+    .eq('profile_id', user.id)
+    .eq('status', 'active')
+    .maybeSingle();
+
   const [{ data: rolePerms }, { data: memberPerms }] = await Promise.all([
-    supabase
-      .from('store_members')
-      .select('role_permissions!inner(permissions!inner(code))')
-      .eq('profile_id', user.id)
-      .eq('status', 'active'),
+    membership?.role_id
+      ? supabase
+          .from('role_permissions')
+          .select('permissions!inner(code)')
+          .eq('role_id', membership.role_id)
+      : Promise.resolve({ data: [] as any[] }),
     supabase
       .from('member_permissions')
       .select('permissions!inner(code), expires_at')
@@ -26,7 +38,7 @@ export const getMyPermissions = cache(async (): Promise<Set<string>> => {
   ]);
 
   const codes = new Set<string>();
-  rolePerms?.forEach((rp: any) => codes.add(rp.role_permissions.permissions.code));
+  rolePerms?.forEach((rp: any) => codes.add(rp.permissions.code));
   memberPerms?.forEach((mp: any) => {
     if (!mp.expires_at || new Date(mp.expires_at) > new Date()) {
       codes.add(mp.permissions.code);

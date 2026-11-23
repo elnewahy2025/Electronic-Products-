@@ -243,16 +243,21 @@ export async function updateSellerProduct(input: {
 
   if (Object.keys(patch).length === 0) return;
 
-  const { error } = await db
+  const { data, error } = await db
     .from('products')
     .update(patch)
     .eq('id', input.productId)
-    .eq('seller_id', input.sellerId);
+    .eq('seller_id', input.sellerId)
+    .select('id');
 
   if (error) {
     if (error.message.includes('product_price_below_minimum')) throw new Error('below_min_price');
     throw new Error(error.message);
   }
+
+  // A seller updating another seller's product matches no rows under RLS.
+  // Treat that as not-found instead of silently returning success.
+  if (!data?.length) throw new Error('not_found');
 
   await logAudit({
     action: 'product.updated',

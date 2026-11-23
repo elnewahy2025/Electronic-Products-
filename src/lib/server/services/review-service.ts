@@ -116,7 +116,10 @@ export async function createReview(input: {
 
   const eligibility = await canCurrentUserReview(input.productId);
   if (!eligibility.canReview || !eligibility.orderItemId) {
-    throw new Error(eligibility.reason ?? 'NOT_ELIGIBLE');
+    // UI keeps the lowercase reason; the API surfaces a stable uppercase code.
+    throw new Error(
+      eligibility.reason === 'already_reviewed' ? 'ALREADY_REVIEWED' : eligibility.reason ?? 'NOT_ELIGIBLE'
+    );
   }
 
   const { data, error } = await db

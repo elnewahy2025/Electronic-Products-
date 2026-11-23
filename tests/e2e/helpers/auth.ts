@@ -1,5 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
+import { authenticator } from 'otplib';
 import type { BrowserContext } from '@playwright/test';
+import { TEST_MFA_SECRET } from './db';
 
 /**
  * Signs in via Supabase and returns cookies compatible with Playwright's
@@ -29,6 +31,37 @@ export async function getAuthCookies(
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw new Error(`login failed for ${email}: ${error.message}`);
+
+  // The real app gates every protected route on a server-issued MFA
+  // cookie. Complete the challenge for test accounts that require it.
+  const appUrl = process.env.TEST_APP_URL;
+  if (appUrl) {
+    const cookieHeader = Array.from(cookieJar.entries())
+      .map(([name, value]) => `${name}=${value}`)
+      .join('; ');
+    const post = (action: string, code?: string) =>
+      fetch(`${appUrl}/api/auth/mfa`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', cookie: cookieHeader },
+        body: JSON.stringify(code ? { action, code } : { action }),
+      });
+
+    const statusRes = await post('status');
+    const status = await statusRes.json().catch(() => ({}));
+    if (status.required && !status.satisfied) {
+      const challengeRes = await post('challenge', authenticator.generate(TEST_MFA_SECRET));
+      if (!challengeRes.ok) {
+        throw new Error(`mfa challenge failed for ${email}: ${await challengeRes.text()}`);
+      }
+      const setCookies = (challengeRes.headers as Headers & { getSetCookie?: () => string[] })
+        .getSetCookie?.() ?? [];
+      for (const header of setCookies) {
+        const [pair] = header.split(';');
+        const [name, ...rest] = pair.split('=');
+        if (name.trim() === 'mfa_session') cookieJar.set(name.trim(), rest.join('='));
+      }
+    }
+  }
 
   return Array.from(cookieJar.entries()).map(([name, value]) => ({
     name,

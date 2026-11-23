@@ -73,7 +73,7 @@ session_has_started_delivery(p_session_id uuid) RETURNS boolean
 |---|---|
 | **SELECT** | `auth.uid() = id` **OR** `is_admin_or_above()` **OR** `staff_has('staff.user.read')` |
 | **INSERT** | `service_role` فقط (يُنشأ تلقائيًا عبر trigger `handle_new_auth_user` عند التسجيل) |
-| **UPDATE** | `auth.uid() = id` مع منع تعديل: `account_type`, `status`, `mfa_enforced`, `email_verified_at`, `mfa_secret_encrypted` (عبر trigger `profiles_protect_fields`) **OR** `is_super_admin()` |
+| **UPDATE** | `auth.uid() = id` مع منع تعديل: `account_type`, `status`, `mfa_enforced`, `mfa_enabled`, `email_verified_at`, `mfa_secret_encrypted` (عبر trigger `trg_profiles_protect_fields`) **OR** `is_super_admin()`. تسجيل MFA يتم عبر API بصلاحية `service_role` فقط. |
 | **DELETE** | لا أحد (حذف ناعم عبر `status = 'deleted'`) |
 
 > **ملاحظة حقول:** `mfa_secret_encrypted` لا يُقرأ لأي دور عبر واجهة العميل؛ يُقرأ فقط في الخادم للتحقق من رمز `TOTP`.

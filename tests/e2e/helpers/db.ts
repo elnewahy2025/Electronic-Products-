@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { createHmac, randomUUID } from 'node:crypto';
+import { createCipheriv, createHmac, randomBytes, randomUUID } from 'node:crypto';
 
 const SUPABASE_URL = process.env.TEST_SUPABASE_URL!;
 const SERVICE_ROLE = process.env.TEST_SUPABASE_SERVICE_ROLE_KEY!;
@@ -21,6 +21,18 @@ export const anonDb: SupabaseClient = createClient(SUPABASE_URL, ANON, {
 
 const PASSWORD = 'Test-Password-123!';
 
+/** Fixed TOTP secret enrolled for test users that require MFA. */
+export const TEST_MFA_SECRET = 'JBSWY3DPEHPK3PXP';
+
+function encryptMfaSecret(plain: string): string {
+  const raw = process.env.ENCRYPTION_KEY;
+  if (!raw) throw new Error('Missing ENCRYPTION_KEY in .env.test');
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', Buffer.from(raw, 'base64'), iv);
+  const enc = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()]);
+  return Buffer.concat([iv, cipher.getAuthTag(), enc]).toString('base64');
+}
+
 export type TestUser = {
   id: string;
   email: string;
@@ -28,6 +40,9 @@ export type TestUser = {
 };
 
 let userCounter = 0;
+const createdCategoryIds: string[] = [];
+const createdUserIds: string[] = [];
+const createdProductIds: string[] = [];
 
 export async function createTestUser(opts: {
   email?: string;
@@ -49,6 +64,7 @@ export async function createTestUser(opts: {
     user_metadata: { full_name: opts.fullName ?? 'Test User' },
   });
   if (error || !data.user) throw new Error(`createUser failed: ${error?.message}`);
+  createdUserIds.push(data.user.id);
 
   await adminDb.from('profiles').upsert({
     id: data.user.id,
@@ -59,6 +75,15 @@ export async function createTestUser(opts: {
     phone: opts.phone ?? '+201000000000',
     full_name: opts.fullName ?? 'Test User',
   });
+
+  // Staff accounts are MFA-required even when mfa_enabled is false, so
+  // enroll a known secret for every account that will face the challenge.
+  if (mfaEnabled || accountType === 'staff') {
+    await adminDb
+      .from('profiles')
+      .update({ mfa_secret_encrypted: encryptMfaSecret(TEST_MFA_SECRET) })
+      .eq('id', data.user.id);
+  }
 
   if (accountType === 'staff' && opts.roleCode) {
     const { data: role } = await adminDb.from('roles').select('id').eq('code', opts.roleCode).single();
@@ -110,14 +135,16 @@ export async function createSeller(opts?: {
 // ─── Categories & Products ──────────────────────────────
 
 export async function createCategory(name?: string): Promise<{ id: string; name: string; slug: string }> {
-  const n = name ?? `Cat-${Date.now()}`;
-  const slug = n.toLowerCase().replace(/\s+/g, '-');
+  const unique = randomUUID().slice(0, 8);
+  const n = name ?? `Cat-${Date.now()}-${unique}`;
+  const slug = `${n.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-${unique}`;
   const { data, error } = await adminDb
     .from('categories')
     .insert({ name: n, slug, is_active: true })
     .select('id, name, slug')
     .single();
   if (error) throw new Error(error.message);
+  createdCategoryIds.push(data!.id);
   return data!;
 }
 
@@ -145,8 +172,12 @@ export async function seedProductWithFiles(opts: {
   fileExt?: 'pdf' | 'png' | 'jpg' | 'mp4';
   fileSize?: number;
 }): Promise<TestProduct> {
-  const title = opts.title ?? `Product-${Date.now()}`;
-  const slug = title.toLowerCase().replace(/\s+/g, '-');
+  // The DB has a global unique index on products.slug. Two seeds can land in
+  // the same millisecond (or share an explicit title), so always add a
+  // random suffix to the slug while keeping the caller's title unchanged.
+  const unique = randomUUID().slice(0, 8);
+  const title = opts.title ?? `Product-${Date.now()}-${unique}`;
+  const slug = `${title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-${unique}`;
   const price = opts.price ?? 50;
   const currency = opts.currency ?? 'USD';
   const fileName = opts.fileName ?? 'test-file';
@@ -170,6 +201,7 @@ export async function seedProductWithFiles(opts: {
     .select('id, slug')
     .single();
   if (pErr) throw new Error(`product: ${pErr.message}`);
+  createdProductIds.push(product!.id);
 
   // 2. File + storage + file_version (ready)
   const { data: file } = await adminDb
@@ -388,59 +420,139 @@ export async function confirmCodeDelivery(codeId: string): Promise<void> {
  * the `@test.local` email domain.
  */
 export async function cleanupTestData(): Promise<void> {
+  // Rate-limit rows are keyed by IP/user and survive user deletion. A fresh
+  // run must not inherit failures from a previous one.
+  await adminDb.from('redeem_attempts').delete().gte('id', 1);
+
+  // Categories are not tied to a user, so track and remove them explicitly.
+  if (createdCategoryIds.length > 0) {
+    await adminDb.from('categories').delete().in('id', createdCategoryIds);
+    createdCategoryIds.length = 0;
+  }
+
   const { data: users } = await adminDb.auth.admin.listUsers();
-  const testUserIds = (users?.users ?? [])
-    .filter(u => u.email?.endsWith('@test.local'))
-    .map(u => u.id);
+  const allUserIds = (users?.users ?? []).map(u => u.id);
+  const testUserIds = Array.from(new Set([
+    ...createdUserIds,
+    ...(users?.users ?? []).filter(u => u.email?.endsWith('@test.local')).map(u => u.id),
+  ]));
 
-  if (testUserIds.length === 0) return;
+  const requestIds = new Set<string>();
+  const orderIds = new Set<string>();
+  const orderItemIds = new Set<string>();
+  const codeIds = new Set<string>();
+  const sessionIds = new Set<string>();
+  const productIds = new Set<string>(createdProductIds);
+  const versionIds = new Set<string>();
+  const fileIds = new Set<string>();
+  const fileVersionIds = new Set<string>();
 
-  // Delete in dependency order (FKs use RESTRICT on sold items)
-  await adminDb.from('download_sessions').delete().in('buyer_id', testUserIds);
-  await adminDb.from('purchase_codes').delete().in('issued_by', testUserIds);
-  await adminDb.from('order_items').delete().in(
-    'order_id',
-    (await adminDb.from('orders').select('id').in('buyer_id', testUserIds)).data?.map(o => o.id) ?? []
-  );
-  await adminDb.from('orders').delete().in('buyer_id', testUserIds);
-  await adminDb.from('purchase_request_items').delete().in(
-    'purchase_request_id',
-    (await adminDb.from('purchase_requests').select('id').in('buyer_id', testUserIds)).data?.map(p => p.id) ?? []
-  );
-  await adminDb.from('purchase_requests').delete().in('buyer_id', testUserIds);
+  const addIds = async (
+    table: string, column: string, values: string[], sink: Set<string>
+  ) => {
+    if (values.length === 0) return;
+    const { data } = await (adminDb as any).from(table).select('id').in(column, values);
+    for (const row of data ?? []) sink.add(row.id);
+  };
 
-  await adminDb.from('product_version_files').delete().in(
-    'product_version_id',
-    (await adminDb.from('product_versions').select('id').in(
-      'product_id',
-      (await adminDb.from('products').select('id').in('seller_id', testUserIds)).data?.map(p => p.id) ?? []
-    )).data?.map(v => v.id) ?? []
+  const deleteIds = async (table: string, column: string, values: Iterable<string>) => {
+    const ids = Array.from(values);
+    if (ids.length === 0) return;
+    await (adminDb as any).from(table).delete().in(column, ids);
+  };
+
+  // Gather everything first, then delete in dependency order. FKs on sold
+  // items are RESTRICT, so a single out-of-order delete silently leaves rows
+  // behind and the next run inherits stale rate limits and products.
+  await addIds('purchase_requests', 'buyer_id', testUserIds, requestIds);
+  {
+    const { data } = await (adminDb as any)
+      .from('purchase_requests').select('id').like('customer_email', '%@test.local');
+    for (const row of data ?? []) requestIds.add(row.id);
+  }
+
+  await addIds('products', 'seller_id', testUserIds, productIds);
+  if (allUserIds.length > 0) {
+    // Clean up products orphaned by an earlier failed cleanup as well.
+    const { data } = await (adminDb as any)
+      .from('products').select('id').not('seller_id', 'in', allUserIds);
+    for (const row of data ?? []) productIds.add(row.id);
+  }
+
+  await addIds('orders', 'buyer_id', testUserIds, orderIds);
+  await addIds('orders', 'purchase_request_id', Array.from(requestIds), orderIds);
+  await addIds('order_items', 'order_id', Array.from(orderIds), orderItemIds);
+  await addIds('order_items', 'product_id', Array.from(productIds), orderItemIds);
+  await addIds('purchase_codes', 'order_item_id', Array.from(orderItemIds), codeIds);
+  await addIds('purchase_codes', 'issued_by', testUserIds, codeIds);
+  await addIds('download_sessions', 'buyer_id', testUserIds, sessionIds);
+  await addIds('download_sessions', 'code_id', Array.from(codeIds), sessionIds);
+  await addIds('download_sessions', 'order_item_id', Array.from(orderItemIds), sessionIds);
+  await addIds('product_versions', 'product_id', Array.from(productIds), versionIds);
+  await addIds('files', 'seller_id', testUserIds, fileIds);
+  await addIds('file_versions', 'file_id', Array.from(fileIds), fileVersionIds);
+  await addIds(
+    'product_version_files', 'product_version_id', Array.from(versionIds), fileVersionIds
   );
-  await adminDb.from('product_versions').delete().in(
-    'product_id',
-    (await adminDb.from('products').select('id').in('seller_id', testUserIds)).data?.map(p => p.id) ?? []
+
+  await deleteIds('download_attempts', 'order_item_id', orderItemIds);
+  await deleteIds('download_attempts', 'session_id', sessionIds);
+  await deleteIds('download_deliveries', 'session_id', sessionIds);
+  await deleteIds('download_tokens', 'session_id', sessionIds);
+  await deleteIds('attempt_exception_requests', 'session_id', sessionIds);
+  await deleteIds('attempt_exception_requests', 'code_id', codeIds);
+  await deleteIds('compensation_requests', 'code_id', codeIds);
+  await deleteIds('code_delivery_attempts', 'code_id', codeIds);
+  await deleteIds('code_plaintext_handoff', 'code_id', codeIds);
+  await deleteIds('code_redemptions', 'code_id', codeIds);
+  await deleteIds('download_sessions', 'id', sessionIds);
+  await deleteIds('purchase_codes', 'id', codeIds);
+
+  await deleteIds('reviews', 'product_id', productIds);
+  await deleteIds('reviews', 'order_item_id', orderItemIds);
+  await deleteIds('payments', 'order_id', orderIds);
+  await deleteIds('order_items', 'id', orderItemIds);
+  await deleteIds('orders', 'id', orderIds);
+  await deleteIds('purchase_request_items', 'purchase_request_id', requestIds);
+  await deleteIds('purchase_request_items', 'product_id', productIds);
+  await deleteIds('purchase_requests', 'id', requestIds);
+
+  await deleteIds('product_version_files', 'product_version_id', versionIds);
+  await deleteIds('file_previews', 'file_version_id', fileVersionIds);
+  await deleteIds('file_versions', 'id', fileVersionIds);
+  await deleteIds('files', 'id', fileIds);
+  await deleteIds('product_versions', 'id', versionIds);
+  await deleteIds('products', 'id', productIds);
+
+  // seller_profiles has several RESTRICT children; remove them first.
+  const { data: wallets } = await (adminDb as any)
+    .from('seller_wallets').select('id').in('seller_id', testUserIds);
+  const walletIds = (wallets ?? []).map((w: any) => w.id);
+  await deleteIds('financial_transactions', 'wallet_id', walletIds);
+  await deleteIds('seller_payouts', 'seller_id', testUserIds);
+  await deleteIds('seller_drive_accounts', 'seller_id', testUserIds);
+  await deleteIds('seller_commissions', 'seller_id', testUserIds);
+  await deleteIds('seller_profiles', 'profile_id', testUserIds);
+  await deleteIds('seller_wallets', 'seller_id', testUserIds);
+  await deleteIds('store_members', 'profile_id', testUserIds);
+  await deleteIds('mfa_enrollments', 'profile_id', testUserIds);
+  await deleteIds('mfa_attempts', 'profile_id', testUserIds);
+
+  // audit_logs.actor_id is ON DELETE SET NULL, but audit rows are append-only;
+  // deleting a referenced profile would fire the append-only trigger.
+  const { data: auditRefs } = await (adminDb as any)
+    .from('audit_logs').select('actor_id').in('actor_id', testUserIds);
+  const auditActors = new Set((auditRefs ?? []).map((a: any) => a.actor_id));
+  await deleteIds(
+    'profiles', 'id', testUserIds.filter(id => !auditActors.has(id))
   );
-  await adminDb.from('file_previews').delete().in(
-    'file_version_id',
-    (await adminDb.from('file_versions').select('id').in(
-      'file_id',
-      (await adminDb.from('files').select('id').in('seller_id', testUserIds)).data?.map(f => f.id) ?? []
-    )).data?.map(v => v.id) ?? []
-  );
-  await adminDb.from('file_versions').delete().in(
-    'file_id',
-    (await adminDb.from('files').select('id').in('seller_id', testUserIds)).data?.map(f => f.id) ?? []
-  );
-  await adminDb.from('file_storage_locations').delete().in('provider_file_id', []);
-  await adminDb.from('files').delete().in('seller_id', testUserIds);
-  await adminDb.from('products').delete().in('seller_id', testUserIds);
-  await adminDb.from('seller_profiles').delete().in('profile_id', testUserIds);
-  await adminDb.from('seller_wallets').delete().in('seller_id', testUserIds);
-  await adminDb.from('profiles').delete().in('id', testUserIds);
 
   for (const id of testUserIds) {
     await adminDb.auth.admin.deleteUser(id).catch(() => {});
   }
+
+  createdUserIds.length = 0;
+  createdProductIds.length = 0;
 }
 
 // ─── Utils ──────────────────────────────────────────────

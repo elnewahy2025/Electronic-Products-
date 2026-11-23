@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { trackPurchaseByToken } from '@/lib/server/services/purchase-request-service';
-import { StatusBadge } from '@/components/buyer/status-badge';
 
 export default async function TrackPage({ params }: { params: { token: string } }) {
   const req = await trackPurchaseByToken(params.token);
@@ -43,7 +42,7 @@ export default async function TrackPage({ params }: { params: { token: string } 
         </div>
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">الحالة</span>
-          <StatusBadge status={req.status} />
+          <span className="font-medium">{statusLabel}</span>
         </div>
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">تاريخ الإرسال</span>

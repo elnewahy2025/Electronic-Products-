@@ -133,9 +133,18 @@ export type BuyerCodeRow = {
 
 export async function listBuyerCodes(): Promise<BuyerCodeRow[]> {
   const db = await createClient();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return [];
+
+  // Defense in depth: the view itself is row-scoped (migration 041), but
+  // repeat the ownership condition here so a future view regression cannot
+  // expose other buyers' codes. Guest orders have buyer_id = NULL and are
+  // matched by the email they checked out with.
+  const scope = `buyer_id.eq.${user.id}${user.email ? `,customer_email.eq.${JSON.stringify(user.email)}` : ''}`;
   const { data } = await db
     .from('buyer_codes_full')
     .select('code_id, code_prefix, code_status, issued_at, delivered_at, redeemed_at, expires_at, session_id, product_id, product_title, product_slug')
+    .or(scope)
     .order('issued_at', { ascending: false })
     .limit(100);
   return (data ?? []) as BuyerCodeRow[];
@@ -156,9 +165,15 @@ export type BuyerSessionRow = {
 
 export async function listBuyerSessions(statusFilter?: string): Promise<BuyerSessionRow[]> {
   const db = await createClient();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return [];
+
+  // See listBuyerCodes: view-level scoping plus an explicit app-level scope.
+  const scope = `buyer_id.eq.${user.id}${user.email ? `,customer_email.eq.${JSON.stringify(user.email)}` : ''}`;
   let q = db
     .from('buyer_sessions_full')
     .select('session_id, status, started_at, expires_at, ended_at, is_compensation, code_prefix, order_item_id, product_title, product_slug')
+    .or(scope)
     .order('started_at', { ascending: false })
     .limit(100);
 
