@@ -12,6 +12,8 @@ type FlatCategory = {
   is_active: boolean;
   product_count: number;
   depth: number;
+  cover_image_url: string | null;
+  cover_storage_path: string | null;
 };
 
 export function CategoryManager({ initial }: { initial: FlatCategory[] }) {
@@ -153,6 +155,15 @@ export function CategoryManager({ initial }: { initial: FlatCategory[] }) {
                 <td className="p-3">
                   <div style={{ paddingRight: `${c.depth * 20}px` }} className="flex items-center gap-2">
                     {c.depth > 0 && <span className="text-muted-foreground">└─</span>}
+                    {c.cover_image_url && (
+                      <img
+                        src={c.cover_image_url}
+                        alt=""
+                        width={40}
+                        height={24}
+                        className="h-6 w-10 shrink-0 rounded border object-cover"
+                      />
+                    )}
                     <span className="font-medium">{c.name}</span>
                   </div>
                 </td>
@@ -287,12 +298,53 @@ function CategoryDialog({
   const [sortOrder, setSortOrder] = useState(String(editing?.sort_order ?? 0));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [coverUrl, setCoverUrl] = useState<string | null>(editing?.cover_image_url ?? null);
+  const [coverBusy, setCoverBusy] = useState(false);
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const router = useRouter();
 
   // Exclude self + descendants from parent options (for edit)
   const parentOptions = useMemo(() => {
     if (mode === 'create' || !editing) return categories;
     return categories.filter(c => c.id !== editing.id && !isDescendant(categories, editing.id, c.id));
   }, [categories, editing, mode]);
+
+  async function uploadCover(file: File) {
+    setCoverBusy(true); setCoverError(null);
+    try {
+      const body = new FormData();
+      body.append('file', file);
+      const res = await fetch(`/api/admin/categories/${editing!.id}/cover`, {
+        method: 'POST',
+        body,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? 'UPLOAD_FAILED');
+      setCoverUrl(json.url);
+      router.refresh();
+    } catch (e: any) {
+      setCoverError(e?.message ?? 'UPLOAD_FAILED');
+    } finally {
+      setCoverBusy(false);
+    }
+  }
+
+  async function removeCover() {
+    setCoverBusy(true); setCoverError(null);
+    try {
+      const res = await fetch(`/api/admin/categories/${editing!.id}/cover`, {
+        method: 'DELETE',
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? 'REMOVE_FAILED');
+      setCoverUrl(null);
+      router.refresh();
+    } catch (e: any) {
+      setCoverError(e?.message ?? 'REMOVE_FAILED');
+    } finally {
+      setCoverBusy(false);
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -365,6 +417,54 @@ function CategoryDialog({
               dir="ltr"
               className="w-full border rounded p-2 text-sm font-mono"
             />
+          </div>
+
+          <div>
+            <label htmlFor={mode === 'edit' ? 'category-cover-file' : undefined} className="block text-xs mb-1">صورة التصنيف (اختيارية)</label>
+            <div className="flex items-start gap-3 rounded-lg border p-3 bg-muted/30">
+              <div className="grid h-16 w-28 shrink-0 place-items-center overflow-hidden rounded-md border bg-brand text-[11px] text-brand-foreground/80">
+                {coverUrl ? (
+                  <img src={coverUrl} alt="" width={112} height={64} className="h-full w-full object-cover" />
+                ) : (
+                  'رسم تلقائي'
+                )}
+              </div>
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  تظهر الصورة أعلى بطاقة التصنيف. بدون رفع صورة، سيُختار رسم مناسب لموضوع التصنيف تلقائيًا.
+                </p>
+                {mode === 'edit' ? (
+                  <>
+                    <input
+                      id="category-cover-file"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/avif"
+                      disabled={coverBusy}
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        e.target.value = '';
+                        if (file) void uploadCover(file);
+                      }}
+                      className="block w-full text-xs"
+                    />
+                    {coverUrl && (
+                      <button
+                        type="button"
+                        onClick={() => void removeCover()}
+                        disabled={coverBusy}
+                        className="text-xs text-red-600 hover:underline disabled:opacity-50"
+                      >
+                        إزالة الصورة
+                      </button>
+                    )}
+                    {coverBusy && <p className="text-xs" role="status">جارٍ تحديث الصورة...</p>}
+                  </>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">تُضاف الصورة بعد إنشاء التصنيف.</p>
+                )}
+                {coverError && <p className="text-xs text-red-600" role="alert">{coverError}</p>}
+              </div>
+            </div>
           </div>
 
           <div>

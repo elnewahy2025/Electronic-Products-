@@ -2,6 +2,7 @@ import 'server-only';
 import { revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { logAudit } from '@/lib/audit/logger';
+import { deleteProductImageFromStorage } from './product-image-service';
 
 export type CategoryNode = {
   id: string;
@@ -23,6 +24,8 @@ export type FlatCategory = {
   is_active: boolean;
   product_count: number;
   depth: number;
+  cover_image_url: string | null;
+  cover_storage_path: string | null;
 };
 
 function slugify(text: string): string {
@@ -38,7 +41,7 @@ export async function listCategoriesFlat(): Promise<FlatCategory[]> {
   const db = await createClient();
   const { data } = await db
     .from('categories')
-    .select('id, parent_id, name, slug, sort_order, is_active')
+    .select('id, parent_id, name, slug, sort_order, is_active, cover_image_url, cover_storage_path')
     .order('sort_order', { ascending: true })
     .order('name', { ascending: true });
 
@@ -77,6 +80,8 @@ export async function listCategoriesFlat(): Promise<FlatCategory[]> {
     is_active: c.is_active,
     product_count: countMap.get(c.id) ?? 0,
     depth: depthOf(c.id),
+    cover_image_url: c.cover_image_url ?? null,
+    cover_storage_path: c.cover_storage_path ?? null,
   }));
 }
 
@@ -287,5 +292,49 @@ export async function reorderCategories(
     p_order: order,
   });
   if (error) throw new Error(error.message);
+  revalidateTag('storefront-categories');
+}
+
+export async function setCategoryCover(input: {
+  id: string;
+  url: string;
+  storagePath: string;
+}): Promise<void> {
+  const db = await createClient();
+  const { data: current } = await db
+    .from('categories')
+    .select('cover_storage_path')
+    .eq('id', input.id)
+    .maybeSingle();
+  if (!current) throw new Error('category_not_found');
+
+  const { error } = await db
+    .from('categories')
+    .update({ cover_image_url: input.url, cover_storage_path: input.storagePath })
+    .eq('id', input.id);
+  if (error) throw new Error(error.message);
+
+  if (current.cover_storage_path && current.cover_storage_path !== input.storagePath) {
+    await deleteProductImageFromStorage(current.cover_storage_path);
+  }
+  revalidateTag('storefront-categories');
+}
+
+export async function clearCategoryCover(id: string): Promise<void> {
+  const db = await createClient();
+  const { data: current } = await db
+    .from('categories')
+    .select('cover_storage_path')
+    .eq('id', id)
+    .maybeSingle();
+  if (!current) throw new Error('category_not_found');
+
+  const { error } = await db
+    .from('categories')
+    .update({ cover_image_url: null, cover_storage_path: null })
+    .eq('id', id);
+  if (error) throw new Error(error.message);
+
+  await deleteProductImageFromStorage(current.cover_storage_path);
   revalidateTag('storefront-categories');
 }

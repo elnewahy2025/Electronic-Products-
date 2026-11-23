@@ -69,6 +69,7 @@ export function InstantSearch() {
           onChange={e => setQuery(e.target.value)}
           onFocus={() => query.length >= 2 && setOpen(true)}
           placeholder="ابحث عن منتج..."
+          aria-label="ابحث عن منتج"
           className="w-full border rounded-lg px-4 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
         />
         <span className="absolute left-3 top-2.5 text-muted-foreground pointer-events-none">🔍</span>

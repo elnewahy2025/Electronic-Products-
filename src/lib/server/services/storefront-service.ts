@@ -109,14 +109,14 @@ export async function getTopCategories(): Promise<Array<{
 
 export async function getAllCategories(): Promise<Array<{
   id: string; name: string; slug: string; parent_id: string | null;
-  product_count: number; sort_order: number;
+  product_count: number; sort_order: number; cover_image_url: string | null;
 }>> {
   const cached = unstable_cache(
     async () => {
       const db = createPublicClient();
       const { data } = await db
         .from('storefront_categories')
-        .select('id, name, slug, parent_id, product_count, sort_order')
+        .select('id, name, slug, parent_id, product_count, sort_order, cover_image_url')
         .order('sort_order', { ascending: true });
       return (data ?? []) as any[];
     },

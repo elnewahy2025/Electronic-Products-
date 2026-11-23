@@ -2,7 +2,24 @@
 
 ## Data model
 - `categories.id`, `name`, `slug` (unique), `parent_id` (nullable), `sort_order`, `is_active`, `updated_at`.
+- `cover_image_url` / `cover_storage_path` (migration 056): optional admin-uploaded artwork.
 - Fully hierarchical: any depth. Cycle protection is enforced by `category_would_create_cycle()`.
+
+## Storefront artwork
+
+Every category card shows subject-appropriate artwork. If no cover is uploaded,
+`getCategoryArt()` derives an illustration from the category name/slug
+(presentation, lessons, books, templates, video, audio, sheets, documents,
+design, or a stable generic variant), so categories created in the future are
+covered without any extra setup.
+
+An admin with `category.manage` can override it in **Admin → Categories → تعديل**:
+upload PNG/JPEG/WebP/AVIF (max 5 MB) via `POST /api/admin/categories/:id/cover`.
+The server validates and converts it to WebP, stores it under
+`categories/:id/cover.webp` in the public `product-images` bucket, and updates
+the category row. `DELETE /api/admin/categories/:id/cover` restores the automatic
+artwork and removes the stored object. The `storefront-categories` cache tag is
+revalidated on both operations.
 
 ## Operations & safety rules
 
