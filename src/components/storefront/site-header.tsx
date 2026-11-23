@@ -23,10 +23,12 @@ export async function SiteHeader() {
 
   return (
     <header className="border-b border-border sticky top-0 bg-card/95 backdrop-blur z-40">
-      <div className="container flex items-center gap-4 h-[60px]">
-        <BrandLogo href="/" />
+      <div className="container flex items-center justify-between gap-2 sm:gap-4 h-[56px] sm:h-[60px]">
+        <div className="min-w-0 shrink">
+          <BrandLogo href="/" />
+        </div>
 
-        <nav className="hidden lg:flex items-center gap-1 text-sm ms-1">
+        <nav className="hidden lg:flex items-center gap-1 text-sm ms-1 shrink-0">
           <Link href="/" className="px-3 py-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground font-medium transition-colors">
             المتجر
           </Link>
@@ -41,11 +43,11 @@ export async function SiteHeader() {
           </Link>
         </nav>
 
-        <div className="flex-1 max-w-md ms-auto">
+        <div className="hidden md:block flex-1 max-w-md ms-auto">
           <InstantSearch />
         </div>
 
-        <nav className="flex items-center gap-2 text-sm shrink-0">
+        <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm shrink-0">
           <ThemeToggle />
           {user && (
             <Link
@@ -62,13 +64,13 @@ export async function SiteHeader() {
             <>
               <Link
                 href="/login"
-                className="rounded-[9px] border border-border px-3.5 py-1.5 text-sm font-semibold text-foreground hover:bg-muted transition"
+                className="rounded-[9px] border border-border px-2.5 sm:px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-foreground hover:bg-muted transition whitespace-nowrap"
               >
                 دخول
               </Link>
               <Link
                 href="/register"
-                className="rounded-[9px] bg-primary text-primary-foreground px-4 py-1.5 text-sm font-semibold hover:opacity-95 transition"
+                className="rounded-[9px] bg-primary text-primary-foreground px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold hover:opacity-95 transition whitespace-nowrap"
               >
                 حساب جديد
               </Link>
