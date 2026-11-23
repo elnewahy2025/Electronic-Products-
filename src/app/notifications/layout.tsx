@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/lib/auth/session';
-import { AdminSidebar } from '@/components/admin/admin-sidebar';
+import { AdminShell } from '@/components/admin/admin-shell';
 import { SellerSidebar } from '@/components/seller/seller-sidebar';
 import { AccountSidebar } from '@/components/buyer/account-sidebar';
 import { SiteHeader } from '@/components/storefront/site-header';
@@ -11,12 +11,7 @@ export default async function NotificationsLayout({ children }: { children: Reac
   if (!user) redirect('/login?next=/notifications');
 
   if (user.accountType === 'staff') {
-    return (
-      <div className="flex min-h-[100dvh] bg-background">
-        <AdminSidebar />
-        <div className="flex-1 min-w-0">{children}</div>
-      </div>
-    );
+    return <AdminShell email={user.email}>{children}</AdminShell>;
   }
 
   if (user.accountType === 'seller') {

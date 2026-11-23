@@ -50,7 +50,7 @@ export function BrandLogo({
       {subtitle && (
         <small
           className={cn(
-            'text-[13px] font-medium border-s ps-2.5',
+            'hidden sm:inline text-[13px] font-medium border-s ps-2.5',
             inverted
               ? 'text-[#9ccbbd] border-[#3d7a6a]'
               : 'text-muted-foreground border-border',

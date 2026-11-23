@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -40,9 +40,20 @@ export function NotificationList({ initial }: { initial: Notification[] }) {
   const [items, setItems] = useState(initial);
   const router = useRouter();
 
+  // Server navigation (filters) and router.refresh() supply a new `initial`
+  // list; keep the client state in sync instead of showing stale notifications.
+  useEffect(() => {
+    setItems(initial);
+  }, [initial]);
+
   async function markRead(id: string) {
+    const previous = items.find(n => n.id === id);
     setItems(prev => prev.map(n => n.id === id && !n.read_at ? { ...n, read_at: new Date().toISOString() } : n));
-    await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+    const res = await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+    if (!res.ok && previous) {
+      setItems(prev => prev.map(n => n.id === id ? previous : n));
+      return;
+    }
     router.refresh();
   }
 

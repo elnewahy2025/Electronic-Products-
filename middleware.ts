@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import type { Database } from '@/lib/supabase/types';
 import { MFA_COOKIE, readMfaSessionToken, sessionIdFromJwt } from '@/lib/auth/mfa-session';
+import { THEME_INIT_SCRIPT_HASH } from '@/lib/theme-init';
 
 const ADMIN_PREFIXES = ['/admin'];
 const SELLER_PREFIXES = ['/seller'];
@@ -36,9 +37,13 @@ function buildCsp(nonce: string, isDev: boolean): string {
     ? new URL(downloadServiceUrl).host
     : '';
 
-  const scriptSrc = isDev
-    ? `'self' 'unsafe-eval' 'nonce-${nonce}' 'strict-dynamic'`
-    : `'self' 'nonce-${nonce}' 'strict-dynamic'`;
+  const scriptSrc = [
+    "'self'",
+    ...(isDev ? ["'unsafe-eval'"] : []),
+    `'nonce-${nonce}'`,
+    `'${THEME_INIT_SCRIPT_HASH}'`,
+    "'strict-dynamic'",
+  ].join(' ');
 
   const connectSrc = [
     "'self'",
@@ -229,7 +234,7 @@ function applySecurityHeaders(response: NextResponse, csp: string) {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set(
     'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=()'
+    'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()'
   );
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');

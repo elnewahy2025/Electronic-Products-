@@ -4,6 +4,7 @@ import { IBM_Plex_Sans_Arabic } from 'next/font/google';
 import { ThemeProvider } from '@/components/shared/theme-provider';
 import { ToastProvider } from '@/components/shared/toast-provider';
 import { PwaRegister } from '@/components/shared/pwa-register';
+import { THEME_INIT_SCRIPT } from '@/lib/theme-init';
 import './globals.css';
 
 const arabic = IBM_Plex_Sans_Arabic({
@@ -20,9 +21,14 @@ export const metadata: Metadata = {
   description: 'منصة بيع المنتجات الرقمية',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
-    capable: true,
+    // Next defaults this to the deprecated apple-mobile-web-app-capable meta.
+    // The standards-based mobile-web-app-capable meta below replaces it.
+    capable: false,
     statusBarStyle: 'default',
     title: APP_NAME,
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
   },
   icons: {
     icon: [
@@ -42,8 +48,6 @@ export const viewport: Viewport = {
   ],
 };
 
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('ep-theme');var d=t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
-
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const headersList = await headers();
   const nonce = headersList.get('x-nonce') ?? undefined;
@@ -51,10 +55,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="ar" dir="rtl" className={arabic.variable} suppressHydrationWarning>
       <head>
-        <script
-          nonce={nonce}
-          dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
-        />
+        {/* Allowed by the exact CSP hash in middleware. A nonce prop would be
+            hidden by the browser after parsing and cause a hydration warning. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body
         className="min-h-[100dvh] bg-background text-foreground antialiased"

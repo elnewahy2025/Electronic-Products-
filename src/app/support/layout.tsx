@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
 import { SiteHeader } from '@/components/storefront/site-header';
-import { AdminSidebar } from '@/components/admin/admin-sidebar';
+import { AdminShell } from '@/components/admin/admin-shell';
 import { SellerSidebar } from '@/components/seller/seller-sidebar';
 import { AccountSidebar } from '@/components/buyer/account-sidebar';
 
@@ -11,12 +11,7 @@ export default async function SupportLayout({ children }: { children: React.Reac
   if (!user) redirect('/login?next=/support');
 
   if (user.accountType === 'staff') {
-    return (
-      <div className="flex min-h-[100dvh] bg-background">
-        <AdminSidebar />
-        <div className="flex-1 min-w-0">{children}</div>
-      </div>
-    );
+    return <AdminShell email={user.email}>{children}</AdminShell>;
   }
 
   if (user.accountType === 'seller') {

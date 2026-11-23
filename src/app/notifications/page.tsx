@@ -84,7 +84,7 @@ export default async function NotificationsPage({
         })}
       </div>
 
-      <NotificationList initial={items} />
+      <NotificationList key={filter} initial={items} />
     </main>
   );
 }
