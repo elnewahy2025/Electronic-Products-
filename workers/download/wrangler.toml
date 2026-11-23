@@ -5,7 +5,7 @@ compatibility_date = "2026-11-23"
 # Placeholder only. Set the real app origin via `wrangler secret put` for
 # deployed environments, or via .dev.vars for local development.
 [vars]
-APP_INTERNAL_URL = "https://app.example.invalid"
+APP_INTERNAL_URL = "https://electronic-products-omega.vercel.app"
 
 [observability]
 enabled = true
