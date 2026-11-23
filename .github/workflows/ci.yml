@@ -38,3 +38,66 @@ jobs:
 
       - name: Production audit
         run: pnpm audit --prod --audit-level=moderate
+
+  e2e-high-security:
+    name: E2E - high security fixes (disposable Supabase)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_YES: 'true'
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      TEST_APP_URL: http://localhost:3000
+      CODE_HASH_PEPPER: ci-pepper-must-match-app
+      ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      DOWNLOAD_SERVICE_TOKEN: ci-download-token
+      GOOGLE_CLIENT_ID: ci-google-client
+      GOOGLE_CLIENT_SECRET: ci-google-secret
+      GOOGLE_DRIVE_CLIENT_ID: ci-google-client
+      GOOGLE_DRIVE_CLIENT_SECRET: ci-google-secret
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start disposable local Supabase
+        run: |
+          supabase start
+          supabase db reset --yes
+
+      - name: Export local Supabase credentials
+        run: |
+          supabase status -o json > "$RUNNER_TEMP/supabase-status.json"
+          {
+            echo "TEST_SUPABASE_URL=$(jq -r .API_URL "$RUNNER_TEMP/supabase-status.json")"
+            echo "TEST_SUPABASE_ANON_KEY=$(jq -r .ANON_KEY "$RUNNER_TEMP/supabase-status.json")"
+            echo "TEST_SUPABASE_SERVICE_ROLE_KEY=$(jq -r .SERVICE_ROLE_KEY "$RUNNER_TEMP/supabase-status.json")"
+          } >> "$GITHUB_ENV"
+
+      - name: Point Next.js at the disposable Supabase
+        run: |
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$TEST_SUPABASE_URL"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$TEST_SUPABASE_ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$TEST_SUPABASE_SERVICE_ROLE_KEY"
+          } >> "$GITHUB_ENV"
+
+      - name: Run H1-H4 E2E spec
+        run: pnpm exec playwright test tests/e2e/specs/05-high-security-fixes.spec.ts

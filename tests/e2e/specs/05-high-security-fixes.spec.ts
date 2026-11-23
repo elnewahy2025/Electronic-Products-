@@ -58,18 +58,22 @@ test.describe('HIGH Security Fixes (H1–H4) — Reproducible Verification', () 
       mfaEnabled: false,
     });
 
-    // Grant ONLY `request.read.any` (not `request.update`, not `super_admin`)
+    // Grant ONLY `request.read.any` (not `request.update`, not `super_admin`).
+    // This permission is referenced by RLS but not seeded by the migrations,
+    // so create it here to keep the spec reproducible on a fresh database.
     const { data: readPerm } = await adminDb
       .from('permissions')
+      .upsert(
+        { code: 'request.read.any', description: 'Read any purchase request' },
+        { onConflict: 'code' },
+      )
       .select('id')
-      .eq('code', 'request.read.any')
       .single();
     expect(readPerm?.id).toBeTruthy();
 
     await adminDb.from('member_permissions').upsert({
       member_id: readOnlyStaff.id,
       permission_id: readPerm!.id,
-      granted: true,
     });
 
     const { data: pr, error: prErr } = await adminDb
