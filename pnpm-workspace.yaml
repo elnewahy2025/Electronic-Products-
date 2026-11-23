@@ -1,7 +1,8 @@
 allowBuilds:
-  canvas: set this to true or false
-  sharp: set this to true or false
-  supabase: set this to true or false
+  canvas: false
+  protobufjs: false
+  sharp: true
+  supabase: false
 
 overrides:
   tar: ^7.5.21
