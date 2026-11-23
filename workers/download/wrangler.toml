@@ -2,8 +2,7 @@ name = "electronic-products-download"
 main = "src/index.ts"
 compatibility_date = "2026-11-23"
 
-# Placeholder only. Set the real app origin via `wrangler secret put` for
-# deployed environments, or via .dev.vars for local development.
+# Canonical production app origin (non-secret). Override via `.dev.vars` locally.
 [vars]
 APP_INTERNAL_URL = "https://electronic-products-omega.vercel.app"
 

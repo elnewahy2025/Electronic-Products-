@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/auth/session';
 import { buildDriveAuthUrl } from '@/lib/drive/oauth';
 import { enforceSellerThrottle } from '@/lib/security/seller-throttle';
 
 export async function POST(req: NextRequest) {
-  const db = await createClient();
-  const { data: { user } } = await db.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'UNAUTHENTICATED' }, { status: 401 });
+  let user;
+  try {
+    user = await requireUser();
+  } catch (e: any) {
+    const status = e?.message === 'UNAUTHENTICATED' ? 401 : 403;
+    return NextResponse.json({ error: status === 401 ? 'UNAUTHENTICATED' : 'FORBIDDEN' }, { status });
+  }
+  if (user.accountType !== 'seller') {
+    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+  }
 
   const throttled = await enforceSellerThrottle({
     req,

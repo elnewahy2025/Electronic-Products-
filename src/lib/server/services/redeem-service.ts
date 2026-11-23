@@ -2,6 +2,7 @@ import 'server-only';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { hashCode } from '@/lib/crypto/code-generator';
+import { getTrustedClientIp } from '@/lib/security/rate-limit';
 
 export type RedeemResult =
   | { ok: true; sessionId: string }
@@ -22,14 +23,6 @@ const ERROR_MESSAGES: Record<string, { message: string; status: number }> = {
   ip_rate_limited: { message: 'تجاوزت الحد المسموح. حاول لاحقًا.', status: 429 },
 };
 
-function getClientIp(req: Request): string | undefined {
-  const fwd = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
-  if (fwd) return fwd;
-  const real = req.headers.get('x-real-ip');
-  if (real) return real;
-  return undefined;
-}
-
 export async function redeemCode(
   rawCode: string,
   req: Request
@@ -46,7 +39,7 @@ export async function redeemCode(
     };
   }
 
-  const ip = getClientIp(req) ?? null;
+  const ip = getTrustedClientIp(req);
   const email = user.email?.toLowerCase() ?? null;
   const admin = createAdminClient();
 

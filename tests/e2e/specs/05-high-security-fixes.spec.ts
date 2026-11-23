@@ -261,4 +261,69 @@ test.describe('HIGH Security Fixes (H1–H4) — Reproducible Verification', () 
       p_owner_token: row3.owner_token,
     });
   });
+
+  test('063: seller cannot self-approve via PostgREST UPDATE or INSERT, but can edit display_name', async () => {
+    const pendingSeller = await createTestUser({ accountType: 'seller', mfaEnabled: false });
+    const buyer = await createTestUser({ accountType: 'buyer', mfaEnabled: false });
+
+    const { error: spErr } = await adminDb.from('seller_profiles').upsert(
+      {
+        profile_id: pendingSeller.id,
+        display_name: 'Pending Seller',
+        status: 'pending',
+      },
+      { onConflict: 'profile_id' },
+    );
+    expect(spErr).toBeNull();
+
+    const sellerJwt = await signInForJwt(pendingSeller.email, pendingSeller.password);
+    const buyerJwt = await signInForJwt(buyer.email, buyer.password);
+
+    // 1. Pending seller attempts PATCH status='approved' -> MUST FAIL with 42501
+    const selfApprove = await restAsJwt(
+      `/rest/v1/seller_profiles?profile_id=eq.${pendingSeller.id}`,
+      sellerJwt,
+      {
+        method: 'PATCH',
+        prefer: 'return=representation',
+        body: { status: 'approved' },
+      },
+    );
+    expect(selfApprove.status).toBeGreaterThanOrEqual(400);
+    expect(selfApprove.json?.code).toBe('42501');
+    expect(String(selfApprove.json?.message ?? '')).toContain('seller_profile_fields_forbidden');
+
+    // 2. Buyer attempts INSERT seller_profiles with status='approved' -> MUST FAIL RLS
+    const buyerSelfInsert = await restAsJwt('/rest/v1/seller_profiles', buyerJwt, {
+      method: 'POST',
+      prefer: 'return=representation',
+      body: {
+        profile_id: buyer.id,
+        display_name: 'Sneaky Buyer',
+        status: 'approved',
+      },
+    });
+    expect(buyerSelfInsert.status).toBeGreaterThanOrEqual(400);
+
+    // 3. Pending seller CAN legitimately update display_name
+    const editName = await restAsJwt(
+      `/rest/v1/seller_profiles?profile_id=eq.${pendingSeller.id}`,
+      sellerJwt,
+      {
+        method: 'PATCH',
+        prefer: 'return=representation',
+        body: { display_name: 'Updated Pending Seller' },
+      },
+    );
+    expect(editName.status).toBe(200);
+    expect(editName.json?.[0]?.display_name).toBe('Updated Pending Seller');
+    expect(editName.json?.[0]?.status).toBe('pending');
+
+    // 4. Health endpoint returns 200 ok
+    const health = await fetch(`${APP_URL}/api/health`);
+    expect(health.status).toBe(200);
+    const healthJson = await health.json();
+    expect(healthJson?.ok).toBe(true);
+    expect(healthJson?.db).toBe('up');
+  });
 });

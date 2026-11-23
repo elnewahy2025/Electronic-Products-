@@ -2,6 +2,7 @@ import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createPurchaseRequest } from '@/lib/server/services/purchase-request-service';
+import { getTrustedClientIp } from '@/lib/security/rate-limit';
 
 const bodySchema = z.object({
   product_id: z.string().uuid(),
@@ -29,11 +30,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'بيانات غير صالحة.', details: parsed.error.flatten() }, { status: 400 });
   }
 
-  // Extract client IP
-  const ip =
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    req.headers.get('x-real-ip') ||
-    undefined;
+  const ip = getTrustedClientIp(req) ?? undefined;
   const userAgent = req.headers.get('user-agent') ?? undefined;
 
   try {
