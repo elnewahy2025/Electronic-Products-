@@ -44,6 +44,9 @@ export async function initUpload(input: InitUploadInput): Promise<InitUploadResu
     .maybeSingle();
 
   if (!fileType) throw new Error('FILE_TYPE_NOT_ALLOWED');
+  if (input.mime.trim().toLowerCase() !== fileType.mime.toLowerCase()) {
+    throw new Error('MIME_MISMATCH');
+  }
   if (fileType.max_size_bytes && input.size > Number(fileType.max_size_bytes)) {
     throw new Error('FILE_TOO_LARGE');
   }

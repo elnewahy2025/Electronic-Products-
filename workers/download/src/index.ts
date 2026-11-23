@@ -75,7 +75,10 @@ async function finish(args: FinishArgs): Promise<void> {
 export default {
   async fetch(request: Request, env: Env, ctx: WorkerContext): Promise<Response> {
     const url = new URL(request.url);
-    if (url.pathname === '/stream' && request.method === 'OPTIONS') return preflight(request);
+    const allowedOrigin = env.APP_INTERNAL_URL;
+    if (url.pathname === '/stream' && request.method === 'OPTIONS') {
+      return preflight(request, allowedOrigin);
+    }
 
     let nonce: string | undefined;
     try {
@@ -130,12 +133,12 @@ export default {
 
       return new Response(body, {
         status: 200,
-        headers: downloadHeaders(request, resolution.type, prepared[0]?.meta),
+        headers: downloadHeaders(request, resolution.type, prepared[0]?.meta, allowedOrigin),
       });
     } catch (error) {
       const failure = toDownloadError(error);
       if (failure.code !== 'CLIENT_ABORT') logFailure(failure.code, nonce);
-      return jsonError(failure.status, failure.code, request);
+      return jsonError(failure.status, failure.code, request, allowedOrigin);
     }
   },
 };

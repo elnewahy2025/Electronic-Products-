@@ -4,11 +4,13 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { initUpload } from '@/lib/server/services/upload-service';
 
+const SHA256_RE = /^[a-f0-9]{64}$/i;
+
 const bodySchema = z.object({
   original_name: z.string().min(1).max(255),
-  mime: z.string().min(1).max(150),
+  mime: z.string().trim().min(1).max(150),
   size: z.number().int().positive(),
-  checksum: z.string().length(64).optional(),
+  checksum: z.string().trim().regex(SHA256_RE, 'invalid_sha256').optional(),
   drive_account_id: z.string().uuid().optional(),
 });
 

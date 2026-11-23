@@ -83,11 +83,12 @@ function runPgDump() {
   );
 }
 
-function runPsql(dbName, sql, inputBuffer) {
+function runPsql(dbName, sql, inputBuffer, { tuplesOnly = false } = {}) {
+  const modeArgs = tuplesOnly ? ['-tA'] : [];
   if (dockerContainer) {
     const res = spawnSync(
       'docker',
-      ['exec', '-i', dockerContainer, 'psql', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', dbName, ...(sql ? ['-c', sql] : [])],
+      ['exec', '-i', dockerContainer, 'psql', ...modeArgs, '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', dbName, ...(sql ? ['-c', sql] : [])],
       { input: inputBuffer, maxBuffer: 256 * 1024 * 1024, encoding: 'utf8' },
     );
     if (res.status !== 0) {
@@ -106,7 +107,7 @@ function runPsql(dbName, sql, inputBuffer) {
 
   const res = spawnSync(
     'psql',
-    ['-v', 'ON_ERROR_STOP=1', url.toString(), ...(sql ? ['-c', sql] : [])],
+    [...modeArgs, '-v', 'ON_ERROR_STOP=1', url.toString(), ...(sql ? ['-c', sql] : [])],
     { input: inputBuffer, maxBuffer: 256 * 1024 * 1024, encoding: 'utf8' },
   );
   if (res.status !== 0) {
@@ -276,7 +277,7 @@ async function verifyLatestArchive() {
     throw new Error(`archive ${archive.id} has no source PostgreSQL version evidence`);
   }
 
-  const verifyVersionNum = runPsql('postgres', 'SHOW server_version_num;').trim();
+  const verifyVersionNum = runPsql('postgres', 'SHOW server_version_num;', undefined, { tuplesOnly: true }).trim();
   const sourceMajor = pgMajorFromVersionNum(archive.source_pg_version);
   const verifyMajor = pgMajorFromVersionNum(verifyVersionNum);
   if (!sourceMajor || !verifyMajor || sourceMajor !== verifyMajor) {
@@ -353,7 +354,7 @@ async function verifyLatestArchive() {
       const countSql = `SELECT jsonb_build_object(${EVIDENCE_TABLES
         .map((table) => `'${table}', (SELECT count(*) FROM public.${table})`)
         .join(', ')})::text;`;
-      const restoredCounts = JSON.parse(runPsql(tempDb, countSql).trim());
+      const restoredCounts = JSON.parse(runPsql(tempDb, countSql, undefined, { tuplesOnly: true }).trim());
       for (const table of EVIDENCE_TABLES) {
         const expected = Number(archive.row_counts[table]);
         const actual = Number(restoredCounts[table]);
