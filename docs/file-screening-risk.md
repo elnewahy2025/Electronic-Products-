@@ -3,9 +3,9 @@
 ## Status
 - **Control implemented:** file type/signature screening on upload completion.
 - **Control not implemented:** malware/AV scanning, archive expansion, behavioral analysis.
-- **Risk acceptance:** documented here; deployment owner sign-off is still required.
+- **Risk acceptance:** Accepted by deployment owner; revisit if any review trigger below occurs.
 
-Owner: ____________________  Date: ____________
+Owner: `elnewahy@gmail.com` (Platform Owner)  Date: `2026-11-24`
 
 ## What the current control does
 `src/lib/files/signature.ts` inspects the first 8 KiB fetched by
