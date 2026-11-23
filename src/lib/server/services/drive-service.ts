@@ -5,6 +5,10 @@ export type ResolvedFile = {
   filename: string;
   mime: string;
   sizeBytes: number;
+  /** Short-lived OAuth bearer token for the internal download worker only. */
+  accessToken: string;
+  /** Set only when the stored checksum is a real SHA-256 hex digest. */
+  expectedSha256: string | null;
 };
 
 /**
@@ -25,7 +29,7 @@ export async function resolveDriveUrl(fileVersionId: string): Promise<ResolvedFi
   const { data, error } = await admin
     .from('file_versions')
     .select(`
-      id, mime, extension, size_bytes,
+      id, mime, extension, size_bytes, checksum_sha256,
       files!inner(original_name, seller_id),
       file_storage_locations!inner(
         provider_file_id,
@@ -59,16 +63,25 @@ export async function resolveDriveUrl(fileVersionId: string): Promise<ResolvedFi
   // GCS (if mirrored) OR the download service authenticates with the same
   // refresh token via our resolve endpoint.
   //
-  // For this MVP, we return the Drive API alt=media URL + a temporary
-  // access token that the download service will use as Bearer.
+  // The internal resolver returns the Drive alt=media URL together with this
+  // short-lived bearer token. It never reaches the browser and is never logged.
   const accessTokenResp = await oauth2Client.getAccessToken();
   const accessToken = accessTokenResp.token;
   if (!accessToken) throw new Error('DRIVE_TOKEN_FAILED');
+
+  const storedChecksum = typeof data.checksum_sha256 === 'string'
+    ? data.checksum_sha256.toLowerCase()
+    : null;
+  const expectedSha256 = storedChecksum && /^[a-f0-9]{64}$/.test(storedChecksum)
+    ? storedChecksum
+    : null;
 
   return {
     driveUrl: `https://www.googleapis.com/drive/v3/files/${loc.provider_file_id}?alt=media`,
     filename: (data as any).files.original_name,
     mime: data.mime ?? 'application/octet-stream',
     sizeBytes: Number(data.size_bytes ?? 0),
+    accessToken,
+    expectedSha256,
   };
 }

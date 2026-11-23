@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { TicketReplyForm } from '@/app/support/[id]/reply-form';
+import { ReviewDeleteFromTicket } from './review-delete-from-ticket';
 
 export default async function AdminSupportDetailPage({
   params,
@@ -11,7 +13,7 @@ export default async function AdminSupportDetailPage({
   const db = await createClient();
   const [{ data: ticket }, { data: messages }] = await Promise.all([
     db.from('support_tickets')
-      .select('id, owner_id, subject, status, created_at, updated_at, profiles!support_tickets_owner_id_fkey(email, full_name, account_type)')
+      .select('id, owner_id, subject, status, review_id, created_at, updated_at, profiles!support_tickets_owner_id_fkey(email, full_name, account_type)')
       .eq('id', params.id)
       .maybeSingle(),
     db.from('support_messages')
@@ -23,6 +25,39 @@ export default async function AdminSupportDetailPage({
   if (!ticket) notFound();
 
   const owner = (ticket as any).profiles;
+
+  let linkedReview: {
+    id: string;
+    rating: number;
+    body: string | null;
+    status: string;
+    product_title: string;
+    buyer_email: string;
+  } | null = null;
+
+  if (ticket.review_id) {
+    const admin = createAdminClient();
+    const { data: review } = await admin
+      .from('reviews')
+      .select(`
+        id, rating, body, status,
+        products!inner(title),
+        profiles:profiles!reviews_buyer_id_fkey(email)
+      `)
+      .eq('id', ticket.review_id)
+      .maybeSingle();
+
+    if (review) {
+      linkedReview = {
+        id: review.id,
+        rating: review.rating,
+        body: review.body,
+        status: review.status,
+        product_title: (review as any).products.title,
+        buyer_email: (review as any).profiles.email,
+      };
+    }
+  }
 
   return (
     <main className="p-6 max-w-4xl space-y-6">
@@ -72,6 +107,10 @@ export default async function AdminSupportDetailPage({
           );
         })}
       </div>
+
+      {linkedReview && (
+        <ReviewDeleteFromTicket ticketId={ticket.id} review={linkedReview} />
+      )}
 
       <TicketReplyForm
         ticketId={ticket.id}

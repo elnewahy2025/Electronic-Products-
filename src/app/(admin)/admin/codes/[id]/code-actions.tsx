@@ -28,7 +28,8 @@ export function CodeActions({ codeId, status }: { codeId: string; status: string
   const canConfirmDelivery = status === 'issued';
   const canRevoke = status === 'issued'; // before delivery only
   const canReplace = ['expired', 'revoked'].includes(status);
-  const canResend = status === 'delivered' || status === 'issued';
+  const resendAvailable = false; // No code-delivery transport is configured yet.
+  const canResend = (status === 'delivered' || status === 'issued') && resendAvailable;
 
   return (
     <div className="border rounded p-4 space-y-3">
@@ -42,6 +43,11 @@ export function CodeActions({ codeId, status }: { codeId: string; status: string
           <button onClick={() => call('resend')} disabled={busy} className="border rounded px-4 py-2 text-sm disabled:opacity-50">
             إعادة إرسال
           </button>
+        )}
+        {(status === 'delivered' || status === 'issued') && !resendAvailable && (
+          <p className="w-full text-xs text-muted-foreground" title="RESEND_NOT_IMPLEMENTED">
+            إعادة الإرسال غير متاحة حاليًا؛ لم يُربط بعد بخدمة تسليم الأكواد. استخدم «إصدار كود بديل» عند الحاجة.
+          </p>
         )}
         {canReplace && (
           <button onClick={() => call('replace')} disabled={busy || reason.length < 3} className="bg-yellow-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50">

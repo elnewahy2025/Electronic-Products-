@@ -84,7 +84,8 @@
 
 ## الإدارة والتشغيل
 - review.created
-- review.deleted
+- review.deleted (المسار القديم — `service_role` فقط بعد الترحيل `054`)
+- review.deleted_from_ticket (المسار المعتمد: تذكرة بائع منظمة + قرار أدمن/موظف بصلاحية `review.delete`؛ يتضمن `ticket_id` في `after_value`)
 - review.replied
 - review.reply_deleted
 - report.resolved
@@ -119,3 +120,5 @@
 - أرشفة بعد 180 يومًا إلى تخزين بارد
 - البحث والاستعادة يبقيان متاحين بعد الأرشفة
 - أي محاولة إلغاء بعد التسليم تُرفض وتُسجَّل كـ*_blocked_after_delivery
+- لا يحذف البائع التقييم مباشرة؛ الحذف يتم من تفاصيل تذكرة الدعم عبر `delete_review_from_ticket` ويُسجَّل كـ `review.deleted_from_ticket` مع سبب إلزامي و`ticket_id`
+- يُمنع الحذف مع طلب تعويض/استثناء بحالة `pending`/`approved` أو تذكرة مشتري `open`/`pending` لنفس التقييم/الطلب/المنتج (`054`)

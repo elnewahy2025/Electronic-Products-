@@ -19,8 +19,67 @@ export function CategoryManager({ initial }: { initial: FlatCategory[] }) {
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<FlatCategory | null>(null);
   const [deleting, setDeleting] = useState<FlatCategory | null>(null);
+  const [orderDraft, setOrderDraft] = useState<FlatCategory[] | null>(null);
+  const [reorderBusy, setReorderBusy] = useState(false);
+  const [reorderError, setReorderError] = useState<string | null>(null);
 
-  const list = initial;
+  const list = orderDraft ?? initial;
+
+  function moveWithinSiblings(id: string, direction: -1 | 1) {
+    setOrderDraft(current => {
+      if (!current) return current;
+      const item = current.find(c => c.id === id);
+      if (!item) return current;
+      const siblingIndexes = current
+        .map((c, index) => ({ c, index }))
+        .filter(({ c }) => c.parent_id === item.parent_id)
+        .map(({ index }) => index);
+      const position = siblingIndexes.indexOf(current.findIndex(c => c.id === id));
+      const targetPosition = position + direction;
+      if (position < 0 || targetPosition < 0 || targetPosition >= siblingIndexes.length) return current;
+      const next = [...current];
+      const from = siblingIndexes[position];
+      const to = siblingIndexes[targetPosition];
+      [next[from], next[to]] = [next[to], next[from]];
+      return next;
+    });
+  }
+
+  async function saveOrder() {
+    if (!orderDraft) return;
+    setReorderBusy(true);
+    setReorderError(null);
+
+    const counters = new Map<string, number>();
+    const updated = orderDraft.flatMap(c => {
+      const key = c.parent_id ?? '__root__';
+      const sortOrder = counters.get(key) ?? 0;
+      counters.set(key, sortOrder + 1);
+      return sortOrder === c.sort_order ? [] : [{ id: c.id, sort_order: sortOrder }];
+    });
+
+    if (updated.length === 0) {
+      setOrderDraft(null);
+      setReorderBusy(false);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/categories/reorder', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ order: updated }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? 'REORDER_FAILED');
+      setOrderDraft(null);
+      router.refresh();
+    } catch (e: any) {
+      setReorderError(e?.message ?? 'REORDER_FAILED');
+    } finally {
+      setReorderBusy(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -31,13 +90,43 @@ export function CategoryManager({ initial }: { initial: FlatCategory[] }) {
             {list.length} تصنيف
           </p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="bg-primary text-primary-foreground rounded px-4 py-2 text-sm"
-        >
-          + تصنيف جديد
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {orderDraft ? (
+            <>
+              <button
+                onClick={saveOrder}
+                disabled={reorderBusy}
+                className="bg-primary text-primary-foreground rounded px-4 py-2 text-sm disabled:opacity-50"
+              >
+                {reorderBusy ? '...' : 'حفظ الترتيب'}
+              </button>
+              <button
+                onClick={() => { setOrderDraft(null); setReorderError(null); }}
+                disabled={reorderBusy}
+                className="border rounded px-4 py-2 text-sm"
+              >
+                إلغاء
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => { setOrderDraft([...initial]); setReorderError(null); }}
+              className="border rounded px-4 py-2 text-sm"
+            >
+              ترتيب جماعي
+            </button>
+          )}
+          <button
+            onClick={() => setShowCreate(true)}
+            disabled={Boolean(orderDraft)}
+            className="bg-primary text-primary-foreground rounded px-4 py-2 text-sm disabled:opacity-50"
+          >
+            + تصنيف جديد
+          </button>
+        </div>
       </div>
+
+      {reorderError && <p className="text-sm text-red-600">{reorderError}</p>}
 
       <div className="border rounded overflow-hidden">
         <table className="w-full text-sm">
@@ -76,22 +165,52 @@ export function CategoryManager({ initial }: { initial: FlatCategory[] }) {
                     {c.is_active ? 'مفعّل' : 'معطّل'}
                   </span>
                 </td>
-                <td className="p-3 text-xs text-muted-foreground">{c.sort_order}</td>
+                <td className="p-3 text-xs text-muted-foreground">
+                  {orderDraft ? siblingPosition(list, c).index + 1 : c.sort_order}
+                </td>
                 <td className="p-3">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setEditing(c)}
-                      className="text-primary text-xs"
-                    >
-                      تعديل
-                    </button>
-                    <button
-                      onClick={() => setDeleting(c)}
-                      className="text-red-600 text-xs"
-                    >
-                      حذف
-                    </button>
-                  </div>
+                  {orderDraft ? (
+                    <div className="flex gap-2">
+                      {(() => {
+                        const sibling = siblingPosition(list, c);
+                        return (
+                          <>
+                            <button
+                              onClick={() => moveWithinSiblings(c.id, -1)}
+                              disabled={reorderBusy || sibling.index <= 0}
+                              aria-label={`نقل ${c.name} إلى أعلى`}
+                              className="border rounded px-2 py-1 text-xs disabled:opacity-30"
+                            >
+                              ↑
+                            </button>
+                            <button
+                              onClick={() => moveWithinSiblings(c.id, 1)}
+                              disabled={reorderBusy || sibling.index === sibling.count - 1}
+                              aria-label={`نقل ${c.name} إلى أسفل`}
+                              className="border rounded px-2 py-1 text-xs disabled:opacity-30"
+                            >
+                              ↓
+                            </button>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setEditing(c)}
+                        className="text-primary text-xs"
+                      >
+                        تعديل
+                      </button>
+                      <button
+                        onClick={() => setDeleting(c)}
+                        className="text-red-600 text-xs"
+                      >
+                        حذف
+                      </button>
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}
@@ -128,6 +247,11 @@ export function CategoryManager({ initial }: { initial: FlatCategory[] }) {
       )}
     </div>
   );
+}
+
+function siblingPosition(all: FlatCategory[], category: FlatCategory): { index: number; count: number } {
+  const ids = all.filter(c => c.parent_id === category.parent_id).map(c => c.id);
+  return { index: ids.indexOf(category.id), count: ids.length };
 }
 
 function isDescendant(all: FlatCategory[], ancestorId: string, candidateId: string): boolean {

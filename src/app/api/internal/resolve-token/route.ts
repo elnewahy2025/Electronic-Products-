@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { verifyDownloadToken } from '@/lib/crypto/download-token';
+import { hashDownloadToken, verifyDownloadToken } from '@/lib/crypto/download-token';
 import { resolveDriveUrl } from '@/lib/server/services/drive-service';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { constantTimeEqual } from '@/lib/crypto/constant-time';
@@ -58,7 +58,33 @@ export async function POST(req: NextRequest) {
     targets = [payload.fid];
   }
 
-  // Resolve Drive URLs one by one (short-lived)
+  // Single-use ledger: verify the token was issued for this exact scope, then
+  // atomically claim it before minting any Drive URLs. Replay never reaches Drive.
+  const tokenHash = hashDownloadToken(parsed.data.token);
+  const { data: ledger } = await admin
+    .from('download_tokens')
+    .select('session_id, scope, file_version_id')
+    .eq('token_hash', tokenHash)
+    .maybeSingle();
+  if (
+    !ledger ||
+    ledger.session_id !== payload.sid ||
+    ledger.scope !== payload.typ ||
+    (payload.typ === 'single' && ledger.file_version_id !== payload.fid)
+  ) {
+    return NextResponse.json({ error: 'INVALID_TOKEN' }, { status: 401 });
+  }
+
+  const { error: claimError } = await admin.rpc('claim_download_token', {
+    p_token_hash: tokenHash,
+  });
+  if (claimError) {
+    const code = /already_used/.test(claimError.message) ? 'TOKEN_ALREADY_USED' : 'INVALID_TOKEN';
+    return NextResponse.json({ error: code }, { status: code === 'TOKEN_ALREADY_USED' ? 409 : 401 });
+  }
+
+  // Resolve Drive URLs one by one (short-lived). The bearer token is scoped to
+  // the seller account that owns each file and is never returned to the buyer.
   try {
     const resolved = await Promise.all(
       targets.map(async (fid) => {
@@ -69,12 +95,15 @@ export async function POST(req: NextRequest) {
           filename: r.filename,
           mime: r.mime,
           size_bytes: r.sizeBytes,
+          sha256: r.expectedSha256,
+          access_token: r.accessToken,
         };
       })
     );
 
     return NextResponse.json({
       type: payload.typ,
+      session_id: payload.sid,
       files: resolved,
     });
   } catch {

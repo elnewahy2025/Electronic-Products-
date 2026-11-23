@@ -1,5 +1,5 @@
 import 'server-only';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 export type DownloadTokenPayload = {
   sid: string;                 // session_id
@@ -49,8 +49,24 @@ export function verifyDownloadToken(token: string): DownloadTokenPayload | null 
     return null;
   }
 
-  if (payload.exp < Math.floor(Date.now() / 1000)) return null;
+  if (!payload || typeof payload !== 'object') return null;
+  if (typeof payload.exp !== 'number' || payload.exp < Math.floor(Date.now() / 1000)) return null;
+  if (typeof payload.n !== 'string' || payload.n.length < 8) return null;
+  if (!isUuid(payload.sid)) return null;
+  if (payload.typ !== 'single' && payload.typ !== 'zip') return null;
+  if (payload.typ === 'single' && !payload.fid) return null;
+  if (payload.fid !== undefined && !isUuid(payload.fid)) return null;
   return payload;
+}
+
+/** Stable hash used by the single-use download_tokens ledger. */
+export function hashDownloadToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+function isUuid(value: unknown): value is string {
+  return typeof value === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 function cryptoRandomString(len: number): string {

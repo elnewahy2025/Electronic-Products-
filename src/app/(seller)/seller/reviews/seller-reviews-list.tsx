@@ -51,8 +51,9 @@ function ReviewCard({ review, onChanged }: { review: Review; onChanged: () => vo
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteReason, setDeleteReason] = useState('');
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [requestReason, setRequestReason] = useState('');
+  const [requestSent, setRequestSent] = useState(false);
 
   async function saveReply() {
     if (!replyText.trim()) return;
@@ -91,23 +92,25 @@ function ReviewCard({ review, onChanged }: { review: Review; onChanged: () => vo
     onChanged();
   }
 
-  async function deleteReview() {
+  async function requestDeleteReview() {
     setBusy(true); setError(null);
-    const res = await fetch(`/api/reviews/${review.id}`, {
-      method: 'DELETE',
+    const res = await fetch('/api/support/tickets', {
+      method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ reason: deleteReason }),
+      body: JSON.stringify({
+        review_id: review.id,
+        subject: `طلب حذف تقييم: ${review.product_title}`,
+        message: `أطلب مراجعة حذف التقييم رقم ${review.id} على منتج «${review.product_title}». السبب: ${requestReason.trim()}`,
+      }),
     });
     const json = await res.json();
     setBusy(false);
     if (!res.ok) {
-      const map: Record<string, string> = {
-        REASON_REQUIRED: 'السبب مطلوب (3 أحرف على الأقل).',
-        FORBIDDEN: 'لا تملك صلاحية حذف هذا التقييم.',
-      };
-      return setError(map[json.error] ?? json.error ?? 'خطأ');
+      return setError(json.error ?? 'تعذّر إرسال الطلب.');
     }
-    setDeleteOpen(false);
+    setRequestOpen(false);
+    setRequestReason('');
+    setRequestSent(true);
     onChanged();
   }
 
@@ -199,13 +202,18 @@ function ReviewCard({ review, onChanged }: { review: Review; onChanged: () => vo
               </button>
             </>
           )}
-          {!deleteOpen && (
+          {!requestOpen && !requestSent && (
             <button
-              onClick={() => setDeleteOpen(true)}
-              className="text-sm text-red-600 hover:underline mr-auto"
+              onClick={() => setRequestOpen(true)}
+              className="text-sm text-primary hover:underline mr-auto"
             >
-              حذف التقييم
+              طلب حذف التقييم
             </button>
+          )}
+          {requestSent && (
+            <span role="status" className="mr-auto text-xs text-emerald-700 dark:text-emerald-300">
+              أُرسل الطلب إلى الإدارة.
+            </span>
           )}
         </div>
       )}
@@ -245,30 +253,33 @@ function ReviewCard({ review, onChanged }: { review: Review; onChanged: () => vo
         </div>
       )}
 
-      {deleteOpen && (
-        <div className="space-y-2 pt-2 border-t bg-red-50/30 rounded p-3">
-          <p className="text-sm font-medium text-red-900">
-            حذف هذا التقييم؟ لن يمكن التراجع.
+      {requestOpen && (
+        <div className="space-y-2 pt-2 border-t rounded bg-muted/50 p-3">
+          <p className="text-sm font-medium">
+            طلب مراجعة حذف التقييم
+          </p>
+          <p className="text-xs text-muted-foreground">
+            سيفتح الطلب تذكرة دعم للإدارة. لا يتم الحذف إلا إذا لم يكن هناك تعويض أو استثناء أو تذكرة مفتوحة للمشتري على هذا المنتج أو الطلب.
           </p>
           <input
-            value={deleteReason}
-            onChange={e => setDeleteReason(e.target.value)}
-            placeholder="السبب (إلزامي، 3 أحرف على الأقل)"
+            value={requestReason}
+            onChange={e => setRequestReason(e.target.value)}
+            placeholder="سبب طلب الحذف (إلزامي، 3 أحرف على الأقل)"
             className="w-full border rounded p-2 text-sm"
             minLength={3}
           />
           <div className="flex gap-2">
             <button
-              onClick={deleteReview}
-              disabled={busy || deleteReason.trim().length < 3}
-              className="bg-red-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50"
+              onClick={requestDeleteReview}
+              disabled={busy || requestReason.trim().length < 3}
+              className="bg-primary text-primary-foreground rounded px-4 py-2 text-sm disabled:opacity-50"
             >
-              {busy ? '...' : 'تأكيد الحذف'}
+              {busy ? '...' : 'إرسال الطلب'}
             </button>
             <button
               onClick={() => {
-                setDeleteOpen(false);
-                setDeleteReason('');
+                setRequestOpen(false);
+                setRequestReason('');
                 setError(null);
               }}
               className="border rounded px-4 py-2 text-sm"

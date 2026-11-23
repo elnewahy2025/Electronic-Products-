@@ -147,29 +147,72 @@ export async function getUploadStatus(params: {
   bytesReceived: number;
   driveFileId?: string;
   totalBytes: number;
+  status: string;
+  expiresAt: string | null;
+  uploadUrl?: string;
+  fileId?: string;
+  fileVersionId?: string;
+  originalName?: string;
+  mime?: string;
 }> {
   const admin = createAdminClient();
 
   const { data: session } = await admin
     .from('upload_sessions')
-    .select('id, seller_id, provider_upload_url, status, total_bytes')
+    .select(`
+      id, seller_id, provider_upload_url, status, total_bytes,
+      expires_at, file_id, original_name, mime
+    `)
     .eq('id', params.sessionId)
     .single();
 
   if (!session || session.seller_id !== params.sellerId) throw new Error('NOT_FOUND');
-  if (!session.provider_upload_url) {
-    if (session.status === 'completed') {
-      return { done: true, bytesReceived: Number(session.total_bytes ?? 0), totalBytes: Number(session.total_bytes ?? 0) };
+  if (session.status === 'aborted' || session.status === 'expired') {
+    throw new Error('UPLOAD_SESSION_EXPIRED');
+  }
+  if (
+    session.expires_at &&
+    session.status !== 'completed' &&
+    new Date(session.expires_at).getTime() < Date.now()
+  ) {
+    throw new Error('UPLOAD_SESSION_EXPIRED');
+  }
+
+  const base = {
+    status: session.status,
+    expiresAt: session.expires_at ?? null,
+    originalName: session.original_name ?? undefined,
+    mime: session.mime ?? undefined,
+    totalBytes: Number(session.total_bytes ?? 0),
+  };
+
+  if (session.status === 'completed' || !session.provider_upload_url) {
+    if (session.status === 'completed' && session.file_id) {
+      const { data: fv } = await admin
+        .from('file_versions')
+        .select('id')
+        .eq('file_id', session.file_id)
+        .order('version_number', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return {
+        ...base,
+        done: true,
+        bytesReceived: base.totalBytes,
+        fileId: session.file_id,
+        fileVersionId: fv?.id,
+      };
     }
     throw new Error('UPLOAD_URL_MISSING');
   }
 
   const status = await checkResumableUploadStatus(session.provider_upload_url);
   return {
+    ...base,
     done: status.done,
     bytesReceived: status.bytesReceived,
     driveFileId: status.driveFileId,
-    totalBytes: Number(session.total_bytes ?? 0),
+    uploadUrl: session.provider_upload_url,
   };
 }
 

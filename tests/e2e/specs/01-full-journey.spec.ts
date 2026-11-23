@@ -4,7 +4,7 @@ import {
   cleanupTestData, adminDb,
 } from '../helpers/db';
 import { authenticateContext, getCookieHeader } from '../helpers/auth';
-import { apiRequest } from '../helpers/api';
+import { apiRequest, completeDownloadAsWorker } from '../helpers/api';
 
 test.describe('Full journey: publish → request → code → redeem → download', () => {
   test.afterAll(async () => {
@@ -119,8 +119,22 @@ test.describe('Full journey: publish → request → code → redeem → downloa
     const downloadToken = downloadUrl.searchParams.get('token')!;
     expect(downloadToken).toBeTruthy();
 
-    // Simulate download service completion
-    const completeRes = await apiRequest(
+    // Drive the same internal completion contract the first-party worker uses.
+    // Byte counts and checksums must match the seeded file metadata exactly.
+    const completeRes = await completeDownloadAsWorker(
+      sessionId,
+      downloadToken,
+      product.fileVersionIds.map(fid => ({
+        file_version_id: fid,
+        bytes_sent: 100_000,
+        checksum: '0'.repeat(64),
+      }))
+    );
+    expect(completeRes.status).toBe(200);
+    expect(completeRes.json.sessionCompleted).toBe(true);
+
+    // The same worker receipt cannot close a second delivery.
+    const replay = await apiRequest(
       'POST',
       `/api/download/${sessionId}/complete`,
       {
@@ -128,12 +142,14 @@ test.describe('Full journey: publish → request → code → redeem → downloa
         files: product.fileVersionIds.map(fid => ({
           file_version_id: fid,
           bytes_sent: 100_000,
+          checksum: '0'.repeat(64),
         })),
       },
-      buyerCookies
+      undefined,
+      { 'x-internal-secret': process.env.DOWNLOAD_SERVICE_TOKEN! }
     );
-    expect(completeRes.status).toBe(200);
-    expect(completeRes.json.sessionCompleted).toBe(true);
+    expect(replay.status).toBe(409);
+    expect(replay.json.error).toBe('TOKEN_ALREADY_USED');
 
     // Reload page — session should be completed
     await page.reload();

@@ -1,0 +1,9 @@
+# Copy to .dev.vars for `npx wrangler dev`. These are placeholders only.
+# DOWNLOAD_SERVICE_TOKEN must be byte-for-byte identical to the Next.js app's
+# DOWNLOAD_SERVICE_TOKEN (the worker verifies HMAC signatures with it and also
+# uses it as the x-internal-secret when calling the app).
+DOWNLOAD_SERVICE_TOKEN=replace_with_the_shared_download_service_token
+
+# Origin of the Next.js app (no trailing path). The worker appends
+# /api/internal/resolve-token and /api/download/{session_id}/complete.
+APP_INTERNAL_URL=http://localhost:3010

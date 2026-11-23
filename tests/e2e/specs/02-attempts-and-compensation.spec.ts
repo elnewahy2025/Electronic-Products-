@@ -5,7 +5,7 @@ import {
   cleanupTestData, adminDb, randomCode,
 } from '../helpers/db';
 import { getCookieHeader } from '../helpers/auth';
-import { apiRequest } from '../helpers/api';
+import { apiRequest, claimDownloadToken, completeDownloadAsWorker } from '../helpers/api';
 
 test.describe('Attempts, single-file delivery, and compensation', () => {
   test.afterAll(async () => {
@@ -67,11 +67,12 @@ test.describe('Attempts, single-file delivery, and compensation', () => {
 
       const token = new URL(init.json.url).searchParams.get('token')!;
 
-      // Complete
-      const complete = await apiRequest('POST', `/api/download/${sessionId}/complete`, {
-        token,
-        files: [{ file_version_id: product.fileVersionIds[0], bytes_sent: 1000 }],
-      }, buyerCookies);
+      // Complete through the internal worker contract with verified byte counts.
+      const complete = await completeDownloadAsWorker(sessionId, token, [{
+        file_version_id: product.fileVersionIds[0],
+        bytes_sent: 100_000,
+        checksum: '0'.repeat(64),
+      }]);
 
       // First attempt marks the session completed (single file = only file)
       if (attempt === 1) {
@@ -175,5 +176,69 @@ test.describe('Attempts, single-file delivery, and compensation', () => {
       granted_attempts: 5,
     }, adminCookies);
     expect(badException.status).toBe(403);
+  });
+
+  test('internal completion rejects worker byte-count mismatches', async () => {
+    const seller = await createSeller();
+    const category = await createCategory();
+    const product = await seedProductWithFiles({
+      sellerId: seller.sellerId,
+      categoryId: category.id,
+      title: 'Byte Verification Product',
+      price: 12,
+    });
+    const buyer = await createTestUser({
+      accountType: 'buyer',
+      email: `bytes-${Date.now()}@test.local`,
+    });
+    const buyerCookies = await getCookieHeader(buyer.email, buyer.password);
+
+    const { requestId } = await seedPurchaseRequest({
+      buyerId: buyer.id,
+      buyerEmail: buyer.email,
+      productId: product.id,
+      versionId: product.versionId,
+      price: 12,
+    });
+    const { codeId, plaintext } = await approveAndGetCode({
+      requestId,
+      buyerId: buyer.id,
+    });
+    await confirmCodeDelivery(codeId);
+
+    const redeem = await apiRequest('POST', '/api/redeem', { code: plaintext }, buyerCookies);
+    expect(redeem.status).toBe(200);
+    const sessionId = redeem.json.session_id as string;
+
+    const init = await apiRequest(
+      'POST',
+      `/api/download/${sessionId}/init`,
+      { type: 'single', file_version_id: product.fileVersionIds[0] },
+      buyerCookies
+    );
+    expect(init.status).toBe(200);
+    const token = new URL(init.json.url).searchParams.get('token')!;
+    expect(token).toBeTruthy();
+    await claimDownloadToken(token);
+
+    const badReceipt = await apiRequest(
+      'POST',
+      `/api/download/${sessionId}/complete`,
+      {
+        token,
+        files: [{
+          file_version_id: product.fileVersionIds[0],
+          bytes_sent: 99_999,
+          checksum: '0'.repeat(64),
+        }],
+      },
+      undefined,
+      { 'x-internal-secret': process.env.DOWNLOAD_SERVICE_TOKEN! }
+    );
+    expect(badReceipt.status).toBe(400);
+    expect(badReceipt.json.error).toBe('BYTE_COUNT_MISMATCH');
+
+    const stats = await apiRequest('GET', `/api/download/${sessionId}`, undefined, buyerCookies);
+    expect(stats.json.attempts.used).toBe(0);
   });
 });

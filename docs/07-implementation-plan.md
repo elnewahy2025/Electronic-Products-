@@ -1,6 +1,6 @@
 # Updated Phased Implementation Plan and Completion Status
 
-This plan documents the fifteen approved phases (0–14) for building the Digital Products Marketplace Platform, linking each phase to what has actually been implemented in the repository (database migrations up to `032`, server services, user interfaces, and end-to-end tests), in addition to the remaining operational items before actual launch and the roadmap for additional enhancements.
+This plan documents the fifteen approved phases (0–14) for building the Digital Products Marketplace Platform, linking each phase to what has actually been implemented in the repository (database migrations up to `055`, the Cloudflare download Worker under `workers/download`, server services, user interfaces, and end-to-end tests), in addition to the remaining operational items before actual launch and the roadmap for additional enhancements. Implementation in the repository does **not** mean external deployment or vendor configuration is complete; those items are tracked in section 3.
 
 ---
 
@@ -20,7 +20,7 @@ This plan documents the fifteen approved phases (0–14) for building the Digita
 | **9** | Download sessions + ZIP + individual files + atomic attempt counter | 3 attempts immune to concurrency bypass (`FOR UPDATE`) + `ExpiredPartial` partial session support | Completed (`006_downloads_and_compensation.sql`, `017_download_flow.sql`, `src/lib/server/services/download-service.ts`) |
 | **10** | Compensation (cap of 3 per product code `code_id`) + exception requests | Compensation session for remaining files only + exception requests decided exclusively by `Super Admin` | Completed (`006_downloads_and_compensation.sql`, `017_download_flow.sql`, `src/app/(admin)/admin/compensations/*`, `exceptions/*`) |
 | **11** | Finance: currencies + purchase-time exchange rates + commissions + wallets & payouts | Exchange rate lock at purchase time + seller wallets + minimum payout threshold (`100 USD`) | Completed (`007_finance.sql`, `018_finance_helpers.sql`, `src/lib/server/services/finance-service.ts`) |
-| **12** | Reviews, content reports, notifications, admin dashboard, and seller reviews | One review per product enforced by `UNIQUE(product_id, buyer_id)` + seller reply & stats + deletion with mandatory reason + instant notifications | Completed (`008`, `019`, `025`, `026`, `028_seller_reviews.sql`, `/seller/reviews`) |
+| **12** | Reviews, content reports, notifications, admin dashboard, and seller reviews | One review per product enforced by `UNIQUE(product_id, buyer_id)` + seller reply & stats + instant notifications. Seller replies but **cannot delete reviews**; deletion is requested via a structured support ticket and executed only by Admin/Staff with `review.delete` from the admin ticket detail page (`review.deleted_from_ticket`). | Completed (`008`, `019`, `025`, `026`, `028_seller_reviews.sql`, `053_review_privacy_hardening.sql`, `054_review_delete_ticket_guard.sql`, `/seller/reviews`, `/admin/support/[id]`) |
 | **13** | Separate settings tables (11 tables) + backups + `Append-Only` audit log | Immutable audit log protected against updates or deletion + settings, staff, and permissions management | Completed (`009_settings_tables.sql`, `010_audit_and_backups.sql`, `020_settings_and_staff_helpers.sql`) |
 | **14** | Comprehensive security review + RPC and RLS hardening + Playwright E2E tests | Closure of RPC, RLS, and field-tampering vulnerabilities + 4 comprehensive E2E test suites | Completed (`027_security_hardening.sql`, `tests/e2e/specs/01..04`, `docs/security-review.md`) |
 
@@ -28,7 +28,7 @@ This plan documents the fifteen approved phases (0–14) for building the Digita
 
 ## 2. Actual Repository Implementation Map (Migrations & Modules)
 
-### 2.1 Database Migrations (`supabase/migrations/001..032`)
+### 2.1 Database Migrations (`supabase/migrations/001..055`)
 - **`001_extensions_and_helpers.sql`**: Extensions (`pgcrypto`, `citext`), types (`ENUMs`), and `updated_at` helper functions.
 - **`002_identity_and_roles.sql`**: Tables `profiles`, `seller_profiles`, `seller_applications`, `seller_agreements`, `seller_drive_accounts`, `roles`, `permissions`, `role_permissions`, `store_members`, `member_permissions`.
 - **`003_security_helper_functions.sql`**: Security check helper functions (`SECURITY DEFINER`) used inside `RLS` policies.
@@ -64,36 +64,92 @@ This plan documents the fifteen approved phases (0–14) for building the Digita
 - **`033_commission_snapshot_and_wallet.sql`**: Snapshotting the commission rate at sale time on `order_items` (`commission_rate_at_sale`, `commission_amount`, `net_seller_amount`), immediate atomic crediting into `seller_wallets.balance` and `financial_transactions` inside `approve_purchase_request` (protected by unique index `uq_fin_tx_order_item_type` against duplicates), and displaying financial transaction history in `/seller/wallet`.
 - **`034_product_images_storage.sql`**: Creating the `product-images` bucket in Supabase Storage with `RLS` policies, server-side image processing via `sharp` (WebP conversion + EXIF stripping + resizing), real deletion from Storage on removal, and tightening `img-src` in `middleware.ts` by removing the open `https:` wildcard.
 - **`035_email_notifications.sql`**: `email_outbox` table (Transactional Outbox pattern) with 4 automatic triggers for critical events (order approval/rejection, code delivery confirmation, payout decision, and seller status), real delivery via `nodemailer` (SMTP) or Resend API, and daily admin digest (`/api/internal/worker/admin-digest`).
+- **`036_seller_order_detail.sql`**: Single-sale detail RPC for sellers with masked buyer identity.
+- **`037_backup_automation.sql`**: Private `database-backups` Supabase Storage bucket, backup job/archive lifecycle, due checks, isolated restore verification records, and Super Admin backup settings RPC.
+- **`038_auth_user_profile_trigger.sql`**: Automatic creation of `profiles` (and pending `seller_profiles`) on new auth user signup.
+- **`039_fix_search_storefront_return_type.sql`**: Cast `rating_count` to `bigint` so `search_storefront()` matches its declared return type.
+- **`040_drive_store_folder.sql`**: Dedicated Google Drive "Store" folder id per linked seller Drive account; Picker imports stay inside that folder.
+- **`041_fix_view_row_scoping.sql`**: Explicit ownership predicates inside SECURITY DEFINER views (preserving guest-order email fallback).
+- **`042_protect_profile_fields.sql`**: Before-update trigger denying changes to privileged profile fields (status, MFA fields, account type, email verification).
+- **`043_mfa_hardening.sql`**: Real TOTP enrollment (`mfa_enrollments`) and failed-attempt/lockout tracking (`mfa_attempts`), service-role-only access.
+- **`044_revoke_pick_drive_account.sql`**: Removes residual `PUBLIC EXECUTE` from server-only `pick_drive_account`.
+- **`045_fix_pgcrypto_search_path.sql`**: Corrects `hmac()` lookup for code-hash functions under Supabase's `extensions` schema.
+- **`046_block_compensation_after_completion.sql`**: Blocks opening compensation for a fully delivered order.
+- **`047_code_pepper_from_caller.sql`**: Code hash functions take `CODE_HASH_PEPPER` from the trusted caller instead of a fallback pepper.
+- **`048_protect_product_rating_stats.sql`**: RLS and write revocation on `product_rating_stats`; public EXECUTE retained only for the trigger-called refresh function.
+- **`049_compensation_four_eyes.sql`**: Separate `request.reject` permission, `FOR UPDATE` lock on pending compensation approvals, approve-only permission check, single pending request and 3-session cap.
+- **`050_delivery_result_skipped.sql`**: Honest `skipped` delivery result; resend returns `501 RESEND_NOT_IMPLEMENTED` instead of claiming success.
+- **`051_download_ownership_rpc.sql`**: Enforces buyer ownership (including guest email matching) before download completion and file-set validation.
+- **`052_guest_review_eligibility.sql`**: Guest-aware `can_current_user_review` so email-matched guest purchases can be reviewed.
+- **`053_review_privacy_hardening.sql`**: Scopes seller review stats, restricts soft-delete to admin/staff with `review.delete`, and masks buyer identity.
+- **`054_review_delete_ticket_guard.sql`**: Structured seller support ticket (`product_id`, `order_item_id`, `review_id`); admin/staff-only `delete_review_from_ticket` with buyer-case guards; legacy `delete_review` becomes service-role-only; trigger defence in depth; `review.deleted_from_ticket` audit event.
+- **`055_download_token_ledger.sql`**: Enforced single-use download token ledger (`register_download_token`, `claim_download_token`, `mark_download_token_completed`, service-role-only) with token hash registration, atomic claim before Drive resolution, byte/checksum verification against `file_versions`, and an atomic completion step that rejects replayed callbacks.
+- **Download Worker (`workers/download`)**: Cloudflare Worker implementing `docs/download-service-contract.md` (HMAC token verification, short-lived Drive URL resolution, streaming or store-only ZIP, measured bytes/checksum completion callbacks, retry only on transport errors). Source and tests are in the repo; deployment and secret configuration remain operational tasks.
 
 ---
 
 ## 3. Remaining Operational Items Before Actual Launch (Operational & Legal Decisions)
 
-1. **Final Legal Review** of the seller agreement text, privacy policy, and terms of use, including the explicit statement: *"Payment takes place outside the platform, the platform does not provide financial refunds, and its role is strictly limited to issuing download codes."*
-2. **Actual Plan Limits Document**: Locking production plan quotas and limits for Vercel, Google Drive API, Supabase, the download streaming service, and administrative cloud backup storage.
-3. **Connecting the Independent Download Streaming Service (`DOWNLOAD_SERVICE_URL`)**: Deploying the external streaming Worker (e.g., Cloudflare Worker per `docs/download-service-contract.md`) to stream Drive files and large ZIP archives outside Vercel.
-4. **Setting Up Administrative Cloud Storage for Backups** (Cloudflare R2 or AWS S3 independent of sellers' Drive accounts) and configuring separate encryption keys.
-5. **Setting Production Default Values from the `Super Admin` Panel**: Minimum product price (`min_product_price`), initial exchange rates (`EGP, KWD, SAR, USD`), and minimum payout threshold (`100 USD`).
-6. **Defining the Soft Launch Plan**: Initial number of sellers, product volume, and monitoring performance and audit logs.
+These items are no longer "entirely undone": drafting, code and runbooks are prepared in
+the repository. What remains is external review, vendor configuration, deployment and
+sign-off. Do not treat a prepared document as evidence that the external task is finished.
+
+| # | Item | Prepared in repo | Remaining work / status |
+|---|---|---|---|
+| 1 | **Legal review of Seller Agreement, Privacy Policy and Terms of Use** | [`docs/legal-review-drafts.md`](legal-review-drafts.md) contains DRAFT clauses with the mandatory statement: *"Payment takes place outside the platform; the platform does not provide financial refunds; its role is strictly limited to issuing download codes and protected delivery sessions."* | **Prepared, NOT approved.** Requires qualified external counsel, Arabic translation approval, jurisdiction choices and launch sign-off. Not legal advice. |
+| 2 | **Production plan quotas and limits** | [`docs/plan-limits.md`](plan-limits.md) proposes launch defaults for Vercel, Google Drive API, Supabase, the Worker, R2/S3 backups, email outbox and alerts. | **Prepared.** Confirm every number against live vendor dashboards and record the approved values in the launch log. |
+| 3 | **Independent download streaming service (`DOWNLOAD_SERVICE_URL`)** | **Implementation is in the repo**: Cloudflare Worker under `workers/download` (`src/index.ts`, `token.ts`, `resolve.ts`, `drive.ts`, `zip.ts`, `complete.ts`, tests) implements `docs/download-service-contract.md`. Migration `055_download_token_ledger.sql` enforces single-use tokens. | **Deploy still operational.** Run Worker tests/typecheck, set `DOWNLOAD_SERVICE_TOKEN` and `APP_INTERNAL_URL` as Worker secrets, `wrangler deploy`, then set `DOWNLOAD_SERVICE_URL` on the app and run an end-to-end stream/completion smoke test. Not deployed by this plan. |
+| 4 | **Administrative cloud storage for backups** | [`docs/backup-storage-config.md`](backup-storage-config.md) documents independent R2/S3 setup, separate keys, least-privilege IAM, versioning/object lock, lifecycle, watchdog and restore drills. Env var names already exist in `.env.example`. | **Doc prepared; bucket provisioning is external.** Create and secure the bucket/KMS identity, populate secrets, verify one upload and one isolated restore. Existing runner stores to private Supabase Storage `database-backups` per `docs/backups.md`; do not assume R2/S3 writes are live. |
+| 5 | **Production default values from the Super Admin panel** | [`docs/production-defaults.md`](production-defaults.md) lists `min_product_price`, EGP/KWD/SAR/USD rates, `100 USD` payout threshold, 4 h / 3 attempts / 72 h download settings, MFA-enforced roles, and verification SQL. | **Doc prepared; values not set in production.** Super Admin must apply and verify them after the final migration run; confirm proposed rates and minimum price with the business owner. |
+| 6 | **Soft launch plan** | [`docs/soft-launch-plan.md`](soft-launch-plan.md) defines proposed phases (e.g. 10 sellers / 100 products in the closed pilot), monitoring windows, success criteria, rollback/stop criteria and support staffing. | **Plan prepared.** Requires business/security sign-off and evidence from each phase gate before expanding. |
+
+Related cross-cutting controls already documented: append-only audit events
+([`docs/05-audit-events.md`](05-audit-events.md)), MFA/RBAC
+([`docs/04-permissions-matrix.md`](04-permissions-matrix.md)), RLS
+([`docs/08-rls-matrix.md`](08-rls-matrix.md)), and the ticket-based review moderation path
+([`docs/seller-reviews.md`](seller-reviews.md)).
 
 ---
 
 ## 4. Pre-Deployment Checklist
 
-1. Apply all migrations up to `032` in order on staging and then production databases (`pnpm db:push`).
-2. Create the public previews storage bucket `previews` in Supabase Storage according to `docs/scan-preview-flow.md`.
-3. Verify all environment variables are configured in `.env.local` / Vercel (`ENCRYPTION_KEY`, `CODE_HASH_PEPPER`, `DOWNLOAD_SERVICE_TOKEN`, `WORKER_SECRET`, `GOOGLE_DRIVE_*`).
-4. Verify typechecking passes (`pnpm typecheck`) and all four Playwright test suites pass (`pnpm test:e2e`):
+1. Apply all migrations **up to `055`** in order on staging and then production
+   (`pnpm db:push` / reviewed migration workflow). Confirm the applied version by checking
+   `supabase_migrations.schema_migrations` (or the Supabase migration dashboard) rather than
+   assuming success.
+2. Create/verify the Supabase Storage buckets: `previews` per
+   `docs/scan-preview-flow.md`, `product-images` per migration
+   `034_product_images_storage.sql`, and the private `database-backups` bucket per
+   `docs/backups.md`.
+3. Verify environment variables in Vercel/secret stores: `ENCRYPTION_KEY`,
+   `CODE_HASH_PEPPER`, `DOWNLOAD_SERVICE_TOKEN`, `DOWNLOAD_SERVICE_URL`, `WORKER_SECRET`,
+   `GOOGLE_DRIVE_*`, SMTP/Resend settings, and the four `BACKUP_STORAGE_*` variables.
+4. Deploy the download Worker from `workers/download` (Cloudflare):
+   - run its typecheck and Node tests (`npm run typecheck`, `npm test`);
+   - set `DOWNLOAD_SERVICE_TOKEN` and `APP_INTERNAL_URL` as Worker secrets;
+   - run `npx wrangler deploy`, then point the app's `DOWNLOAD_SERVICE_URL` at the deployed
+     origin and smoke-test a single-file and a ZIP download including completion callback.
+   Deployment is an operational action; repository presence is not deployment.
+5. Provision and verify the independent backup bucket/KMS identity and run one backup plus
+   one isolated restore drill (`docs/backup-storage-config.md`, `docs/backups.md`).
+6. Apply and verify production defaults as Super Admin (`docs/production-defaults.md`),
+   including MFA roles and the mandatory no-refund checkout statement.
+7. Obtain external legal sign-off on the DRAFT texts in `docs/legal-review-drafts.md` before
+   public launch; confirm vendor limits in `docs/plan-limits.md`.
+8. Verify typechecking (`pnpm typecheck`) and all four Playwright suites (`pnpm test:e2e`):
    - `01-full-journey.spec.ts`
    - `02-attempts-and-compensation.spec.ts`
    - `03-security.spec.ts`
    - `04-security-hardening.spec.ts`
+   Also include the review-deletion ticket guards from `docs/06-testing-checklist.md` and the
+   Worker tests before opening the soft launch.
+9. Execute the gate in `docs/soft-launch-plan.md` for Phase 0 before inviting sellers.
 
 ---
 
 ## 5. Next Iteration Roadmap
 
-- [x] **Seller Reviews Page (`/seller/reviews`)**: Completed in migration `028_seller_reviews.sql` and `docs/seller-reviews.md`.
+- [x] **Seller Reviews Page (`/seller/reviews`)**: Completed in migration `028_seller_reviews.sql`; seller reply/stats remain, while review deletion is now admin/staff-only via a structured seller support ticket (`054_review_delete_ticket_guard.sql`). See `docs/seller-reviews.md`.
 - [x] **Storefront UX Enhancements (`Storefront UX`)**: Completed in migration `029_storefront_ux.sql` (`cover_image_url`, `product_gallery_images`, `Breadcrumbs`, `ProductGallery`, `SimilarProducts`, `loading.tsx`) and `docs/storefront-ux.md`.
 - [x] **Admin Notifications & Unified `/notifications` Route**: Completed in migration `030_admin_notifications.sql`, `src/app/notifications/*`, and `docs/admin-notifications.md`.
 - [x] **Security Headers (`CSP + Nonce + HSTS + Permissions-Policy`)**: Completed in `middleware.ts`, `src/app/layout.tsx`, `next.config.mjs`, `/api/csp-report`, and `docs/security-headers.md`.

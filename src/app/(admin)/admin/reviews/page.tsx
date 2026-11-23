@@ -1,5 +1,5 @@
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { ReviewActions } from './review-actions';
 
 export default async function ReviewsPage({ searchParams }: { searchParams: { status?: string } }) {
   const db = await createClient();
@@ -19,7 +19,14 @@ export default async function ReviewsPage({ searchParams }: { searchParams: { st
 
   return (
     <main className="p-6">
-      <h1 className="text-2xl font-bold mb-6">التقييمات</h1>
+      <div className="mb-6 space-y-1">
+        <h1 className="text-2xl font-bold">التقييمات</h1>
+        <p className="text-sm text-muted-foreground">
+          يتم حذف التقييم من{' '}
+          <Link href="/admin/support" className="text-primary hover:underline">تذاكر الدعم المرتبطة بطلبات البائعين</Link>
+          فقط، بعد التأكد من عدم وجود حالة مفتوحة للمشتري.
+        </p>
+      </div>
 
       <div className="border rounded overflow-hidden">
         <table className="w-full text-sm">
@@ -45,8 +52,8 @@ export default async function ReviewsPage({ searchParams }: { searchParams: { st
                     {row.status === 'published' ? 'منشور' : 'محذوف'}
                   </span>
                 </td>
-                <td className="p-3">
-                  {row.status === 'published' && <ReviewActions reviewId={row.id} />}
+                <td className="p-3 text-xs text-muted-foreground">
+                  {row.status === 'published' ? 'عبر تذكرة البائع' : '—'}
                 </td>
               </tr>
             ))}

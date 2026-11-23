@@ -1,0 +1,12 @@
+name = "electronic-products-download"
+main = "src/index.ts"
+compatibility_date = "2026-11-23"
+
+# Placeholder only. Set the real app origin via `wrangler secret put` for
+# deployed environments, or via .dev.vars for local development.
+[vars]
+APP_INTERNAL_URL = "https://app.example.invalid"
+
+[observability]
+enabled = true
+head_sampling_rate = 1

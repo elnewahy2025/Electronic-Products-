@@ -25,7 +25,10 @@ Two modes:
 Products in `deleted` status are ignored by the count.
 
 ### Reorder
-Bulk `POST /api/admin/categories/reorder` with `[{id, sort_order}, ...]`.
+- Admin UI: click **ترتيب جماعي**, then use ↑/↓ to move a category among its siblings and **حفظ الترتيب**.
+- The UI assigns sequential `sort_order` values per parent and sends only changed rows to
+  `POST /api/admin/categories/reorder` as `{ order: [{id, sort_order}, ...] }`.
+- The API/RPC remains available for integrations; all operations still require `category.manage`.
 
 ## Permissions
 All operations require `category.manage` (admin or staff with the permission).

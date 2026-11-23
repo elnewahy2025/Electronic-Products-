@@ -30,7 +30,89 @@ type InitResponse = {
   driveAccountId: string;
 };
 
-type Stage = 'idle' | 'initializing' | 'uploading' | 'finalizing' | 'done' | 'error';
+type Stage =
+  | 'idle'
+  | 'initializing'
+  | 'resuming'
+  | 'uploading'
+  | 'paused'
+  | 'finalizing'
+  | 'done'
+  | 'error';
+
+type PendingUpload = {
+  sessionId: string;
+  driveAccountId: string;
+  name: string;
+  size: number;
+  mime: string;
+  lastModified: number;
+};
+
+type UploadStatus = {
+  done: boolean;
+  bytesReceived: number;
+  totalBytes: number;
+  status: string;
+  expiresAt: string | null;
+  uploadUrl?: string;
+  driveFileId?: string;
+  fileId?: string;
+  fileVersionId?: string;
+  originalName?: string;
+  mime?: string;
+};
+
+const PENDING_UPLOAD_KEY = 'electronic-products:pending-upload';
+
+function savePendingUpload(value: PendingUpload) {
+  sessionStorage.setItem(PENDING_UPLOAD_KEY, JSON.stringify(value));
+}
+
+function readPendingUpload(): PendingUpload | null {
+  try {
+    const raw = sessionStorage.getItem(PENDING_UPLOAD_KEY);
+    if (!raw) return null;
+    const value = JSON.parse(raw) as PendingUpload;
+    if (
+      !value.sessionId ||
+      !value.driveAccountId ||
+      typeof value.name !== 'string' ||
+      typeof value.size !== 'number' ||
+      typeof value.mime !== 'string'
+    ) {
+      sessionStorage.removeItem(PENDING_UPLOAD_KEY);
+      return null;
+    }
+    return value;
+  } catch {
+    sessionStorage.removeItem(PENDING_UPLOAD_KEY);
+    return null;
+  }
+}
+
+function matchesPending(pending: PendingUpload, file: File): boolean {
+  return (
+    pending.name === file.name &&
+    pending.size === file.size &&
+    pending.mime === (file.type || 'application/octet-stream')
+  );
+}
+
+function friendlyUploadError(message: string): string {
+  const map: Record<string, string> = {
+    UPLOAD_SESSION_EXPIRED: 'انتهت صلاحية جلسة الرفع. اختر الملف من جديد.',
+    UPLOAD_URL_MISSING: 'تعذّر استئناف هذا الرفع. اختر الملف من جديد.',
+    NETWORK_ERROR: 'انقطع الاتصال. سيُستأنف الرفع تلقائياً عند عودة الاتصال.',
+    UPLOAD_TIMEOUT: 'انقطع الاتصال. سيُستأنف الرفع تلقائياً عند عودة الاتصال.',
+    UPLOAD_STALLED: 'توقّف الرفع دون تقدّم. أعد المحاولة.',
+    FILE_MISMATCH: 'الملف المختار لا يطابق جلسة الرفع المعلّقة.',
+    NOT_FOUND: 'جلسة الرفع غير موجودة. اختر الملف من جديد.',
+  };
+  if (map[message]) return map[message];
+  if (message.startsWith('DRIVE_UPLOAD_FAILED: 404')) return map.UPLOAD_SESSION_EXPIRED;
+  return message;
+}
 
 export default function UploadPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -44,9 +126,16 @@ export default function UploadPage() {
   const [importedResults, setImportedResults] = useState<DriveImportResultItem[] | null>(null);
   const [storeFolderNotice, setStoreFolderNotice] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [pending, setPending] = useState<PendingUpload | null>(null);
+  const [resumeNotice, setResumeNotice] = useState<string | null>(null);
+  const [online, setOnline] = useState(true);
   const toast = useToast();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
+  const pendingRef = useRef<PendingUpload | null>(null);
+  const finalizingRef = useRef<string | null>(null);
+  const actionRef = useRef(false);
 
   useEffect(() => {
     fetch('/api/seller/drive/accounts')
@@ -57,7 +146,10 @@ export default function UploadPage() {
         );
         setAccounts(active);
         if (active.length > 0) {
-          const def = active.find(a => a.is_default) ?? active[0];
+          const stored = readPendingUpload();
+          const def = active.find(a => a.id === stored?.driveAccountId)
+            ?? active.find(a => a.is_default)
+            ?? active[0];
           setSelectedAccountId(def.id);
         }
       })
@@ -67,15 +159,164 @@ export default function UploadPage() {
 
   const selectedAccount = accounts.find(a => a.id === selectedAccountId) ?? accounts[0] ?? null;
 
-  async function handleUpload() {
-    if (!file) return;
+  function setPendingSession(value: PendingUpload | null) {
+    pendingRef.current = value;
+    setPending(value);
+    if (value) savePendingUpload(value);
+    else sessionStorage.removeItem(PENDING_UPLOAD_KEY);
+  }
+
+  async function fetchUploadStatus(sessionId: string): Promise<UploadStatus> {
+    const res = await fetch(`/api/upload/${sessionId}/status`, { cache: 'no-store' });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const code = json.error ?? 'UPLOAD_STATUS_FAILED';
+      if (code === 'UPLOAD_SESSION_EXPIRED' || code === 'NOT_FOUND' || res.status === 404 || res.status === 410) {
+        setPendingSession(null);
+      }
+      throw new Error(code);
+    }
+    return json as UploadStatus;
+  }
+
+  async function finalizeSession(sessionId: string, driveFileId: string) {
+    if (finalizingRef.current === sessionId) return;
+    finalizingRef.current = sessionId;
+    setStage('finalizing');
+    try {
+      const res = await fetch('/api/upload/complete', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, drive_file_id: driveFileId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'COMPLETE_FAILED');
+      setResult(json);
+      setStage('done');
+      setProgress(100);
+      setFile(null);
+      setPendingSession(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      toast.success('تم رفع الملف إلى مجلد Store بنجاح وبدأ الفحص التلقائي.');
+    } finally {
+      finalizingRef.current = null;
+    }
+  }
+
+  async function applyStatus(status: UploadStatus, pendingValue: PendingUpload) {
+    if (status.status === 'completed' && status.fileId) {
+      setResult({
+        fileId: status.fileId,
+        fileVersionId: status.fileVersionId ?? '',
+      });
+      setStage('done');
+      setProgress(100);
+      setFile(null);
+      setPendingSession(null);
+      toast.success('اكتمل رفع هذا الملف سابقاً وبدأ الفحص التلقائي.');
+      return;
+    }
+    if (status.done && status.driveFileId) {
+      await finalizeSession(pendingValue.sessionId, status.driveFileId);
+      return;
+    }
+    if (status.originalName && status.originalName !== pendingValue.name) {
+      throw new Error('FILE_MISMATCH');
+    }
+    if (status.totalBytes && status.totalBytes !== pendingValue.size) {
+      throw new Error('FILE_MISMATCH');
+    }
+    const received = Math.min(status.bytesReceived, pendingValue.size);
+    setProgress(pendingValue.size > 0 ? Math.round((received / pendingValue.size) * 100) : 0);
+    setResumeNotice(
+      `تم العثور على رفع متوقف عند ${received.toLocaleString()} من ${pendingValue.size.toLocaleString()} بايت. اختر الملف نفسه للمتابعة.`,
+    );
+  }
+
+  async function runUpload(
+    sessionId: string,
+    uploadUrl: string,
+    selectedFile: File,
+    startByte: number,
+  ) {
+    let offset = startByte;
+    setStage('uploading');
+    while (true) {
+      const outcome = await uploadChunk(uploadUrl, selectedFile, offset, (loaded) => {
+        const sent = Math.min(offset + loaded, selectedFile.size);
+        setProgress(selectedFile.size > 0 ? Math.round((sent / selectedFile.size) * 100) : 0);
+      }, (xhr) => {
+        xhrRef.current = xhr;
+      });
+      if (outcome.nextByte !== undefined) {
+        offset = outcome.nextByte;
+        continue;
+      }
+      if (!outcome.driveFileId) throw new Error('NO_DRIVE_FILE_ID');
+      await finalizeSession(sessionId, outcome.driveFileId);
+      return;
+    }
+  }
+
+  async function resumeUploadInternal() {
+    const current = pendingRef.current;
+    if (!current || !file) return;
+    if (!matchesPending(current, file)) {
+      setError('الملف المختار لا يطابق جلسة الرفع المعلّقة.');
+      return;
+    }
+    if (!navigator.onLine) {
+      setStage('paused');
+      setError('لا يوجد اتصال بالإنترنت. سيُستأنف الرفع تلقائياً.');
+      return;
+    }
     setError(null);
     setResult(null);
-    setStage('initializing');
-    setProgress(0);
-
+    setStage('resuming');
     try {
-      // 1. Init
+      const status = await fetchUploadStatus(current.sessionId);
+      await applyStatus(status, current);
+      if (status.done) return;
+      if (!status.uploadUrl) throw new Error('UPLOAD_URL_MISSING');
+      const start = Math.min(status.bytesReceived, file.size);
+      setProgress(file.size > 0 ? Math.round((start / file.size) * 100) : 0);
+      await runUpload(current.sessionId, status.uploadUrl, file, start);
+    } catch (e: any) {
+      const message = friendlyUploadError(e?.message ?? 'RESUME_FAILED');
+      setError(message);
+      toast.error(message);
+      setStage(navigator.onLine ? 'error' : 'paused');
+    }
+  }
+
+  async function resumeUpload() {
+    if (actionRef.current) return;
+    actionRef.current = true;
+    try {
+      await resumeUploadInternal();
+    } finally {
+      actionRef.current = false;
+    }
+  }
+
+  async function handleUpload() {
+    if (!file || actionRef.current) return;
+    actionRef.current = true;
+    try {
+      setError(null);
+      setResult(null);
+
+      if (pendingRef.current) {
+        await resumeUploadInternal();
+        return;
+      }
+      if (!navigator.onLine) {
+        setError('لا يوجد اتصال بالإنترنت. انتظر حتى يعود الاتصال قبل بدء رفع جديد.');
+        return;
+      }
+
+      setStage('initializing');
+      setProgress(0);
       const initRes = await fetch('/api/upload/init', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -89,34 +330,96 @@ export default function UploadPage() {
       const initJson: InitResponse & { error?: string } = await initRes.json();
       if (!initRes.ok) throw new Error(initJson.error ?? 'INIT_FAILED');
 
-      setStage('uploading');
-
-      // 2. Upload directly to Google Drive (not through Vercel)
-      const driveFileId = await uploadToDrive(initJson.uploadUrl, file, (pct) => setProgress(pct));
-
-      setStage('finalizing');
-
-      // 3. Finalize on our side
-      const compRes = await fetch('/api/upload/complete', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          session_id: initJson.sessionId,
-          drive_file_id: driveFileId,
-        }),
+      setPendingSession({
+        sessionId: initJson.sessionId,
+        driveAccountId: initJson.driveAccountId,
+        name: file.name,
+        size: file.size,
+        mime: file.type || 'application/octet-stream',
+        lastModified: file.lastModified,
       });
-      const compJson = await compRes.json();
-      if (!compRes.ok) throw new Error(compJson.error ?? 'COMPLETE_FAILED');
-
-      setResult(compJson);
-      setStage('done');
-      toast.success('تم رفع الملف إلى مجلد Store بنجاح وبدأ الفحص التلقائي.');
-      setFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      await runUpload(initJson.sessionId, initJson.uploadUrl, file, 0);
     } catch (e: any) {
-      setError(e.message);
-      toast.error(e.message ?? 'فشل رفع الملف.');
-      setStage('error');
+      const message = friendlyUploadError(e?.message ?? 'UPLOAD_FAILED');
+      setError(message);
+      toast.error(message);
+      setStage(navigator.onLine ? 'error' : 'paused');
+    } finally {
+      actionRef.current = false;
+    }
+  }
+
+  // Restore a pending session on mount. The browser cannot restore the File
+  // object, so the seller must reselect the same file before resuming.
+  useEffect(() => {
+    const stored = readPendingUpload();
+    if (!stored) return;
+    pendingRef.current = stored;
+    setPending(stored);
+    setOnline(navigator.onLine);
+    setStage('resuming');
+    actionRef.current = true;
+    void (async () => {
+      try {
+        const status = await fetchUploadStatus(stored.sessionId);
+        await applyStatus(status, stored);
+        if (!status.done) setStage('paused');
+      } catch (e: any) {
+        setError(friendlyUploadError(e?.message ?? 'UPLOAD_STATUS_FAILED'));
+        setStage(navigator.onLine ? 'error' : 'paused');
+      } finally {
+        actionRef.current = false;
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!pending) return;
+    if (accounts.some(a => a.id === pending.driveAccountId)) {
+      setSelectedAccountId(pending.driveAccountId);
+    }
+  }, [accounts, pending]);
+
+  useEffect(() => {
+    function onOnline() {
+      setOnline(true);
+      const current = pendingRef.current;
+      if (current && file && matchesPending(current, file) && stage === 'paused') {
+        void resumeUpload();
+      }
+    }
+    function onOffline() {
+      setOnline(false);
+      xhrRef.current?.abort();
+      setStage(prev =>
+        prev === 'uploading' || prev === 'resuming' || prev === 'initializing' ? 'paused' : prev,
+      );
+    }
+    function onVisible() {
+      if (!document.hidden) onOnline();
+    }
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [file, stage]);
+
+  function chooseFile(next: File | null | undefined) {
+    if (!next) {
+      setFile(null);
+      return;
+    }
+    setFile(next);
+    if (pendingRef.current && !matchesPending(pendingRef.current, next)) {
+      setError('الملف المختار لا يطابق جلسة الرفع المعلّقة. اختر الملف الأصلي أو ألغِ الجلسة.');
+    } else {
+      setError(null);
     }
   }
 
@@ -162,12 +465,13 @@ export default function UploadPage() {
             <div className="space-y-2">
               <select
                 value={selectedAccountId}
+                disabled={Boolean(pending)}
                 onChange={(e) => {
                   setSelectedAccountId(e.target.value);
                   setStoreFolderNotice(null);
                   setImportedResults(null);
                 }}
-                className="w-full border border-border rounded-lg p-2.5 text-sm"
+                className="w-full border border-border rounded-lg p-2.5 text-sm disabled:opacity-60"
               >
                 {accounts.map(a => (
                   <option key={a.id} value={a.id}>
@@ -195,6 +499,42 @@ export default function UploadPage() {
               </div>
             )
           )}
+        </section>
+      )}
+
+      {!online && (
+        <div role="status" className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+          أنت غير متصل بالإنترنت. سيُستأنف الرفع تلقائياً عند عودة الاتصال.
+        </div>
+      )}
+
+      {pending && (
+        <section className="rounded-xl border border-primary/30 bg-primary/[0.04] p-4 space-y-2" aria-labelledby="resume-upload-heading">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="space-y-1">
+              <h2 id="resume-upload-heading" className="text-sm font-bold">لديك رفع متوقف</h2>
+              <p className="text-xs text-muted-foreground break-all">
+                {resumeNotice ?? `الملف: ${pending.name} — يجب اختيار الملف نفسه للمتابعة.`}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                xhrRef.current?.abort();
+                setPendingSession(null);
+                setResumeNotice(null);
+                setError(null);
+                setResult(null);
+                setFile(null);
+                setProgress(0);
+                setStage('idle');
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }}
+              className="text-xs text-destructive hover:underline"
+            >
+              إلغاء الجلسة المعلقة
+            </button>
+          </div>
         </section>
       )}
 
@@ -317,7 +657,7 @@ export default function UploadPage() {
                   e.preventDefault();
                   setDragging(false);
                   const dropped = e.dataTransfer.files?.[0];
-                  if (dropped) setFile(dropped);
+                  if (dropped) chooseFile(dropped);
                 }}
                 className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-5 text-center cursor-pointer transition ${
                   dragging
@@ -328,9 +668,9 @@ export default function UploadPage() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  onChange={(e) => chooseFile(e.target.files?.[0] ?? null)}
                   className="hidden"
-                  disabled={stage === 'uploading' || stage === 'initializing' || stage === 'finalizing'}
+                  disabled={stage === 'uploading' || stage === 'resuming' || stage === 'initializing' || stage === 'finalizing'}
                 />
                 {file ? (
                   <>
@@ -358,11 +698,20 @@ export default function UploadPage() {
           <div className="space-y-3 pt-2 border-t border-primary/15">
             <button
               onClick={handleUpload}
-              disabled={!file || !selectedAccount || stage === 'uploading' || stage === 'initializing' || stage === 'finalizing'}
+              disabled={
+                !file ||
+                !selectedAccount ||
+                stage === 'uploading' ||
+                stage === 'resuming' ||
+                stage === 'initializing' ||
+                stage === 'finalizing'
+              }
               className="w-full bg-primary text-primary-foreground rounded-xl p-2.5 text-sm font-semibold hover:opacity-95 transition disabled:opacity-50"
             >
               {stage === 'initializing' && 'جارٍ التجهيز...'}
+              {stage === 'resuming' && 'جارٍ استئناف الرفع...'}
               {stage === 'uploading' && `جارٍ الرفع... ${progress}%`}
+              {stage === 'paused' && 'استئناف الرفع'}
               {stage === 'finalizing' && 'جارٍ الإنهاء...'}
               {(stage === 'idle' || stage === 'done' || stage === 'error') &&
                 (selectedAccount
@@ -370,7 +719,7 @@ export default function UploadPage() {
                   : 'رفع إلى Drive')}
             </button>
 
-            {stage === 'uploading' && (
+            {(stage === 'uploading' || stage === 'resuming' || stage === 'paused') && (
               <div className="w-full bg-muted rounded h-2 overflow-hidden">
                 <div
                   className="bg-primary h-2 rounded transition-all"
@@ -408,42 +757,72 @@ export default function UploadPage() {
 }
 
 /**
- * Uploads directly to Google Drive using XHR (for progress events).
- * Bypasses our servers entirely — the browser talks to Google.
+ * Sends one resumable range directly to Google Drive using XHR (for progress
+ * events). A 308 tells us where to continue; 200/201 completes the object.
  */
-function uploadToDrive(
+function uploadChunk(
   uploadUrl: string,
   file: File,
-  onProgress: (pct: number) => void
-): Promise<string> {
+  startByte: number,
+  onProgress: (loadedBytes: number) => void,
+  onXhr: (xhr: XMLHttpRequest | null) => void,
+): Promise<{ driveFileId?: string; nextByte?: number }> {
   return new Promise((resolve, reject) => {
+    if (startByte >= file.size) {
+      reject(new Error('UPLOAD_STALLED'));
+      return;
+    }
+
     const xhr = new XMLHttpRequest();
+    onXhr(xhr);
     xhr.open('PUT', uploadUrl, true);
     xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+    xhr.setRequestHeader('Content-Range', `bytes ${startByte}-${file.size - 1}/${file.size}`);
 
     xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) {
-        onProgress(Math.round((e.loaded / e.total) * 100));
-      }
+      if (e.lengthComputable) onProgress(e.loaded);
     };
 
     xhr.onload = () => {
+      onXhr(null);
+      if (xhr.status === 308) {
+        const range = xhr.getResponseHeader('Range');
+        const nextByte = range ? parseInt(range.split('-')[1], 10) + 1 : NaN;
+        if (!Number.isFinite(nextByte) || nextByte <= startByte) {
+          reject(new Error('UPLOAD_STALLED'));
+          return;
+        }
+        resolve({ nextByte });
+        return;
+      }
       if (xhr.status === 200 || xhr.status === 201) {
         try {
           const data = JSON.parse(xhr.responseText);
-          if (!data.id) return reject(new Error('NO_DRIVE_FILE_ID'));
-          resolve(data.id);
+          if (!data.id) throw new Error('NO_DRIVE_FILE_ID');
+          resolve({ driveFileId: data.id });
         } catch {
           reject(new Error('INVALID_DRIVE_RESPONSE'));
         }
-      } else {
-        reject(new Error(`DRIVE_UPLOAD_FAILED: ${xhr.status}`));
+        return;
       }
+      if (xhr.status === 404) reject(new Error('UPLOAD_SESSION_EXPIRED'));
+      else reject(new Error(`DRIVE_UPLOAD_FAILED: ${xhr.status}`));
     };
 
-    xhr.onerror = () => reject(new Error('NETWORK_ERROR'));
-    xhr.ontimeout = () => reject(new Error('UPLOAD_TIMEOUT'));
+    xhr.onerror = () => {
+      onXhr(null);
+      reject(new Error('NETWORK_ERROR'));
+    };
+    xhr.ontimeout = () => {
+      onXhr(null);
+      reject(new Error('UPLOAD_TIMEOUT'));
+    };
+    xhr.onabort = () => {
+      onXhr(null);
+      reject(new Error('NETWORK_ERROR'));
+    };
 
-    xhr.send(file);
+    // slice() keeps memory bounded when resuming a large file.
+    xhr.send(file.slice(startByte));
   });
 }

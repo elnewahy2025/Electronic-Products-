@@ -87,5 +87,8 @@ export async function checkResumableUploadStatus(uploadUrl: string): Promise<{
     return { done: true, bytesReceived: Number(data.size ?? 0), driveFileId: data.id };
   }
 
-  throw new Error(`UPLOAD_STATUS_FAILED: ${res.status}`);
+  // Google returns 404 when a resumable session URI has expired. Use a stable
+  // token so publicError() can pass it through to the upload UI.
+  if (res.status === 404) throw new Error('UPLOAD_SESSION_EXPIRED');
+  throw new Error('UPLOAD_STATUS_FAILED');
 }

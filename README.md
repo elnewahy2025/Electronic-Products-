@@ -71,3 +71,12 @@ A high-security Arabic multi-vendor platform for selling and delivering digital 
    cp .env.test.example .env.test
    pnpm test:e2e
    ```
+
+## Download Streaming Worker
+
+The independent Cloudflare Worker lives in `workers/download`. For local dev, copy
+`workers/download/.dev.vars.example` to `.dev.vars` and run `npx wrangler dev` from
+that directory (it listens on `http://localhost:8787`); point `.env.local`'s
+`DOWNLOAD_SERVICE_URL` at that origin. Deploy with `npx wrangler deploy` after setting
+`DOWNLOAD_SERVICE_TOKEN` and `APP_INTERNAL_URL` as Worker secrets. See
+[`docs/download-service-contract.md`](docs/download-service-contract.md).

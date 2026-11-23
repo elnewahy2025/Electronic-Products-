@@ -5,7 +5,7 @@ import {
   cleanupTestData, adminDb, randomCode,
 } from '../helpers/db';
 import { getCookieHeader } from '../helpers/auth';
-import { apiRequest } from '../helpers/api';
+import { apiRequest, completeDownloadAsWorker } from '../helpers/api';
 
 test.describe('Security: ownership, rate limits, blocked operations', () => {
   test.afterAll(async () => {
@@ -140,10 +140,12 @@ test.describe('Security: ownership, rate limits, blocked operations', () => {
     // Start a delivery (creates a download_deliveries row)
     const init = await apiRequest('POST', `/api/download/${sessionId}/init`, { type: 'zip' }, buyerCookies);
     const token = new URL(init.json.url).searchParams.get('token');
-    await apiRequest('POST', `/api/download/${sessionId}/complete`, {
-      token,
-      files: [{ file_version_id: product.fileVersionIds[0], bytes_sent: 1000 }],
-    }, buyerCookies);
+    expect(token).toBeTruthy();
+    await completeDownloadAsWorker(sessionId, token!, [{
+      file_version_id: product.fileVersionIds[0],
+      bytes_sent: 100_000,
+      checksum: '0'.repeat(64),
+    }]);
 
     // Attempt to revoke
     const res = await apiRequest('POST', `/api/admin/downloads/${sessionId}/revoke`, {

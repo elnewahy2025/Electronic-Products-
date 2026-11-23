@@ -32,6 +32,11 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const subject = String(body?.subject ?? '').trim();
   const message = String(body?.message ?? '').trim();
+  const reviewId = body?.review_id ? String(body.review_id) : null;
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (reviewId && !isUuid.test(reviewId)) {
+    return NextResponse.json({ error: 'invalid_review_id' }, { status: 400 });
+  }
 
   if (subject.length < 4 || subject.length > 200) {
     return NextResponse.json({ error: 'عنوان التذكرة يجب أن يكون بين 4 و200 حرف.' }, { status: 400 });
@@ -40,9 +45,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'تفاصيل الرسالة يجب أن تكون بين 10 و5000 حرف.' }, { status: 400 });
   }
 
+  const adminDb = createAdminClient();
+  let linked: { product_id: string | null; order_item_id: string | null; review_id: string | null } = {
+    product_id: null,
+    order_item_id: null,
+    review_id: null,
+  };
+
+  if (reviewId) {
+    const { data: review } = await adminDb
+      .from('reviews')
+      .select('id, product_id, order_item_id, products!inner(seller_id)')
+      .eq('id', reviewId)
+      .maybeSingle();
+
+    if (!review || (review as any).products?.seller_id !== user.id) {
+      return NextResponse.json({ error: 'review_not_found' }, { status: 404 });
+    }
+
+    linked = {
+      review_id: review.id,
+      product_id: review.product_id,
+      order_item_id: review.order_item_id,
+    };
+  }
+
   const { data: ticket, error: ticketErr } = await db
     .from('support_tickets')
-    .insert({ owner_id: user.id, subject, status: 'open' })
+    .insert({ owner_id: user.id, subject, status: 'open', ...linked })
     .select('id, subject, status, created_at')
     .single();
 
@@ -64,7 +94,6 @@ export async function POST(req: NextRequest) {
   }
 
   // Notify staff with support.read permission (best-effort)
-  const adminDb = createAdminClient();
   await adminDb.rpc('notify_staff_with_permission', {
     p_permission: 'support.read',
     p_type: 'support_ticket_opened',

@@ -87,7 +87,7 @@ END IF;
 | Seller modifies another seller's file or transfers ownership | RLS `USING` + `WITH CHECK` + FK constraints |
 | Seller inserts a fake payout bypassing minimum/balance | `REVOKE INSERT` on `seller_payouts` + `request_payout` RPC validation |
 | User tampers with notification title/body | `trg_notifications_only_read_at` trigger blocks non-`read_at` changes |
-| Seller inflates review ratings or restores deleted reviews | `trg_reviews_protect_fields` trigger blocks `rating`/`body` changes and un-delete |
+| Seller inflates review ratings, restores deleted reviews, or deletes reviews directly | `trg_reviews_protect_fields` blocks `rating`/`body` changes and un-delete; `trg_restrict_review_soft_delete` + `review_delete_from_ticket` (`054`) require a linked seller support ticket; legacy `delete_review` is `service_role`-only |
 | Staff redirects a purchase code by changing `code_hash` | `trg_codes_protect_fields` trigger blocks `code_hash` mutation |
 | Brute-force code redemption | Per-user (5/15m) and per-IP (15/15m) rate limits (`024_redeem_hardening.sql`) + `redeem_attempts` audit trail |
 | Cross-account code redemption | `buyer_owns_code` verified inside `redeem_code` RPC + `/api/redeem` route |
@@ -127,3 +127,4 @@ END IF;
 | Token replay after session completion / arbitrary file completion | Status check in resolve/completion, ownership RPC, file-set intersection (`051`) |
 | Guest buyers could never review | Guest-aware `can_current_user_review` RPC (`052`) |
 | Error hygiene and low findings | `publicError` sanitizer, super-admin-only settings GET, constant-time secret comparisons, rejection sampling, `logAudit` for file deletion, cron-secret-only workers, scoped seller stats, masked `buyer_id`, admin-only review soft-delete (`053` + app changes) |
+| Seller-driven review deletion bypass (`054`) | Sellers can only open a structured support ticket (`product_id`, `order_item_id`, `review_id`); only Admin/Staff with `review.delete` may call `delete_review_from_ticket` from the admin ticket page. RPC re-checks ticket linkage/status and blocks deletion while the buyer has a pending/approved compensation request, pending/approved attempt exception, or open/pending buyer-owned support ticket for the same review/item/product. DB trigger requires an open seller ticket even for direct PostgREST updates. Legacy `delete_review` is `service_role`-only. Success emits `review.deleted_from_ticket` to the append-only audit log. |

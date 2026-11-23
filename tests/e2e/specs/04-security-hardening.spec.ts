@@ -116,15 +116,9 @@ test.describe('Security hardening — verify critical fixes', () => {
 
     const fileId = (pvf as any).file_versions.files.id;
 
-    // Try to update seller_id via seller A's session
-    const cookiesA = await getCookieHeader(sellerA.email, sellerA.password);
-    const res = await apiRequest('PATCH', `/api/seller/files/${fileId}`, {
-      seller_id: sellerB.sellerId,
-    }, cookiesA);
-
-    // No such endpoint → 404 is fine
-    // Direct DB check: seller A cannot change seller_id even via RLS
-    const { data: { user: sellerAUser } } = await adminDb.auth.admin.getUserById(sellerA.sellerId);
+    // There is no seller endpoint that can change a file's owner. The
+    // authoritative check is the RLS WITH CHECK policy on public.files, tested
+    // directly with seller A's JWT below.
 
     // Simulate RLS via user client
     const { createClient } = await import('@supabase/supabase-js');
@@ -233,6 +227,109 @@ test.describe('Security hardening — verify critical fixes', () => {
 
     expect(error).toBeTruthy();
     expect(error!.message).toMatch(/review_delete_forbidden|cannot_undelete_review|row-level security|permission denied/);
+  });
+
+  test('review deletion requires a linked seller ticket and no open buyer case', async () => {
+    const seller = await createSeller();
+    const buyer = await createTestUser({
+      accountType: 'buyer',
+      email: `review-ticket-${Date.now()}@test.local`,
+    });
+    const admin = await createTestUser({ accountType: 'staff', roleCode: 'admin' });
+    const category = await createCategory();
+    const product = await seedProductWithFiles({
+      sellerId: seller.sellerId,
+      categoryId: category.id,
+    });
+    const { requestId } = await seedPurchaseRequest({
+      buyerId: buyer.id,
+      buyerEmail: buyer.email,
+      productId: product.id,
+      versionId: product.versionId,
+      price: 10,
+    });
+    const { codeId } = await approveAndGetCode({ requestId, buyerId: buyer.id });
+    await confirmCodeDelivery(codeId);
+
+    const { data: oi } = await adminDb
+      .from('order_items')
+      .select('id')
+      .eq('product_id', product.id)
+      .single();
+    const { data: review } = await adminDb
+      .from('reviews')
+      .insert({
+        product_id: product.id,
+        buyer_id: buyer.id,
+        order_item_id: oi!.id,
+        rating: 2,
+        body: 'Ticket moderation test',
+      })
+      .select('id')
+      .single();
+
+    const { createClient } = await import('@supabase/supabase-js');
+    const adminClient = createClient(
+      process.env.TEST_SUPABASE_URL!,
+      process.env.TEST_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false } }
+    );
+    await adminClient.auth.signInWithPassword({
+      email: admin.email,
+      password: admin.password,
+    });
+
+    const { data: ticket } = await adminDb
+      .from('support_tickets')
+      .insert({
+        owner_id: seller.sellerId,
+        subject: 'Review deletion request',
+        status: 'open',
+      })
+      .select('id')
+      .single();
+
+    const unlinked = await adminClient.rpc('delete_review_from_ticket', {
+      p_review_id: review!.id,
+      p_ticket_id: ticket!.id,
+      p_reason: 'moderation decision',
+    });
+    expect(unlinked.error?.message).toContain('ticket_not_linked_to_review');
+
+    await adminDb.from('support_tickets')
+      .update({ review_id: review!.id, order_item_id: oi!.id })
+      .eq('id', ticket!.id);
+
+    await adminDb.from('compensation_requests').insert({
+      code_id: codeId,
+      status: 'pending',
+      reason: 'buyer dispute',
+      requested_by: buyer.id,
+      sequence_number: 1,
+    });
+
+    const blocked = await adminClient.rpc('delete_review_from_ticket', {
+      p_review_id: review!.id,
+      p_ticket_id: ticket!.id,
+      p_reason: 'moderation decision',
+    });
+    expect(blocked.error?.message).toContain('buyer_case_compensation_open');
+
+    await adminDb.from('compensation_requests').delete().eq('code_id', codeId);
+
+    const allowed = await adminClient.rpc('delete_review_from_ticket', {
+      p_review_id: review!.id,
+      p_ticket_id: ticket!.id,
+      p_reason: 'moderation decision',
+    });
+    expect(allowed.error).toBeNull();
+
+    const { data: deleted } = await adminDb
+      .from('reviews')
+      .select('status')
+      .eq('id', review!.id)
+      .single();
+    expect(deleted?.status).toBe('deleted');
   });
 
   test('staff cannot modify code_hash', async () => {

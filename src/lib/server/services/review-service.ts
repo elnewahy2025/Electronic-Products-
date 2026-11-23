@@ -130,11 +130,3 @@ export async function createReview(input: {
   return { id: data.id };
 }
 
-export async function deleteReview(input: { reviewId: string; reason: string }): Promise<void> {
-  const db = await createClient();
-  const { error } = await db.rpc('delete_review', {
-    p_review_id: input.reviewId,
-    p_reason: input.reason,
-  });
-  if (error) throw new Error(error.message);
-}

@@ -20,6 +20,11 @@ Instead of sending SMTP requests inside database transactions or blocking user r
 - Queries live pending counts across `purchase_requests`, `seller_profiles`, `seller_payouts`, `quarantine_records`, and `compensation_requests`.
 - Sends an Arabic RTL summary email to all active `super_admin` and `admin` members when `pendingTotal > 0`.
 
+## Manual Code Resend (Currently Unavailable)
+- `POST /api/admin/codes/{id}/resend` is a deliberate stub: it records a `skipped` delivery attempt (`error = resend_delivery_not_implemented`) and returns `501 { "error": "RESEND_NOT_IMPLEMENTED" }`.
+- No re-send transport exists yet. The admin code page hides the action and explains that a replacement code should be issued instead.
+- This is intentionally different from the normal `code_delivered` trigger: the original delivery email is already enqueued by migration `035`; a manual resend needs a separately approved secure re-delivery flow so the plaintext code is not re-exposed.
+
 ## Security
 - `email_outbox` has RLS enabled (`SELECT` restricted to `is_admin_or_above() OR staff_has('audit.read')`).
 - `enqueue_email`, `claim_email_outbox`, `mark_email_sent`, and `mark_email_failed` are `SECURITY DEFINER` and `REVOKE`d from `PUBLIC` (`service_role` only).

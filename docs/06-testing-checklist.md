@@ -9,6 +9,13 @@
 - [ ] منع تعديل أو حذف أي صف في audit_logs حتى بحساب Super Admin
 - [ ] التحقق من أن الأصل المسلّم غير موسوم، وأن المعاينة موسومة
 - [ ] منع البائع من تعديل العمولات وأسعار الصرف والأكواد
+- [ ] رفض استدعاء `delete_review` من بائع/مشتري (`review_delete_requires_ticket`) ونجاحه من `service_role` فقط
+- [ ] رفض محاولة بائع حذف تقييم عبر PostgREST مباشرة (`review_delete_forbidden` / `review_delete_requires_ticket`)
+- [ ] التأكد أن خيار «طلب حذف تقييم» في `/seller/reviews` ينشئ تذكرة مرتبطة بـ `product_id` و`order_item_id` و`review_id` ولا يحذف التقييم
+- [ ] التحقق أن الأدمن/الموظف بصلاحية `review.delete` يستطيع الحذف من صفحة تفاصيل التذكرة فقط عبر `delete_review_from_ticket`
+- [ ] منع الحذف بتذكرة غير مرتبطة، أو بحالة مغلقة، أو بمالك غير البائع (`ticket_not_linked_to_review` / `ticket_not_open`)
+- [ ] منع الحذف مع طلب تعويض `pending`/`approved`، أو طلب استثناء `pending`/`approved`، أو تذكرة مشتري `open`/`pending` لنفس التقييم/الطلب/المنتج
+- [ ] التحقق من ظهور `review.deleted_from_ticket` مع السبب و`ticket_id` في `audit_logs`، واختفاء التقييم من المتجر العام مع بقاء إحصاءات البائع وردّه
 
 ## الأكواد والتنزيل
 - [ ] رفض كود انتهت صلاحيته بعد 72 ساعة

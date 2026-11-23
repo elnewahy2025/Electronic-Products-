@@ -1,6 +1,6 @@
 # مصفوفة RLS التفصيلية (Row-Level Security Matrix)
 
-توثّق هذه الوثيقة التصميم الكامل والنهائي لسياسات أمن الصفوف (`Row-Level Security - RLS`)، والدوال المساعدة (`SECURITY DEFINER`)، والعروض الآمنة (`Safe Views`)، ومشغلات الحماية الإلزامية (`Triggers`) عبر جميع جداول قاعدة البيانات، شاملةً كافة تحديثات التحصين الأمني والأداء في الترحيلات `027` إلى `053`.
+توثّق هذه الوثيقة التصميم الكامل والنهائي لسياسات أمن الصفوف (`Row-Level Security - RLS`)، والدوال المساعدة (`SECURITY DEFINER`)، والعروض الآمنة (`Safe Views`)، ومشغلات الحماية الإلزامية (`Triggers`) عبر جميع جداول قاعدة البيانات، شاملةً كافة تحديثات التحصين الأمني والأداء في الترحيلات `027` إلى `054`.
 
 ---
 
@@ -298,7 +298,7 @@ can_current_user_review(p_product_id uuid) RETURNS TABLE(can_review boolean, ord
 |---|---|
 | **SELECT** | `status = 'published'` للجميع **OR** `buyer_id = auth.uid()` **OR** `seller_owns_product(product_id)` **OR** `staff_has('review.delete')` **OR** `is_admin_or_above()` |
 | **INSERT** | عبر `create_review` (`buyer_id = auth.uid()` + تحقق من وجود `order_item` مكتمل التسليم + قيد `UNIQUE(product_id, buyer_id)`) |
-| **UPDATE (الرد فقط للبائع، الحذف الناعم للإدارة فقط)** | `seller_owns_product(product_id)` **OR** `staff_has('review.delete')` **OR** `is_admin_or_above()`؛ المشغّل `trg_restrict_review_soft_delete` (`053`) يرفض أي تغيير على `status` / `deleted_at` / `deleted_by` / `delete_reason` إلا لـ `is_admin_or_above()` أو `staff_has('review.delete')` أو `service_role` |
+| **UPDATE (الرد للبائع، الحذف الناعم للإدارة فقط عبر تذكرة)** | `seller_owns_product(product_id)` **OR** `staff_has('review.delete')` **OR** `is_admin_or_above()`؛ المشغّل `trg_restrict_review_soft_delete` (`053`، المُحدَّث في `054`) يرفض أي تغيير على `status` / `deleted_at` / `deleted_by` / `delete_reason` إلا لـ `is_admin_or_above()` أو `staff_has('review.delete')` أو `service_role`، ويشترط وجود تذكرة بائع مفتوحة/`pending` مرتبطة بنفس التقييم/المنتج/الطلب قبل الحذف (باستثناء `service_role`) |
 | **DELETE** | لا أحد |
 
 **مشغلات حماية الحقول على `reviews` (`027_security_hardening.sql` و`028_seller_reviews.sql`):**
@@ -309,13 +309,16 @@ can_current_user_review(p_product_id uuid) RETURNS TABLE(can_review boolean, ord
 2. **`trg_restrict_review_reply` (`restrict_review_reply` — `028`)**:
    - يتحقق عند تعديل `seller_reply`, `seller_replied_at`, `seller_replied_by` من أن المستدعي هو البائع مالك المنتج (`p.seller_id = auth.uid()`) أو `is_admin_or_above()` أو يملك صلاحية `review.reply`.
    - يفرض ألا يتجاوز طول `seller_reply` 2000 حرف (`reply_too_long`).
+3. **`trg_restrict_review_soft_delete` (`restrict_review_soft_delete` — `053`، مُحدَّث في `054`)**:
+   - يمنع أي دور (بما فيه البائع) من تعديل حقول الحذف دون `review.delete` / `is_admin_or_above()` / `service_role` (`review_delete_forbidden`).
+   - يشترط تذكرة دعم مملوكة للبائع بحالة `open`/`pending` ومرتبطة بـ `review_id` أو `order_item_id` أو `product_id` قبل أي تحويل إلى `deleted` (`review_delete_requires_ticket`).
 
 ### `favorites`, `content_reports`, `support_tickets`, `support_messages`, `notifications`
 | الجدول | SELECT | INSERT | UPDATE | DELETE |
 |---|---|---|---|---|
 | `favorites` | `buyer_id = auth.uid()` | `buyer_id = auth.uid()` | لا أحد | `buyer_id = auth.uid()` |
 | `content_reports` | `reporter_id = auth.uid()` **OR** `staff_has('report.read')` **OR** `is_admin_or_above()` | `reporter_id = auth.uid()` | `staff_has('report.resolve')` **OR** `is_admin_or_above()` | لا أحد |
-| `support_tickets` | `owner_id = auth.uid()` **OR** `is_admin_or_above()` | `owner_id = auth.uid()` | `owner_id = auth.uid()` **OR** `is_admin_or_above()` | لا أحد |
+| `support_tickets` | `owner_id = auth.uid()` **OR** `is_admin_or_above()` | `owner_id = auth.uid()` (مع أن `product_id` / `order_item_id` / `review_id` تُملأ خادميًا من التقييم — `054`) | `owner_id = auth.uid()` **OR** `is_admin_or_above()` | لا أحد |
 | `support_messages` | `EXISTS` (ticket للمستخدم) **OR** `is_admin_or_above()` | `EXISTS` (ticket للمستخدم) **OR** `is_admin_or_above()` | لا أحد | لا أحد |
 | `notifications` | `user_id = auth.uid()` | `service_role` / triggers فقط | `user_id = auth.uid()` (محمي بـ trigger `trg_notifications_only_read_at` الذي يمنع تعديل أي حقل سوى `read_at`) | `service_role` فقط |
 
@@ -389,7 +392,8 @@ can_current_user_review(p_product_id uuid) RETURNS TABLE(can_review boolean, ord
    - `approve_seller`, `reject_seller`, `suspend_seller`
    - `approve_purchase_request`, `reject_purchase_request` (`049` — الرفض يتطلب `request.reject`)
    - `approve_payout`, `mark_payout_paid`, `reject_payout`
-   - `delete_review`, `resolve_report`
+   - `delete_review` (**أصبح `service_role` فقط في `054`**؛ استدعاؤه من `authenticated` يفشل بـ `review_delete_requires_ticket`), `resolve_report`
+   - `delete_review_from_ticket` (`054`): يتحقق داخليًا من `is_admin_or_above()` أو `staff_has('review.delete')`، ومن ارتباط تذكرة البائع بالتقييم، ويمنع الحذف مع طلبات التعويض/الاستثناء/تذاكر المشتري المفتوحة؛ يكتب `review.deleted_from_ticket` في `audit_logs`
    - `set_category_parent`, `delete_category_safe`, `reorder_categories`
    - `issue_attempt_exception`, `adjust_wallet` (`is_super_admin()` حصريًا)
 3. **دوال `SECURITY DEFINER` مقيدة بملكية المستخدم الحالي (`auth.uid()`) (`031` و`032`):**
@@ -408,7 +412,9 @@ can_current_user_review(p_product_id uuid) RETURNS TABLE(can_review boolean, ord
 - [x] المشتري أو البائع لا يستطيع استدعاء الدوال الخادمية (`record_successful_attempt`, `pick_drive_account`, إلخ)
 - [x] البائع A لا يرى منتجات البائع B غير المنشورة ولا ملفاته ولا يستطيع نقل ملكية ملف إلى بائع آخر (`WITH CHECK`)
 - [x] البائع لا يستطيع إدراج صف مباشر في `seller_payouts` لتجاوز حد الـ 100 دولار أو الرصيد المتاح
-- [x] البائع يستطيع الرد على تقييم منتجه وحذف رده فقط، لكنه **لا يستطيع** حذف التقييم ناعمًا (الإدارة فقط عبر `053`) ولا تعديل `rating`/`body` أو إعادة نشر تقييم محذوف
+- [x] البائع يستطيع الرد على تقييم منتجه وحذف رده فقط، لكنه **لا يستطيع** حذف التقييم ناعمًا (الإدارة فقط عبر تذكرة منظمة `054`) ولا تعديل `rating`/`body` أو إعادة نشر تقييم محذوف
+- [x] استدعاء `delete_review` من حساب بائع يفشل بـ `review_delete_requires_ticket`، ولا يعمل إلا عبر `service_role`
+- [x] `delete_review_from_ticket` يمنع الحذف دون تذكرة بائع مرتبطة، أو مع طلب تعويض/استثناء `pending`/`approved` أو تذكرة مشتري `open`/`pending` لنفس التقييم/الطلب/المنتج
 - [x] المستخدم يستطيع تحديث `read_at` في إشعاراته، لكنه لا يستطيع تعديل `title` أو `body`
 - [x] المشتري لا يرى `admin_reason` في طلبات التعويض إلا عند `status = 'rejected'`
 - [x] محاولة `UPDATE purchase_codes SET status = 'revoked'` بعد `delivered_at IS NOT NULL` تفشل بـ `code_revocation_blocked_after_delivery`

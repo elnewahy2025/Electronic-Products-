@@ -18,3 +18,7 @@ supabase/.temp/
 test-results/
 playwright-report/
 blob-report/
+
+# Cloudflare Worker local secrets (see workers/download/.dev.vars.example)
+workers/download/.dev.vars
+workers/download/.wrangler/

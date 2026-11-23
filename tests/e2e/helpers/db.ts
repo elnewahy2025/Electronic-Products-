@@ -495,6 +495,12 @@ export async function cleanupTestData(): Promise<void> {
     'product_version_files', 'product_version_id', Array.from(versionIds), fileVersionIds
   );
 
+  const { data: ticketRefs } = await (adminDb as any)
+    .from('support_tickets').select('id').in('owner_id', testUserIds);
+  const ticketIds = (ticketRefs ?? []).map((t: any) => t.id as string);
+  await deleteIds('support_messages', 'ticket_id', ticketIds);
+  await deleteIds('support_tickets', 'id', ticketIds);
+
   await deleteIds('download_attempts', 'order_item_id', orderItemIds);
   await deleteIds('download_attempts', 'session_id', sessionIds);
   await deleteIds('download_deliveries', 'session_id', sessionIds);

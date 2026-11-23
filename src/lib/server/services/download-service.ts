@@ -2,7 +2,7 @@ import 'server-only';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getAttemptState, recordSuccessfulAttempt, AttemptType } from './attempt-service';
-import { createDownloadToken } from '@/lib/crypto/download-token';
+import { createDownloadToken, hashDownloadToken } from '@/lib/crypto/download-token';
 import { logAudit } from '@/lib/audit/logger';
 
 export type SessionInfo = {
@@ -144,19 +144,33 @@ export async function initiateDownload(params: {
     if (existing) throw new Error('FILE_ALREADY_DELIVERED');
   }
 
+  const scope = params.type === 'zip' ? 'zip' : 'single';
   const token = createDownloadToken({
     sid: params.sessionId,
     fid: params.fileVersionId,
-    typ: params.type === 'zip' ? 'zip' : 'single',
+    typ: scope,
     ttlSec: 15 * 60,
   });
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+  // Persist the token before returning it. The resolver and completion
+  // callback both check this ledger so a signed token cannot be replayed.
+  const admin = createAdminClient();
+  const { error: ledgerError } = await admin.rpc('register_download_token', {
+    p_session_id: params.sessionId,
+    p_token_hash: hashDownloadToken(token),
+    p_scope: scope,
+    p_file_version_id: params.fileVersionId ?? null,
+    p_expires_at: expiresAt.toISOString(),
+  });
+  if (ledgerError) throw new Error('TOKEN_LEDGER_FAILED');
 
   const base = process.env.DOWNLOAD_SERVICE_URL;
   if (!base) throw new Error('DOWNLOAD_SERVICE_URL_NOT_SET');
 
   return {
     url: `${base}/stream?token=${encodeURIComponent(token)}`,
-    expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    expiresAt: expiresAt.toISOString(),
   };
 }
 
