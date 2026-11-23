@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     });
     if (throttled) return throttled;
 
-    const lock = await acquireConcurrencyLock(`seller:drive:import:${user.id}`, 120);
+    const lock = await acquireConcurrencyLock(`seller:drive:import:${user.id}`, 300);
     if (!lock.acquired) {
       return NextResponse.json(
         { error: 'CONCURRENT_IMPORT_IN_PROGRESS' },

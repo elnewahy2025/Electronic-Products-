@@ -42,7 +42,11 @@ export async function getAuthCookies(
     const post = (action: string, code?: string) =>
       fetch(`${appUrl}/api/auth/mfa`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json', cookie: cookieHeader },
+        headers: {
+          'content-type': 'application/json',
+          origin: new URL(appUrl).origin,
+          cookie: cookieHeader,
+        },
         body: JSON.stringify(code ? { action, code } : { action }),
       });
 

@@ -15,15 +15,17 @@ function sanitizeIp(raw: string | null | undefined): string | null {
  * Extracts client IP from trusted edge headers.
  * - On Vercel (`VERCEL=1`), trusts ONLY `x-vercel-forwarded-for`, which Vercel's
  *   edge overwrites and clients cannot spoof.
- * - Outside Vercel (e.g. Cloudflare / local dev), checks `cf-connecting-ip`,
- *   `x-real-ip`, then `x-forwarded-for`.
+ * - Behind Cloudflare (`TRUST_CLOUDFLARE_IP=1`), trusts `cf-connecting-ip`.
+ * - Otherwise (local dev / generic proxy), falls back to `x-real-ip` / `x-forwarded-for`.
  */
 export function getTrustedClientIp(req: NextRequest | Request): string | null {
   if (process.env.VERCEL === '1') {
     return sanitizeIp(req.headers.get('x-vercel-forwarded-for'));
   }
+  if (process.env.TRUST_CLOUDFLARE_IP === '1') {
+    return sanitizeIp(req.headers.get('cf-connecting-ip'));
+  }
   return (
-    sanitizeIp(req.headers.get('cf-connecting-ip')) ??
     sanitizeIp(req.headers.get('x-real-ip')) ??
     sanitizeIp(req.headers.get('x-forwarded-for'))
   );
