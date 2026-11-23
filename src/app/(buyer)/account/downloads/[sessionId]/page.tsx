@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 
 type FileStatus = {
@@ -29,14 +29,14 @@ export default function DownloadPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     const res = await fetch(`/api/download/${sessionId}`);
     const json = await res.json();
     if (!res.ok) return setError(json.error);
     setData(json);
-  }
+  }, [sessionId]);
 
-  useEffect(() => { load(); }, [sessionId]);
+  useEffect(() => { load(); }, [load]);
 
   async function startDownload(type: 'zip' | 'single', fileVersionId?: string) {
     setBusy(fileVersionId ?? 'zip');
