@@ -1,0 +1,33 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Runs every 3 days at 12:00 UTC to prevent Supabase Free-tier auto-pausing (7-day inactivity limit)
+    - cron: '0 12 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase PostgREST
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY secrets"
+            exit 1
+          fi
+
+          HTTP_CODE=$(curl -sS -o /tmp/keepalive.json -w "%{http_code}" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            "$SUPABASE_URL/rest/v1/settings?select=id&limit=1")
+
+          echo "Supabase keep-alive HTTP status: $HTTP_CODE"
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            cat /tmp/keepalive.json
+            exit 1
+          fi
+          echo "Keep-alive ping succeeded at $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
