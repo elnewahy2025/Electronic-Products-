@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { publicError } from '@/lib/api/errors';
 import { requireUser } from '@/lib/auth/session';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { decrypt } from '@/lib/crypto/encryption';
 import { getDriveClient } from '@/lib/drive/client';
+import { enforceSellerThrottle } from '@/lib/security/seller-throttle';
 
 const bodySchema = z.object({
   drive_account_id: z.string().uuid(),
@@ -20,6 +22,16 @@ export async function POST(req: NextRequest) {
     if (user.accountType !== 'seller') {
       return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
     }
+
+    const throttled = await enforceSellerThrottle({
+      req,
+      sellerId: user.id,
+      scope: 'seller:drive:store_folder',
+      sellerLimit: 15,
+      ipLimit: 30,
+      windowSeconds: 600,
+    });
+    if (throttled) return throttled;
 
     const parsed = bodySchema.safeParse(await req.json().catch(() => null));
     if (!parsed.success) {
@@ -59,7 +71,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (e: any) {
     return NextResponse.json(
-      { error: e?.message ?? 'STORE_FOLDER_LINK_FAILED' },
+      { error: publicError(e, 'STORE_FOLDER_LINK_FAILED') },
       { status: e?.message === 'UNAUTHENTICATED' ? 401 : 400 },
     );
   }

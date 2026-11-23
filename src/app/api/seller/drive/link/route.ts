@@ -1,11 +1,22 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { buildDriveAuthUrl } from '@/lib/drive/oauth';
+import { enforceSellerThrottle } from '@/lib/security/seller-throttle';
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const db = await createClient();
   const { data: { user } } = await db.auth.getUser();
   if (!user) return NextResponse.json({ error: 'UNAUTHENTICATED' }, { status: 401 });
+
+  const throttled = await enforceSellerThrottle({
+    req,
+    sellerId: user.id,
+    scope: 'seller:drive:link',
+    sellerLimit: 10,
+    ipLimit: 20,
+    windowSeconds: 3600,
+  });
+  if (throttled) return throttled;
 
   const clientId = process.env.GOOGLE_DRIVE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_DRIVE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;

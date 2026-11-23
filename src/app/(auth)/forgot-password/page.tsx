@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -14,16 +13,15 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const supabase = createClient();
-    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
-      email.trim(),
-      {
-        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
-      },
-    );
+    const res = await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: email.trim() }),
+    }).catch(() => null);
+    const payload = res ? await res.json().catch(() => null) : null;
     setBusy(false);
-    if (resetErr) {
-      setError('تعذّر إرسال رابط الاستعادة حالياً. يرجى المحاولة لاحقاً.');
+    if (!res || !res.ok) {
+      setError(payload?.error ?? 'تعذّر إرسال رابط الاستعادة حالياً. يرجى المحاولة لاحقاً.');
       return;
     }
     setSent(true);

@@ -10,6 +10,8 @@ const SELLER_PREFIXES = ['/seller'];
 const BUYER_PREFIXES = ['/account'];
 const MFA_WHITELIST = [
   '/verify-mfa',
+  '/api/auth/login',
+  '/api/auth/forgot-password',
   '/api/auth/mfa',
   '/api/auth/signout',
   '/api/csp-report',

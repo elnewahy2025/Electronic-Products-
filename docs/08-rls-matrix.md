@@ -191,7 +191,7 @@ can_current_user_review(p_product_id uuid) RETURNS TABLE(can_review boolean, ord
 |---|---|
 | **SELECT** | `buyer_id = auth.uid()` **OR** `lower(customer_email) = lower(auth.email())` **OR** `staff_has('request.read.any')` **OR** `is_admin_or_above()` |
 | **INSERT** | عبر دالة `create_purchase_request` (`SECURITY DEFINER`) أو `buyer_id = auth.uid()` |
-| **UPDATE** | (`buyer_id = auth.uid()` **AND** `status IN ('created','pending')`) **OR** `staff_has('request.read.any')` **OR** `is_admin_or_above()` |
+| **UPDATE** | (`buyer_id = auth.uid()` **AND** `status IN ('created','pending')`) **OR** `staff_has('request.update')` **OR** `is_super_admin()` *(تمت إزالة `request.read.any` في الترحيل `058`؛ ويحمي المشغل `trg_purchase_requests_update_guard` جميع الحقول المالية والهوية والرموز لكل متصل غير `service_role`/RPC)* |
 | **DELETE** | لا أحد |
 
 > **منع صريح:** الانتقال إلى `status = 'cancelled'` ممنوع على مستوى القاعدة عبر trigger `purchase_requests_block_cancel_after_delivery` إذا وُجد كود مرتبط حالته `delivered` أو `redeemed`.

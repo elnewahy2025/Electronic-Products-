@@ -2,6 +2,8 @@ import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireUser } from '@/lib/auth/session';
+import { enforceSellerThrottle } from '@/lib/security/seller-throttle';
+import { acquireConcurrencySlot } from '@/lib/security/rate-limit';
 import {
   approvePreviewDataUrlCover,
   extractFirstPageCoverFromDrive,
@@ -42,48 +44,102 @@ export async function POST(req: NextRequest) {
     }
 
     if ((raw as any).action === 'extract_first_page') {
-      const parsed = extractSchema.safeParse(raw);
-      if (!parsed.success) {
-        return NextResponse.json({ error: 'INVALID_BODY' }, { status: 400 });
-      }
-      const extracted = await extractFirstPageCoverFromDrive({
+      const throttled = await enforceSellerThrottle({
+        req,
         sellerId: user.id,
-        productId: parsed.data.product_id ?? null,
-        fileVersionId: parsed.data.file_version_id ?? null,
-        applyWatermark: parsed.data.apply_watermark,
+        scope: 'seller:auto_cover:extract',
+        sellerLimit: 20,
+        ipLimit: 40,
+        windowSeconds: 3600,
       });
-      return NextResponse.json({
-        previewDataUrl: `data:image/webp;base64,${extracted.buffer.toString('base64')}`,
-        sourceFileName: extracted.sourceFileName,
-        watermarked: extracted.watermarked,
-        width: extracted.width,
-        height: extracted.height,
-        sizeBytes: extracted.sizeBytes,
-      });
+      if (throttled) return throttled;
+
+      const release = acquireConcurrencySlot(`seller:auto_cover:${user.id}`, 1);
+      if (!release) {
+        return NextResponse.json(
+          { error: 'CONCURRENT_COVER_JOB_IN_PROGRESS' },
+          { status: 429, headers: { 'Retry-After': '10' } },
+        );
+      }
+
+      try {
+        const parsed = extractSchema.safeParse(raw);
+        if (!parsed.success) {
+          return NextResponse.json({ error: 'INVALID_BODY' }, { status: 400 });
+        }
+        const extracted = await extractFirstPageCoverFromDrive({
+          sellerId: user.id,
+          productId: parsed.data.product_id ?? null,
+          fileVersionId: parsed.data.file_version_id ?? null,
+          applyWatermark: parsed.data.apply_watermark,
+        });
+        return NextResponse.json({
+          previewDataUrl: `data:image/webp;base64,${extracted.buffer.toString('base64')}`,
+          sourceFileName: extracted.sourceFileName,
+          watermarked: extracted.watermarked,
+          width: extracted.width,
+          height: extracted.height,
+          sizeBytes: extracted.sizeBytes,
+        });
+      } finally {
+        release();
+      }
     }
 
     if ((raw as any).action === 'preview') {
-      const parsed = previewSchema.safeParse(raw);
-      if (!parsed.success) {
-        return NextResponse.json({ error: 'INVALID_BODY' }, { status: 400 });
+      const throttled = await enforceSellerThrottle({
+        req,
+        sellerId: user.id,
+        scope: 'seller:auto_cover:ai_preview',
+        sellerLimit: 10,
+        ipLimit: 20,
+        windowSeconds: 3600,
+      });
+      if (throttled) return throttled;
+
+      const release = acquireConcurrencySlot(`seller:auto_cover:${user.id}`, 1);
+      if (!release) {
+        return NextResponse.json(
+          { error: 'CONCURRENT_COVER_JOB_IN_PROGRESS' },
+          { status: 429, headers: { 'Retry-After': '10' } },
+        );
       }
-      const rendered = await generateAiProductCover({
-        title: parsed.data.title,
-        shortDescription: parsed.data.short_description ?? null,
-        description: parsed.data.description ?? null,
-        categoryName: parsed.data.category_name ?? null,
-        variant: parsed.data.variant,
-      });
-      return NextResponse.json({
-        previewDataUrl: `data:image/webp;base64,${rendered.buffer.toString('base64')}`,
-        variant: rendered.variant,
-        width: rendered.width,
-        height: rendered.height,
-        sizeBytes: rendered.sizeBytes,
-      });
+
+      try {
+        const parsed = previewSchema.safeParse(raw);
+        if (!parsed.success) {
+          return NextResponse.json({ error: 'INVALID_BODY' }, { status: 400 });
+        }
+        const rendered = await generateAiProductCover({
+          title: parsed.data.title,
+          shortDescription: parsed.data.short_description ?? null,
+          description: parsed.data.description ?? null,
+          categoryName: parsed.data.category_name ?? null,
+          variant: parsed.data.variant,
+        });
+        return NextResponse.json({
+          previewDataUrl: `data:image/webp;base64,${rendered.buffer.toString('base64')}`,
+          variant: rendered.variant,
+          width: rendered.width,
+          height: rendered.height,
+          sizeBytes: rendered.sizeBytes,
+        });
+      } finally {
+        release();
+      }
     }
 
     if ((raw as any).action === 'approve') {
+      const throttled = await enforceSellerThrottle({
+        req,
+        sellerId: user.id,
+        scope: 'seller:auto_cover:approve',
+        sellerLimit: 30,
+        ipLimit: 60,
+        windowSeconds: 3600,
+      });
+      if (throttled) return throttled;
+
       const parsed = approveSchema.safeParse(raw);
       if (!parsed.success) {
         return NextResponse.json({ error: 'INVALID_BODY' }, { status: 400 });

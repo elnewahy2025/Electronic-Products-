@@ -16,6 +16,7 @@ export const PERMISSIONS = {
   FILE_DELETE: 'file.delete',
   FILE_PREVIEW_REGENERATE: 'file.preview.regenerate',
   // codes
+  REQUEST_UPDATE: 'request.update',
   CODE_ISSUE: 'code.issue',
   CODE_REVOKE: 'code.revoke',
   CODE_CONFIRM_DELIVERY: 'code.confirm_delivery',

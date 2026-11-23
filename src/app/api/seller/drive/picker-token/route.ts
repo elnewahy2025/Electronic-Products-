@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { google } from 'googleapis';
 import { publicError } from '@/lib/api/errors';
 import { requireUser } from '@/lib/auth/session';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { decrypt } from '@/lib/crypto/encryption';
 import { ensureStoreFolder } from '@/lib/drive/client';
+import { getCachedDriveAccessToken } from '@/lib/drive/token-cache';
+import { enforceSellerThrottle } from '@/lib/security/seller-throttle';
 
 /**
  * Returns a short-lived Google OAuth2 access token (drive.file scope) plus
@@ -17,6 +18,16 @@ export async function GET(req: NextRequest) {
     if (user.accountType !== 'seller') {
       return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
     }
+
+    const throttled = await enforceSellerThrottle({
+      req,
+      sellerId: user.id,
+      scope: 'seller:drive:picker_token',
+      sellerLimit: 30,
+      ipLimit: 60,
+      windowSeconds: 600,
+    });
+    if (throttled) return throttled;
 
     const developerKey = process.env.GOOGLE_PICKER_API_KEY;
     const appId = process.env.GOOGLE_PICKER_APP_ID;
@@ -52,12 +63,12 @@ export async function GET(req: NextRequest) {
     }
 
     const refreshToken = decrypt(acc.encrypted_refresh_token);
-    const oauth2 = new google.auth.OAuth2(clientId, clientSecret);
-    oauth2.setCredentials({ refresh_token: refreshToken });
-    const { token } = await oauth2.getAccessToken();
-    if (!token) {
-      return NextResponse.json({ error: 'DRIVE_TOKEN_FAILED' }, { status: 502 });
-    }
+    const token = await getCachedDriveAccessToken({
+      driveAccountId: acc.id,
+      refreshToken,
+      clientId,
+      clientSecret,
+    });
 
     const mode = req.nextUrl.searchParams.get('mode');
     let storeFolderId: string | null = (acc as any).store_folder_id ?? null;

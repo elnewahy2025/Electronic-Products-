@@ -20,28 +20,24 @@ export default function LoginPage() {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-    if (signInError) {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: email.trim(),
+        password,
+      }),
+    }).catch(() => null);
+
+    const payload = res ? await res.json().catch(() => null) : null;
+    if (!res || !res.ok) {
       setBusy(false);
-      setError('بيانات الدخول غير صحيحة.');
+      setError(payload?.error ?? 'بيانات الدخول غير صحيحة.');
       return;
     }
 
-    // Ask the server whether this login needs a TOTP challenge and drop any
-    // MFA token left over from a previous login session.
-    const res = await fetch('/api/auth/mfa', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'begin' }),
-    }).catch(() => null);
-    const status = res?.ok ? await res.json().catch(() => null) : null;
-
     setBusy(false);
-    if (status?.required) {
+    if (payload?.mfaRequired) {
       router.push(`/verify-mfa?next=${encodeURIComponent(next)}`);
     } else {
       router.push(next);
