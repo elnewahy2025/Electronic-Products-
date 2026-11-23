@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -48,17 +47,18 @@ export default function LoginPage() {
   async function signInWithGoogle() {
     setBusy(true);
     setError(null);
-    const supabase = createClient();
-    const { error: oauthErr } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
-    });
-    if (oauthErr) {
+    const res = await fetch('/api/auth/oauth', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ provider: 'google', next }),
+    }).catch(() => null);
+    const payload = res ? await res.json().catch(() => null) : null;
+    if (!res || !res.ok || !payload?.url) {
       setBusy(false);
-      setError(oauthErr.message);
+      setError(payload?.error ?? 'تعذر بدء تسجيل الدخول عبر Google.');
+      return;
     }
+    window.location.assign(payload.url);
   }
 
   return (

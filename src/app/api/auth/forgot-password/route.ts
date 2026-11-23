@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { assertSameOrigin } from '@/lib/security/origin';
 import {
   consumeRateLimit,
-  getLoginRateLimitPerHour,
+  getCodeRateLimitPerHour,
   getTrustedClientIp,
   logSecurityEvent,
 } from '@/lib/security/rate-limit';
@@ -34,8 +34,9 @@ export async function POST(req: NextRequest) {
   const emailHash = hashIdentifier(email);
   const ip = getTrustedClientIp(req);
   const userAgent = req.headers.get('user-agent');
-  const loginPerHour = await getLoginRateLimitPerHour();
-  const resetEmailLimit = Math.max(3, Math.min(Math.floor(loginPerHour / 2), 10));
+  const codePerHour = await getCodeRateLimitPerHour();
+  const resetEmailLimit = codePerHour;
+  const resetIpLimit = codePerHour * 2;
 
   const emailDecision = await consumeRateLimit({
     scope: 'auth:forgot_password:email',
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
     const ipDecision = await consumeRateLimit({
       scope: 'auth:forgot_password:ip',
       key: ip,
-      limit: loginPerHour,
+      limit: resetIpLimit,
       windowSeconds: 3600,
       ip,
     });
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
         ip,
         userAgent,
         severity: 'medium',
-        details: { bucket: 'ip', email_hash: emailHash, limit_per_hour: loginPerHour },
+        details: { bucket: 'ip', email_hash: emailHash, limit_per_hour: resetIpLimit },
       });
       return NextResponse.json(
         { error: 'تم تجاوز الحد المسموح لطلبات استعادة كلمة المرور. يرجى المحاولة لاحقاً.' },

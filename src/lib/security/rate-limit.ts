@@ -1,27 +1,28 @@
 import 'server-only';
+import { isIP } from 'node:net';
 import type { NextRequest } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-
-const IPV4_RE = /^(?:\d{1,3}\.){3}\d{1,3}$/;
-const IPV6_RE = /^[0-9a-fA-F:]+$/;
 
 function sanitizeIp(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const candidate = raw.split(',')[0]?.trim();
   if (!candidate || candidate.length > 64) return null;
-  if (IPV4_RE.test(candidate) || (candidate.includes(':') && IPV6_RE.test(candidate))) {
-    return candidate;
-  }
-  return null;
+  // RFC-accurate IPv4 (0-255 octets) and IPv6 validation via node:net
+  return isIP(candidate) !== 0 ? candidate : null;
 }
 
 /**
- * Extracts client IP preferring platform-injected headers that cannot be
- * spoofed behind Vercel / Cloudflare edges before falling back to XFF.
+ * Extracts client IP from trusted edge headers.
+ * - On Vercel (`VERCEL=1`), trusts ONLY `x-vercel-forwarded-for`, which Vercel's
+ *   edge overwrites and clients cannot spoof.
+ * - Outside Vercel (e.g. Cloudflare / local dev), checks `cf-connecting-ip`,
+ *   `x-real-ip`, then `x-forwarded-for`.
  */
 export function getTrustedClientIp(req: NextRequest | Request): string | null {
+  if (process.env.VERCEL === '1') {
+    return sanitizeIp(req.headers.get('x-vercel-forwarded-for'));
+  }
   return (
-    sanitizeIp(req.headers.get('x-vercel-forwarded-for')) ??
     sanitizeIp(req.headers.get('cf-connecting-ip')) ??
     sanitizeIp(req.headers.get('x-real-ip')) ??
     sanitizeIp(req.headers.get('x-forwarded-for'))
@@ -83,6 +84,22 @@ export async function getLoginRateLimitPerHour(): Promise<number> {
   return Math.min(Math.floor(configured), 200);
 }
 
+/**
+ * Reads `security_settings.code_rate_limit_per_hour` (used for recovery/code throttling).
+ */
+export async function getCodeRateLimitPerHour(): Promise<number> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from('security_settings')
+    .select('code_rate_limit_per_hour')
+    .eq('id', 1)
+    .maybeSingle();
+
+  const configured = Number(data?.code_rate_limit_per_hour ?? 10);
+  if (!Number.isFinite(configured) || configured < 3) return 10;
+  return Math.min(Math.floor(configured), 100);
+}
+
 export async function logSecurityEvent(params: {
   type: string;
   actorId?: string | null;
@@ -106,19 +123,57 @@ export async function logSecurityEvent(params: {
   }
 }
 
-// Per-instance concurrency guard to prevent parallel expensive job storms
-const activeSlots = new Map<string, number>();
+export type ConcurrencyLease = {
+  acquired: boolean;
+  retryAfterSeconds: number;
+  release: () => Promise<void>;
+};
 
-export function acquireConcurrencySlot(key: string, maxConcurrent = 1): (() => void) | null {
-  const current = activeSlots.get(key) ?? 0;
-  if (current >= maxConcurrent) return null;
-  activeSlots.set(key, current + 1);
+/**
+ * Distributed PostgreSQL concurrency lock backed by `acquire_concurrency_lock()`
+ * and `release_concurrency_lock()` RPCs. Works across all Vercel serverless instances
+ * and auto-expires after `ttlSeconds` if a worker crashes.
+ */
+export async function acquireConcurrencyLock(
+  key: string,
+  ttlSeconds = 120,
+): Promise<ConcurrencyLease> {
+  const admin = createAdminClient();
+  const { data, error } = await (admin.rpc as any)('acquire_concurrency_lock', {
+    p_key: key,
+    p_ttl_seconds: ttlSeconds,
+  });
+
+  if (error) {
+    console.error('[concurrency-lock] acquire failed', { key, code: error.code });
+    return { acquired: false, retryAfterSeconds: 10, release: async () => {} };
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.acquired || !row?.owner_token) {
+    return {
+      acquired: false,
+      retryAfterSeconds: Number(row?.retry_after_seconds ?? 10),
+      release: async () => {},
+    };
+  }
+
+  const ownerToken = String(row.owner_token);
   let released = false;
-  return () => {
-    if (released) return;
-    released = true;
-    const next = (activeSlots.get(key) ?? 1) - 1;
-    if (next <= 0) activeSlots.delete(key);
-    else activeSlots.set(key, next);
+  return {
+    acquired: true,
+    retryAfterSeconds: 0,
+    release: async () => {
+      if (released) return;
+      released = true;
+      try {
+        await (admin.rpc as any)('release_concurrency_lock', {
+          p_key: key,
+          p_owner_token: ownerToken,
+        });
+      } catch {
+        // TTL will auto-expire if release fails
+      }
+    },
   };
 }

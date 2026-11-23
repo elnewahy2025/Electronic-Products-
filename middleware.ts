@@ -11,6 +11,7 @@ const BUYER_PREFIXES = ['/account'];
 const MFA_WHITELIST = [
   '/verify-mfa',
   '/api/auth/login',
+  '/api/auth/oauth',
   '/api/auth/forgot-password',
   '/api/auth/mfa',
   '/api/auth/signout',

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireUser } from '@/lib/auth/session';
 import { enforceSellerThrottle } from '@/lib/security/seller-throttle';
-import { acquireConcurrencySlot } from '@/lib/security/rate-limit';
+import { acquireConcurrencyLock } from '@/lib/security/rate-limit';
 import {
   approvePreviewDataUrlCover,
   extractFirstPageCoverFromDrive,
@@ -54,11 +54,11 @@ export async function POST(req: NextRequest) {
       });
       if (throttled) return throttled;
 
-      const release = acquireConcurrencySlot(`seller:auto_cover:${user.id}`, 1);
-      if (!release) {
+      const lock = await acquireConcurrencyLock(`seller:auto_cover:${user.id}`, 120);
+      if (!lock.acquired) {
         return NextResponse.json(
           { error: 'CONCURRENT_COVER_JOB_IN_PROGRESS' },
-          { status: 429, headers: { 'Retry-After': '10' } },
+          { status: 429, headers: { 'Retry-After': String(lock.retryAfterSeconds) } },
         );
       }
 
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
           sizeBytes: extracted.sizeBytes,
         });
       } finally {
-        release();
+        await lock.release();
       }
     }
 
@@ -97,11 +97,11 @@ export async function POST(req: NextRequest) {
       });
       if (throttled) return throttled;
 
-      const release = acquireConcurrencySlot(`seller:auto_cover:${user.id}`, 1);
-      if (!release) {
+      const lock = await acquireConcurrencyLock(`seller:auto_cover:${user.id}`, 120);
+      if (!lock.acquired) {
         return NextResponse.json(
           { error: 'CONCURRENT_COVER_JOB_IN_PROGRESS' },
-          { status: 429, headers: { 'Retry-After': '10' } },
+          { status: 429, headers: { 'Retry-After': String(lock.retryAfterSeconds) } },
         );
       }
 
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
           sizeBytes: rendered.sizeBytes,
         });
       } finally {
-        release();
+        await lock.release();
       }
     }
 

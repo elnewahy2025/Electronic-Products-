@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { encrypt, decrypt } from '@/lib/crypto/encryption';
 import { getDriveQuota } from '@/lib/drive/client';
+import { invalidateCachedDriveAccessToken } from '@/lib/drive/token-cache';
 import { logAudit } from '@/lib/audit/logger';
 
 export type LinkedDriveAccount = {
@@ -111,6 +112,8 @@ export async function revokeDriveAccount(sellerId: string, accountId: string): P
     .from('seller_drive_accounts')
     .update({ status: 'revoked', encrypted_refresh_token: null })
     .eq('id', accountId);
+
+  await invalidateCachedDriveAccessToken(accountId);
 
   await logAudit({
     action: 'seller.drive_revoked',

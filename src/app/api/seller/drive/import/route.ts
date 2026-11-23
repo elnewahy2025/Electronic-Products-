@@ -6,7 +6,7 @@ import { importDriveFiles } from '@/lib/server/services/upload-service';
 import { processPendingScans } from '@/lib/server/services/scan-service';
 import { processPendingPreviews } from '@/lib/server/services/preview-service';
 import { enforceSellerThrottle } from '@/lib/security/seller-throttle';
-import { acquireConcurrencySlot } from '@/lib/security/rate-limit';
+import { acquireConcurrencyLock } from '@/lib/security/rate-limit';
 
 const bodySchema = z.object({
   drive_account_id: z.string().uuid(),
@@ -39,11 +39,11 @@ export async function POST(req: NextRequest) {
     });
     if (throttled) return throttled;
 
-    const release = acquireConcurrencySlot(`seller:drive:import:${user.id}`, 1);
-    if (!release) {
+    const lock = await acquireConcurrencyLock(`seller:drive:import:${user.id}`, 120);
+    if (!lock.acquired) {
       return NextResponse.json(
         { error: 'CONCURRENT_IMPORT_IN_PROGRESS' },
-        { status: 429, headers: { 'Retry-After': '10' } },
+        { status: 429, headers: { 'Retry-After': String(lock.retryAfterSeconds) } },
       );
     }
 
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({ results });
     } finally {
-      release();
+      await lock.release();
     }
   } catch (e: any) {
     const error = publicError(e, 'DRIVE_IMPORT_FAILED');
