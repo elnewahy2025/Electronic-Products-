@@ -27,6 +27,7 @@
 | `file.quarantine` / `file.delete` | ✔ | ✔ بصلاحية | ✔ بصلاحية | ملفاته فقط |
 | `file.preview.regenerate` | ✔ | ✔ بصلاحية | ✔ بصلاحية | منتجاته فقط |
 | `request.read.any` | ✔ | ✔ | ✔ بصلاحية | ✖ |
+| `request.reject` (`049` — مطلوب لرفض الطلب، وليس `request.read.any`) | ✔ | ✔ بصلاحية | ✖ | ✖ |
 | `code.issue` / `code.revoke` (قبل التسليم فقط) | ✔ | ✔ بصلاحية | ✔ بصلاحية | ✖ |
 | `code.confirm_delivery` | ✔ | ✔ | ✔ بصلاحية | ✖ |
 | `code.read.any` | ✔ | ✔ | ✔ بصلاحية | ✖ |

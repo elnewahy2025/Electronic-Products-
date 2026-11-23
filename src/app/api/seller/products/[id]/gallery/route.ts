@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     if (error) {
       await deleteProductImageFromStorage(uploaded.storagePath);
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: publicError(error) }, { status: 400 });
     }
 
     revalidateTag('storefront-products');
@@ -70,6 +71,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       : msg === 'FORBIDDEN' ? 403
       : msg === 'image_too_large' ? 413
       : 400;
-    return NextResponse.json({ error: msg }, { status });
+    return NextResponse.json({ error: publicError(msg) }, { status });
   }
 }

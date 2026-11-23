@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getUploadStatus } from '@/lib/server/services/upload-service';
@@ -17,6 +18,6 @@ export async function GET(
     });
     return NextResponse.json(result);
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+    return NextResponse.json({ error: publicError(e) }, { status: 400 });
   }
 }

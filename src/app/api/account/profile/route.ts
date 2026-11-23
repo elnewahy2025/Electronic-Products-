@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
@@ -28,7 +29,7 @@ export async function PATCH(req: NextRequest) {
     .update(parsed.data)
     .eq('id', user.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return NextResponse.json({ error: publicError(error) }, { status: 400 });
 
   await logAudit({
     action: 'profile.updated',

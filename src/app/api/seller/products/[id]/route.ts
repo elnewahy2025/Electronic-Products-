@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireUser } from '@/lib/auth/session';
@@ -38,7 +39,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         : message === 'FORBIDDEN' ? 403
           : message === 'UNAUTHENTICATED' ? 401
             : 400;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: publicError(message) }, { status });
   }
 }
 
@@ -55,6 +56,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
         : message === 'FORBIDDEN' ? 403
           : message === 'UNAUTHENTICATED' ? 401
             : 400;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: publicError(message) }, { status });
   }
 }

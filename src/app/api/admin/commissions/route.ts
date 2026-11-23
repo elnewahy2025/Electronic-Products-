@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/auth/admin-guard';
@@ -18,10 +19,10 @@ export async function GET() {
       .order('effective_from', { ascending: false })
       .limit(100);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: publicError(error) }, { status: 400 });
     return NextResponse.json({ items: data ?? [] });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 403 });
+    return NextResponse.json({ error: publicError(e) }, { status: 403 });
   }
 }
 
@@ -61,9 +62,9 @@ export async function POST(req: NextRequest) {
       .select('id')
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: publicError(error) }, { status: 400 });
     return NextResponse.json({ ok: true, id: data.id }, { status: 201 });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 403 });
+    return NextResponse.json({ error: publicError(e) }, { status: 403 });
   }
 }

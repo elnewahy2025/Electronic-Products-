@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
@@ -36,6 +37,6 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     await deleteReview({ reviewId: params.id, reason: parsed.data.reason });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+    return NextResponse.json({ error: publicError(e) }, { status: 400 });
   }
 }

@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireUser } from '@/lib/auth/session';
@@ -97,6 +98,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'INVALID_ACTION' }, { status: 400 });
   } catch (e: any) {
     const status = e.message === 'AI_COVER_NOT_CONFIGURED' ? 503 : 400;
-    return NextResponse.json({ error: e.message ?? 'AUTO_COVER_FAILED' }, { status });
+    return NextResponse.json({ error: publicError(e, 'AUTO_COVER_FAILED') }, { status });
   }
 }

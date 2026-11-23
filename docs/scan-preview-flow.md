@@ -8,8 +8,9 @@ When a seller completes an upload (`/api/upload/complete`), the server:
 Nothing is visible to visitors until `file_versions.scan_status = 'ready'`.
 
 ## 2. Scan worker (cron every 2 min)
-`POST /api/internal/worker/scan` (Bearer `WORKER_SECRET`) **or** Vercel cron
-calls `/api/internal/worker/scan-cron` (checks `x-vercel-cron: 1`).
+`POST /api/internal/worker/scan` (Bearer `CRON_SECRET`, fallback `WORKER_SECRET`) **or** Vercel cron
+calls `/api/internal/worker/scan-cron`. Both verify the same Bearer secret;
+`x-vercel-cron: 1` is spoofable and is no longer accepted.
 
 For each claimed job (max 3):
 1. `claim_scan_jobs` atomically marks jobs `running`.
@@ -28,7 +29,7 @@ For each claimed job (max 3):
    - Seller receives `file_quarantined` notification.
 
 ## 3. Preview worker (cron every 5 min)
-`POST /api/internal/worker/preview` **or** `/api/internal/worker/preview-cron`.
+`POST /api/internal/worker/preview` **or** `/api/internal/worker/preview-cron` (Bearer `CRON_SECRET`, fallback `WORKER_SECRET`).
 
 For each claimed job (max 2):
 1. `claim_preview_jobs` marks `pending → generating`.

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processPendingScans } from '@/lib/server/services/scan-service';
+import { isAuthorizedCron } from '@/lib/auth/cron';
 
 export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
-  // Vercel adds this header only for cron jobs
-  if (req.headers.get('x-vercel-cron') !== '1') {
+  if (!isAuthorizedCron(req.headers)) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
   const result = await processPendingScans(3);

@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireUser } from '@/lib/auth/session';
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
                  : msg === 'review_not_found' ? 404
                  : msg === 'UNAUTHENTICATED' ? 401
                  : 400;
-    return NextResponse.json({ error: msg }, { status });
+    return NextResponse.json({ error: publicError(msg) }, { status });
   }
 }
 
@@ -50,6 +51,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
                  : msg === 'review_not_found' ? 404
                  : msg === 'UNAUTHENTICATED' ? 401
                  : 400;
-    return NextResponse.json({ error: msg }, { status });
+    return NextResponse.json({ error: publicError(msg) }, { status });
   }
 }

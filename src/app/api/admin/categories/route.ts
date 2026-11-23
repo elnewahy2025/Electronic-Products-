@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requirePerm } from '@/lib/auth/admin-guard';
@@ -16,7 +17,7 @@ export async function GET() {
     const categories = await listCategoriesFlat();
     return NextResponse.json({ categories });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 403 });
+    return NextResponse.json({ error: publicError(e) }, { status: 403 });
   }
 }
 
@@ -37,6 +38,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+    return NextResponse.json({ error: publicError(e) }, { status: 400 });
   }
 }

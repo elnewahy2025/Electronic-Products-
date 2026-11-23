@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createReview } from '@/lib/server/services/review-service';
@@ -25,6 +26,6 @@ export async function POST(req: NextRequest) {
                 : msg === 'ALREADY_REVIEWED' ? 409
                 : msg === 'NOT_ELIGIBLE' || msg?.startsWith('not_') || msg?.startsWith('already_') ? 403
                 : 400;
-    return NextResponse.json({ error: msg }, { status });
+    return NextResponse.json({ error: publicError(msg) }, { status });
   }
 }

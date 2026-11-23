@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
@@ -63,6 +64,6 @@ export async function POST(req: NextRequest) {
       : msg === 'FORBIDDEN' ? 403
       : msg === 'image_too_large' ? 413
       : 400;
-    return NextResponse.json({ error: msg }, { status });
+    return NextResponse.json({ error: publicError(msg) }, { status });
   }
 }

@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
@@ -5,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePerm } from '@/lib/auth/admin-guard';
 import { decrypt } from '@/lib/crypto/encryption';
 import { deleteDriveFile } from '@/lib/drive/client';
+import { logAudit } from '@/lib/audit/logger';
 
 const body = z.object({ reason: z.string().min(3) });
 
@@ -61,15 +63,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       notes: parsed.data.reason,
     }).eq('file_version_id', params.id).is('released_at', null);
 
-    await admin.from('audit_logs').insert({
+    await logAudit({
       action: 'file.deleted',
-      entity_type: 'file_versions',
-      entity_id: params.id,
+      entityType: 'file_versions',
+      entityId: params.id,
+      after: { scan_status: 'deleted' },
       reason: parsed.data.reason,
+      ip: req.headers.get('x-forwarded-for') ?? undefined,
+      userAgent: req.headers.get('user-agent') ?? undefined,
     });
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 403 });
+    return NextResponse.json({ error: publicError(e) }, { status: 403 });
   }
 }

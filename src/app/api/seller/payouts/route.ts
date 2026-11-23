@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireUser } from '@/lib/auth/session';
@@ -18,6 +19,6 @@ export async function POST(req: NextRequest) {
     const result = await requestPayout(parsed.data);
     return NextResponse.json(result);
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+    return NextResponse.json({ error: publicError(e) }, { status: 400 });
   }
 }

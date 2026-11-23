@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
@@ -40,6 +41,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     const status = e.message === 'UNAUTHENTICATED' ? 401 : 403;
-    return NextResponse.json({ error: e.message }, { status });
+    return NextResponse.json({ error: publicError(e) }, { status });
   }
 }

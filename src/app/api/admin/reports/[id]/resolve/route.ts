@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requirePerm } from '@/lib/auth/admin-guard';
@@ -21,6 +22,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 403 });
+    return NextResponse.json({ error: publicError(e) }, { status: 403 });
   }
 }

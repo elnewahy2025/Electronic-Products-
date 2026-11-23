@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
@@ -38,13 +39,13 @@ export async function DELETE(
       .eq('id', params.imageId)
       .eq('product_id', params.id);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: publicError(error) }, { status: 400 });
 
     await deleteProductImageFromStorage(existing.storage_path);
     revalidateTag('storefront-products');
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     const status = e.message === 'UNAUTHENTICATED' ? 401 : 403;
-    return NextResponse.json({ error: e.message }, { status });
+    return NextResponse.json({ error: publicError(e) }, { status });
   }
 }

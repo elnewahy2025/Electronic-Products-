@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { z } from 'zod';
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       .update(patch)
       .eq('id', params.id);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: publicError(error) }, { status: 400 });
 
     await logAudit({
       action: status === 'suspended' ? 'product.suspended' : status === 'rejected' ? 'product.rejected' : 'product.published',
@@ -62,6 +63,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     const code = e.message === 'FORBIDDEN' ? 403 : e.message === 'UNAUTHENTICATED' ? 401 : 400;
-    return NextResponse.json({ error: e.message }, { status: code });
+    return NextResponse.json({ error: publicError(e) }, { status: code });
   }
 }

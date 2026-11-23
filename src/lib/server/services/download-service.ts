@@ -173,11 +173,30 @@ export async function recordCompletion(params: {
 
   const { data: session } = await admin
     .from('download_sessions')
-    .select('id, order_item_id, status, expires_at')
+    .select('id, order_item_id, product_version_id, status, expires_at')
     .eq('id', params.sessionId)
     .single();
 
   if (!session) throw new Error('SESSION_NOT_FOUND');
+  if (!['active', 'compensation_active'].includes(session.status)) {
+    throw new Error('SESSION_NOT_ACTIVE');
+  }
+  if (new Date(session.expires_at).getTime() < Date.now()) {
+    throw new Error('SESSION_EXPIRED');
+  }
+
+  const { data: allowedFiles } = await admin
+    .from('product_version_files')
+    .select('file_version_id')
+    .eq('product_version_id', session.product_version_id);
+  const allowedIds = new Set((allowedFiles ?? []).map(f => f.file_version_id));
+  const submittedIds = params.files.map(f => f.fileVersionId);
+  if (
+    new Set(submittedIds).size !== submittedIds.length ||
+    !submittedIds.every(id => allowedIds.has(id))
+  ) {
+    throw new Error('FILE_NOT_IN_SESSION');
+  }
 
   // Insert deliveries. The unique constraint on (session_id, file_version_id)
   // is partial (completed = true), which PostgREST cannot express as an

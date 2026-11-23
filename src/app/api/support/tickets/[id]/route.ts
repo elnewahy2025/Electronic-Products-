@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
@@ -64,7 +65,7 @@ export async function POST(
     .select('id, body, is_internal, created_at')
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return NextResponse.json({ error: publicError(error) }, { status: 400 });
   return NextResponse.json({ ok: true, message: msg }, { status: 201 });
 }
 
@@ -91,6 +92,6 @@ export async function PATCH(
     .update({ status: status as any })
     .eq('id', params.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 403 });
+  if (error) return NextResponse.json({ error: publicError(error) }, { status: 403 });
   return NextResponse.json({ ok: true, status });
 }

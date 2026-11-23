@@ -3,15 +3,20 @@ import { randomBytes, createHmac } from 'node:crypto';
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O/1/I/L
 const LENGTH = 16;
+// Reject the tail of the byte range so every alphabet character is equally
+// likely (ALPHABET.length is not a power of two).
+const ACCEPTABLE_BYTE = Math.floor(256 / ALPHABET.length) * ALPHABET.length;
 
 export function generateCode(): string {
-  const bytes = randomBytes(LENGTH);
-  let out = '';
-  for (let i = 0; i < LENGTH; i++) {
-    out += ALPHABET[bytes[i] % ALPHABET.length];
-    if (i === 3 || i === 7 || i === 11) out += '-';
+  let body = '';
+  while (body.length < LENGTH) {
+    for (const byte of randomBytes(LENGTH * 2)) {
+      if (byte >= ACCEPTABLE_BYTE) continue;
+      body += ALPHABET[byte % ALPHABET.length];
+      if (body.length === LENGTH) break;
+    }
   }
-  return out; // e.g. ABCD-EFGH-JKLM-NPQR
+  return [body.slice(0, 4), body.slice(4, 8), body.slice(8, 12), body.slice(12)].join('-');
 }
 
 export function hashCode(code: string): string {

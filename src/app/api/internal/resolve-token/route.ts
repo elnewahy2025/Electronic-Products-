@@ -3,11 +3,12 @@ import { z } from 'zod';
 import { verifyDownloadToken } from '@/lib/crypto/download-token';
 import { resolveDriveUrl } from '@/lib/server/services/drive-service';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { constantTimeEqual } from '@/lib/crypto/constant-time';
 
 const bodySchema = z.object({ token: z.string() });
 
 export async function POST(req: NextRequest) {
-  if (req.headers.get('x-internal-secret') !== process.env.DOWNLOAD_SERVICE_TOKEN) {
+  if (!constantTimeEqual(req.headers.get('x-internal-secret'), process.env.DOWNLOAD_SERVICE_TOKEN)) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 
@@ -27,6 +28,11 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (!session) return NextResponse.json({ error: 'SESSION_NOT_FOUND' }, { status: 404 });
+  // A token minted earlier must stop working once the session is completed,
+  // exhausted or revoked — otherwise it can be replayed for fresh Drive URLs.
+  if (!['active', 'compensation_active'].includes(session.status)) {
+    return NextResponse.json({ error: 'SESSION_NOT_ACTIVE' }, { status: 409 });
+  }
   if (new Date(session.expires_at).getTime() < Date.now()) {
     return NextResponse.json({ error: 'SESSION_EXPIRED' }, { status: 410 });
   }
@@ -71,7 +77,7 @@ export async function POST(req: NextRequest) {
       type: payload.typ,
       files: resolved,
     });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'DRIVE_URL_RESOLUTION_FAILED' }, { status: 500 });
   }
 }

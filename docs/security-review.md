@@ -83,7 +83,7 @@ END IF;
 
 | Attack Vector | Blocked By |
 |---|---|
-| Buyer calls `approve_purchase_request` via PostgREST | Internal RPC permission check (`request.read.any`) + API `requirePerm` |
+| Buyer calls `approve_purchase_request` / `approve_compensation` via PostgREST | Internal RPC permission check (`request.approve` / `download.compensation.approve`) + API `requirePerm`; compensation approval locks a `pending` row with `FOR UPDATE` (`049`) |
 | Seller modifies another seller's file or transfers ownership | RLS `USING` + `WITH CHECK` + FK constraints |
 | Seller inserts a fake payout bypassing minimum/balance | `REVOKE INSERT` on `seller_payouts` + `request_payout` RPC validation |
 | User tampers with notification title/body | `trg_notifications_only_read_at` trigger blocks non-`read_at` changes |
@@ -104,6 +104,7 @@ END IF;
 6. **Insider admin abuse:** Every admin action is logged in `audit_logs` (append-only), but an authorized admin could approve their own purchase request. *Mitigation:* Regular audit log review and future two-person approval rule for high-value actions.
 7. **`get_usd_rate` is public:** Anyone can query exchange rates, which are non-sensitive public storefront data.
 8. **Content-Security-Policy (CSP) & HSTS headers:** **Implemented** in `middleware.ts` (per-request nonce + dynamic CSP + HSTS in production) and `next.config.mjs` (static security headers + `poweredByHeader: false`), with optional violation reporting at `/api/csp-report`. See [`docs/security-headers.md`](security-headers.md).
+9. **No real code resend transport:** `/api/admin/codes/[id]/resend` deliberately returns `501 RESEND_NOT_IMPLEMENTED` and records `result: 'skipped'` instead of falsely marking delivery as `'sent'` (`050`). Connect a real transport before enabling this action.
 
 ---
 
@@ -113,3 +114,16 @@ END IF;
 - Add per-admin IP allowlisting for critical actions (`wallet.adjust`, `backup.restore`)
 - Add real-time security alerts (email/webhook on repeated `code_revocation_blocked_after_delivery` or brute-force spikes)
 - Add a scheduled RLS verification job that inspects `pg_policies` and function grants for drift
+
+---
+
+## 7. Audit Remediation (`048`–`053`)
+
+| Finding | Mitigation |
+|---|---|
+| `product_rating_stats` writable by clients | RLS + `REVOKE` writes from `anon`/`authenticated` (`048`) |
+| Compensation self-approval / missing pending lock | `approve_compensation` RPC with approve-only permission and `FOR UPDATE`; `request.reject` for rejections; single pending request and 3-session cap (`049`) |
+| Resend falsely reported success | `501 RESEND_NOT_IMPLEMENTED` + `skipped` delivery attempt (`050`) |
+| Token replay after session completion / arbitrary file completion | Status check in resolve/completion, ownership RPC, file-set intersection (`051`) |
+| Guest buyers could never review | Guest-aware `can_current_user_review` RPC (`052`) |
+| Error hygiene and low findings | `publicError` sanitizer, super-admin-only settings GET, constant-time secret comparisons, rejection sampling, `logAudit` for file deletion, cron-secret-only workers, scoped seller stats, masked `buyer_id`, admin-only review soft-delete (`053` + app changes) |

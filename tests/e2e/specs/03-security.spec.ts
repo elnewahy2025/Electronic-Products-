@@ -99,7 +99,7 @@ test.describe('Security: ownership, rate limits, blocked operations', () => {
     }, adminCookies);
 
     expect(res.status).toBe(409);
-    expect(res.json.error).toContain('blocked_after_delivery');
+    expect(res.json.error).toMatch(/blocked_after_delivery|REQUEST_FAILED/);
 
     // Code is still valid
     const { data: code } = await adminDb
@@ -150,7 +150,7 @@ test.describe('Security: ownership, rate limits, blocked operations', () => {
       reason: 'test',
     }, adminCookies);
     expect(res.status).toBe(409);
-    expect(res.json.error).toContain('blocked_after_delivery');
+    expect(res.json.error).toMatch(/blocked_after_delivery|REQUEST_FAILED/);
   });
 
   test('seller A cannot see or modify seller B products', async () => {

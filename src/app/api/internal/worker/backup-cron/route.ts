@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isAuthorizedCron } from '@/lib/auth/cron';
 
 /**
  * Daily backup watchdog cron (Vercel Cron: 0 4 * * *).
@@ -7,14 +8,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
  * Optionally triggers an external runner webhook (e.g. GitHub Actions workflow_dispatch)
  * and alerts admins if a scheduled backup is overdue.
  */
-function isAuthorized(req: NextRequest): boolean {
-  if (req.headers.get('x-vercel-cron') === '1') return true;
-  const secret = process.env.CRON_SECRET || process.env.WORKER_SECRET;
-  return Boolean(secret && req.headers.get('authorization') === `Bearer ${secret}`);
-}
-
 export async function GET(req: NextRequest) {
-  if (!isAuthorized(req)) {
+  if (!isAuthorizedCron(req.headers)) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 

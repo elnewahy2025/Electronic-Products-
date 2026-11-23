@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requirePerm } from '@/lib/auth/admin-guard';
@@ -23,7 +24,7 @@ export async function GET() {
       },
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 403 });
+    return NextResponse.json({ error: publicError(e) }, { status: 403 });
   }
 }
 

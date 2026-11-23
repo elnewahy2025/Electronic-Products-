@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { initiateDownload } from '@/lib/server/services/download-service';
@@ -28,6 +29,6 @@ export async function POST(
               : e.message === 'FILE_ALREADY_DELIVERED' ? 409
               : e.message === 'SESSION_EXPIRED' ? 410
               : 400;
-    return NextResponse.json({ error: e.message }, { status: code });
+    return NextResponse.json({ error: publicError(e) }, { status: code });
   }
 }

@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -55,6 +56,6 @@ export async function POST(req: NextRequest) {
   } catch (e: any) {
     const message = e?.message ?? 'MFA_ERROR';
     const status = message === 'MFA_TOO_MANY_ATTEMPTS' ? 429 : 400;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: publicError(message) }, { status });
   }
 }

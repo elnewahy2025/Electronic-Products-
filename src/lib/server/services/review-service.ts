@@ -5,13 +5,10 @@ import { logAudit } from '@/lib/audit/logger';
 export type ReviewRow = {
   id: string;
   product_id: string;
-  buyer_id: string;
   rating: number;
   body: string | null;
   status: 'published' | 'deleted';
   created_at: string;
-  deleted_by: string | null;
-  delete_reason: string | null;
   seller_reply?: string | null;
   seller_replied_at?: string | null;
 };
@@ -36,7 +33,7 @@ export async function getProductReviews(productId: string, limit = 20): Promise<
   const db = await createClient();
   const { data } = await db
     .from('reviews')
-    .select('id, product_id, buyer_id, rating, body, status, created_at, deleted_by, delete_reason, seller_reply, seller_replied_at')
+    .select('id, product_id, rating, body, status, created_at, seller_reply, seller_replied_at')
     .eq('product_id', productId)
     .eq('status', 'published')
     .order('created_at', { ascending: false })
@@ -53,7 +50,7 @@ export async function getMyReviewForProduct(
 
   const { data } = await db
     .from('reviews')
-    .select('id, product_id, buyer_id, rating, body, status, created_at, deleted_by, delete_reason')
+    .select('id, product_id, rating, body, status, created_at')
     .eq('product_id', productId)
     .eq('buyer_id', user.id)
     .maybeSingle();
@@ -69,38 +66,22 @@ export async function canCurrentUserReview(productId: string): Promise<{
   orderItemId?: string;
   reason?: string;
 }> {
+  // SECURITY DEFINER RPC so guest purchases (buyer_id IS NULL) are matched
+  // by customer_email, just like the other buyer-facing RPCs.
   const db = await createClient();
-  const { data: { user } } = await db.auth.getUser();
-  if (!user) return { canReview: false, reason: 'login_required' };
-
-  const { data: existing } = await db
-    .from('reviews')
-    .select('id')
-    .eq('product_id', productId)
-    .eq('buyer_id', user.id)
-    .maybeSingle();
-
-  if (existing) return { canReview: false, reason: 'already_reviewed' };
-
-  const { data: eligible } = await db
-    .from('order_items')
-    .select(`
-      id,
-      orders!inner(
-        purchase_requests!inner(buyer_id, status, customer_email)
-      )
-    `)
-    .eq('product_id', productId)
-    .in('orders.purchase_requests.status', ['approved', 'completed'])
-    .limit(1);
-
-  const match = eligible?.find((row: any) => {
-    const pr = row.orders?.purchase_requests;
-    return pr?.buyer_id === user.id || pr?.customer_email === user.email;
+  const { data, error } = await db.rpc('can_current_user_review', {
+    p_product_id: productId,
   });
+  if (error || !data?.length) {
+    return { canReview: false, reason: 'NOT_ELIGIBLE' };
+  }
 
-  if (!match) return { canReview: false, reason: 'not_purchased' };
-  return { canReview: true, orderItemId: (match as any).id };
+  const row = data[0] as { can_review: boolean; order_item_id: string | null; reason: string | null };
+  return {
+    canReview: Boolean(row.can_review),
+    orderItemId: row.order_item_id ?? undefined,
+    reason: row.reason ?? undefined,
+  };
 }
 
 export async function createReview(input: {

@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
@@ -16,9 +17,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       .from('allowed_file_types')
       .update({ is_enabled: parsed.data.is_enabled })
       .eq('id', params.id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: publicError(error) }, { status: 400 });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 403 });
+    return NextResponse.json({ error: publicError(e) }, { status: 403 });
   }
 }

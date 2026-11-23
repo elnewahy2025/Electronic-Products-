@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { searchStorefront } from '@/lib/server/services/storefront-service';
 
@@ -16,6 +17,6 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json(result);
   } catch (e: any) {
-    return NextResponse.json({ error: e.message, items: [], total: 0 }, { status: 500 });
+    return NextResponse.json({ error: publicError(e), items: [], total: 0 }, { status: 500 });
   }
 }

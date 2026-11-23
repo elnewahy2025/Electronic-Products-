@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requireSuperAdmin } from '@/lib/auth/admin-guard';
@@ -35,11 +36,11 @@ export async function PATCH(req: Request) {
     });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: publicError(error) }, { status: 400 });
     }
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 403 });
+    return NextResponse.json({ error: publicError(e) }, { status: 403 });
   }
 }

@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createPurchaseRequest } from '@/lib/server/services/purchase-request-service';
@@ -61,6 +62,6 @@ export async function POST(req: NextRequest) {
     const status = e.message === 'duplicate_request' ? 409
                  : e.message?.startsWith('rate_limit') ? 429
                  : 400;
-    return NextResponse.json({ error: message, code: e.message }, { status });
+    return NextResponse.json({ error: message, code: publicError(e) }, { status });
   }
 }

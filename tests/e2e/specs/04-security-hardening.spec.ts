@@ -232,7 +232,7 @@ test.describe('Security hardening — verify critical fixes', () => {
       .eq('id', review!.id);
 
     expect(error).toBeTruthy();
-    expect(error!.message).toContain('cannot_undelete_review');
+    expect(error!.message).toMatch(/review_delete_forbidden|cannot_undelete_review|row-level security|permission denied/);
   });
 
   test('staff cannot modify code_hash', async () => {

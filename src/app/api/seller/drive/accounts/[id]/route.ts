@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import {
@@ -17,7 +18,7 @@ export async function PATCH(
     await setDefaultDriveAccount(user.id, params.id);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+    return NextResponse.json({ error: publicError(e) }, { status: 400 });
   }
 }
 
@@ -33,6 +34,6 @@ export async function DELETE(
     await revokeDriveAccount(user.id, params.id);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+    return NextResponse.json({ error: publicError(e) }, { status: 400 });
   }
 }

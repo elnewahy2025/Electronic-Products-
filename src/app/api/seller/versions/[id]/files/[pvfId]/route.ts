@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireUser } from '@/lib/auth/session';
@@ -10,7 +11,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     await removeFileFromVersion(params.id, params.pvfId);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+    return NextResponse.json({ error: publicError(e) }, { status: 400 });
   }
 }
 
@@ -29,6 +30,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     await updateVersionFile(params.pvfId, parsed.data);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+    return NextResponse.json({ error: publicError(e) }, { status: 400 });
   }
 }

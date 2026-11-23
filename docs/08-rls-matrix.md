@@ -1,6 +1,6 @@
 # مصفوفة RLS التفصيلية (Row-Level Security Matrix)
 
-توثّق هذه الوثيقة التصميم الكامل والنهائي لسياسات أمن الصفوف (`Row-Level Security - RLS`)، والدوال المساعدة (`SECURITY DEFINER`)، والعروض الآمنة (`Safe Views`)، ومشغلات الحماية الإلزامية (`Triggers`) عبر جميع جداول قاعدة البيانات، شاملةً كافة تحديثات التحصين الأمني والأداء في الترحيلات `027` إلى `032`.
+توثّق هذه الوثيقة التصميم الكامل والنهائي لسياسات أمن الصفوف (`Row-Level Security - RLS`)، والدوال المساعدة (`SECURITY DEFINER`)، والعروض الآمنة (`Safe Views`)، ومشغلات الحماية الإلزامية (`Triggers`) عبر جميع جداول قاعدة البيانات، شاملةً كافة تحديثات التحصين الأمني والأداء في الترحيلات `027` إلى `053`.
 
 ---
 
@@ -60,6 +60,12 @@ code_is_delivered(p_code_id uuid) RETURNS boolean
 
 -- هل بدأت جلسة التسليم (توجد صفوف في download_deliveries)؟
 session_has_started_delivery(p_session_id uuid) RETURNS boolean
+
+-- هل الجلسة مملوكة للمستخدم الحالي (بما في ذلك المشتري الضيف الذي سجّل لاحقًا بنفس البريد)؟ (`051`)
+download_session_owned_by_current_user(p_session_id uuid) RETURNS boolean
+
+-- هل يمكن للمستخدم الحالي تقييم المنتج؟ يطابق المشتري المسجّل أو بريد الضيف (`052`)
+can_current_user_review(p_product_id uuid) RETURNS TABLE(can_review boolean, order_item_id uuid, reason text)
 ```
 
 جميع هذه الدوال معرّفة بـ `STABLE SECURITY DEFINER SET search_path = public`.
@@ -243,13 +249,23 @@ session_has_started_delivery(p_session_id uuid) RETURNS boolean
 | `download_attempts` | `EXISTS` (order_item للمشتري) **OR** `staff_has('download.session.revoke')` **OR** `is_admin_or_above()` | `service_role` فقط (عبر `record_successful_attempt` المحصورة بـ `service_role`) | لا أحد |
 | `download_deliveries` | `buyer_owns_session(session_id)` **OR** `staff_has('download.session.revoke')` **OR** `is_admin_or_above()` | `service_role` فقط | لا أحد |
 
-### `compensation_requests`
+### `compensation_requests` (`049`)
 | العملية | السياسة |
 |---|---|
 | **SELECT** | `buyer_owns_code(code_id)` (عبر `buyer_compensation_view` الذي يخفي `admin_reason` إلا عند `status = 'rejected'`) **OR** `staff_has('download.compensation.approve')` **OR** `is_admin_or_above()` |
-| **INSERT** | `staff_has('download.compensation.request')` **OR** `is_admin_or_above()` (بسبب إلزامي، وضمن سقف 3 لكل `code_id`) |
-| **UPDATE** | `staff_has('download.compensation.approve')` **OR** `is_admin_or_above()` |
+| **INSERT** | `staff_has('download.compensation.request')` **OR** `is_admin_or_above()` (بسبب إلزامي، وضمن سقف 3 لكل `code_id`، وطلب `pending` واحد فقط لكل كود) |
+| **UPDATE** | `staff_has('download.compensation.approve')` **OR** `is_admin_or_above()` — الموافقة تتم حصريًا عبر `approve_compensation(p_request_id, p_reason)` الذي يتحقق من `FOR UPDATE` وحالة `pending` وصلاحية `download.compensation.approve` فقط (فصل المهام: من يطلب التعويض لا يوافق عليه) |
 | **DELETE** | لا أحد |
+
+> **فصل المهام (`049`):** `reject_purchase_request` يتطلب الآن `request.reject` (وليس `request.read.any`). الأدمن ما زال يستطيع التنفيذ المباشر للحفاظ على مسار الإدارة الحالي.
+
+### `product_rating_stats` (`048`)
+| العملية | السياسة |
+|---|---|
+| **SELECT** | المنتج منشور (`status = 'published'`) — RLS مفعّل مع سياسة قراءة واحدة |
+| **INSERT / UPDATE / DELETE** | **ممنوح فقط لـ `service_role` / `postgres`** (`REVOKE` من `anon` و`authenticated`)؛ التحديث يتم تلقائيًا عبر_trigger `refresh_product_rating` |
+
+> `refresh_product_rating(p_product_id)` يبقى **`EXECUTE` متاحًا للعموم** لأن مشغّل التقييم يستدعيه بصلاحية المستدعي؛ لا يُمنح العميل أي حق كتابة مباشر على الجدول.
 
 ### `attempt_exception_requests`
 | العملية | السياسة |
@@ -282,7 +298,7 @@ session_has_started_delivery(p_session_id uuid) RETURNS boolean
 |---|---|
 | **SELECT** | `status = 'published'` للجميع **OR** `buyer_id = auth.uid()` **OR** `seller_owns_product(product_id)` **OR** `staff_has('review.delete')` **OR** `is_admin_or_above()` |
 | **INSERT** | عبر `create_review` (`buyer_id = auth.uid()` + تحقق من وجود `order_item` مكتمل التسليم + قيد `UNIQUE(product_id, buyer_id)`) |
-| **UPDATE (حذف ناعم فقط)** | `seller_owns_product(product_id)` **OR** `staff_has('review.delete')` **OR** `is_admin_or_above()` |
+| **UPDATE (الرد فقط للبائع، الحذف الناعم للإدارة فقط)** | `seller_owns_product(product_id)` **OR** `staff_has('review.delete')` **OR** `is_admin_or_above()`؛ المشغّل `trg_restrict_review_soft_delete` (`053`) يرفض أي تغيير على `status` / `deleted_at` / `deleted_by` / `delete_reason` إلا لـ `is_admin_or_above()` أو `staff_has('review.delete')` أو `service_role` |
 | **DELETE** | لا أحد |
 
 **مشغلات حماية الحقول على `reviews` (`027_security_hardening.sql` و`028_seller_reviews.sql`):**
@@ -365,13 +381,13 @@ session_has_started_delivery(p_session_id uuid) RETURNS boolean
    - `pick_drive_account`
    - `update_drive_quota`
    - `notify_staff_with_permission` (`030_admin_notifications.sql`)
-   - `refresh_product_rating` (`031_performance_indexes.sql`)
+   - ~~`refresh_product_rating`~~ — **استُبعد في `048`**: EXECUTE متاح للعموم لأن مشغّل التقييم يستدعيه.
 2. **دوال إدارية تتحقق داخليًا من صلاحية المستدعي قبل أي تنفيذ (`IF NOT (is_admin_or_above() OR staff_has(...)) THEN RAISE EXCEPTION 'not_authorized'`):**
    - `confirm_code_delivery`, `revoke_code_before_delivery`, `issue_replacement_code`
-   - `create_compensation_session`, `reject_compensation`
+   - `create_compensation_session`, `reject_compensation`, `approve_compensation` (`049` — يتطلب `download.compensation.approve` فقط، ويتحقق من صف `pending` مع `FOR UPDATE`)
    - `extend_session`, `revoke_session_before_delivery`
    - `approve_seller`, `reject_seller`, `suspend_seller`
-   - `approve_purchase_request`, `reject_purchase_request`
+   - `approve_purchase_request`, `reject_purchase_request` (`049` — الرفض يتطلب `request.reject`)
    - `approve_payout`, `mark_payout_paid`, `reject_payout`
    - `delete_review`, `resolve_report`
    - `set_category_parent`, `delete_category_safe`, `reorder_categories`
@@ -379,7 +395,8 @@ session_has_started_delivery(p_session_id uuid) RETURNS boolean
 3. **دوال `SECURITY DEFINER` مقيدة بملكية المستخدم الحالي (`auth.uid()`) (`031` و`032`):**
    - `buyer_order_detail(p_request_id)` و`buyer_orders_list()`: تتحققان داخليًا من `buyer_id = auth.uid() OR customer_email = auth.email()` وتخفيان `admin_reason` إلا عند `status = 'rejected'`.
    - `seller_orders(...)` و`seller_sales_stats()`: تفرضان `p.seller_id = auth.uid()` داخليًا وتقنّعان بريد المشتري (`ab***@domain.com`) لحماية خصوصية المشتري، وممنوحتان لـ `authenticated` فقط.
-   - `refresh_product_rating(p_product_id)`: محصورة بـ `service_role` فقط (تُستدعى عبر triggers).
+   - `refresh_product_rating(p_product_id)`: `EXECUTE` متاح للعموم (`048`) لأن مشغّل التقييم يستدعيه بصلاحية المستدعي؛ الجدول `product_rating_stats` محمي بـ RLS ومنح كتابة لـ `service_role` فقط.
+   - `seller_review_stats(p_seller_id)` (`053`): يرفض أي `p_seller_id` لا يساوي `auth.uid()` إلا للأدمن/الموظف بصلاحية `review.delete`؛ يمنع قراءة إحصاءات بائع آخر.
 
 ---
 
@@ -391,7 +408,7 @@ session_has_started_delivery(p_session_id uuid) RETURNS boolean
 - [x] المشتري أو البائع لا يستطيع استدعاء الدوال الخادمية (`record_successful_attempt`, `pick_drive_account`, إلخ)
 - [x] البائع A لا يرى منتجات البائع B غير المنشورة ولا ملفاته ولا يستطيع نقل ملكية ملف إلى بائع آخر (`WITH CHECK`)
 - [x] البائع لا يستطيع إدراج صف مباشر في `seller_payouts` لتجاوز حد الـ 100 دولار أو الرصيد المتاح
-- [x] البائع يستطيع حذف تقييم على منتجه ناعمًا بسبب إلزامي، لكنه لا يستطيع تعديل `rating`/`body` أو إعادة نشر تقييم محذوف
+- [x] البائع يستطيع الرد على تقييم منتجه وحذف رده فقط، لكنه **لا يستطيع** حذف التقييم ناعمًا (الإدارة فقط عبر `053`) ولا تعديل `rating`/`body` أو إعادة نشر تقييم محذوف
 - [x] المستخدم يستطيع تحديث `read_at` في إشعاراته، لكنه لا يستطيع تعديل `title` أو `body`
 - [x] المشتري لا يرى `admin_reason` في طلبات التعويض إلا عند `status = 'rejected'`
 - [x] محاولة `UPDATE purchase_codes SET status = 'revoked'` بعد `delivered_at IS NOT NULL` تفشل بـ `code_revocation_blocked_after_delivery`

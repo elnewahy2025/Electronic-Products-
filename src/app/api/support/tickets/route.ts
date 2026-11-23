@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return NextResponse.json({ error: publicError(error) }, { status: 400 });
   return NextResponse.json({ items: data ?? [] });
 }
 
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
     });
 
   if (msgErr) {
-    return NextResponse.json({ error: msgErr.message }, { status: 400 });
+    return NextResponse.json({ error: publicError(msgErr) }, { status: 400 });
   }
 
   // Notify staff with support.read permission (best-effort)

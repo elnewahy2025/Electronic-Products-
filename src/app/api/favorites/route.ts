@@ -1,3 +1,4 @@
+import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
@@ -17,7 +18,7 @@ export async function GET() {
     .eq('buyer_id', user.id)
     .order('created_at', { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return NextResponse.json({ error: publicError(error) }, { status: 400 });
   return NextResponse.json({ items: data ?? [] });
 }
 
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
     .from('favorites')
     .upsert({ buyer_id: user.id, product_id: productId }, { onConflict: 'buyer_id,product_id' });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return NextResponse.json({ error: publicError(error) }, { status: 400 });
   return NextResponse.json({ ok: true, favorited: true });
 }
 
@@ -56,6 +57,6 @@ export async function DELETE(req: NextRequest) {
     .eq('buyer_id', user.id)
     .eq('product_id', productId);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return NextResponse.json({ error: publicError(error) }, { status: 400 });
   return NextResponse.json({ ok: true, favorited: false });
 }

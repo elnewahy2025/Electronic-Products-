@@ -23,4 +23,4 @@ Instead of sending SMTP requests inside database transactions or blocking user r
 ## Security
 - `email_outbox` has RLS enabled (`SELECT` restricted to `is_admin_or_above() OR staff_has('audit.read')`).
 - `enqueue_email`, `claim_email_outbox`, `mark_email_sent`, and `mark_email_failed` are `SECURITY DEFINER` and `REVOKE`d from `PUBLIC` (`service_role` only).
-- Worker endpoints require `Authorization: Bearer $WORKER_SECRET` or `x-vercel-cron: 1`.
+- Worker and cron endpoints require `Authorization: Bearer $CRON_SECRET` (fallback `$WORKER_SECRET`). The spoofable `x-vercel-cron: 1` header is **never** accepted as authentication; configure Vercel Cron to send the Bearer secret.
