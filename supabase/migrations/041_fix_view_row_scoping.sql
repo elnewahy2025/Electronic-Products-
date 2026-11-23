@@ -38,7 +38,7 @@ SELECT
 FROM purchase_requests pr
 LEFT JOIN orders o ON o.purchase_request_id = pr.id
 WHERE pr.buyer_id = auth.uid()
-   OR pr.customer_email = auth.email()
+   OR (pr.customer_email IS NOT NULL AND lower(pr.customer_email::text) = lower(coalesce(auth.email(), '')))
    OR public.is_admin_or_above()
    OR public.staff_has('request.read.any');
 GRANT SELECT ON buyer_orders_view TO authenticated;
@@ -69,7 +69,7 @@ JOIN purchase_requests pr ON pr.id = o.purchase_request_id
 JOIN products p ON p.id = oi.product_id
 LEFT JOIN code_redemptions cr ON cr.code_id = pc.id
 WHERE pr.buyer_id = auth.uid()
-   OR pr.customer_email = auth.email()
+   OR (pr.customer_email IS NOT NULL AND lower(pr.customer_email::text) = lower(coalesce(auth.email(), '')))
    OR public.is_admin_or_above()
    OR public.staff_has('code.read.any');
 GRANT SELECT ON buyer_codes_full TO authenticated;
@@ -101,7 +101,7 @@ JOIN orders o ON o.id = oi.order_id
 JOIN purchase_requests pr ON pr.id = o.purchase_request_id
 JOIN products p ON p.id = oi.product_id
 WHERE pr.buyer_id = auth.uid()
-   OR pr.customer_email = auth.email()
+   OR (pr.customer_email IS NOT NULL AND lower(pr.customer_email::text) = lower(coalesce(auth.email(), '')))
    OR public.is_admin_or_above()
    OR public.staff_has('download.session.revoke');
 GRANT SELECT ON buyer_sessions_full TO authenticated;

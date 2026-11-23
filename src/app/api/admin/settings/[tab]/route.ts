@@ -15,7 +15,9 @@ export async function GET(_req: NextRequest, { params }: { params: { tab: string
     const settings = await getSettings(params.tab);
     return NextResponse.json({ settings });
   } catch (e: any) {
-    return NextResponse.json({ error: publicError(e) }, { status: 500 });
+    const code = publicError(e);
+    const status = code === 'UNAUTHENTICATED' ? 401 : code === 'FORBIDDEN' ? 403 : 500;
+    return NextResponse.json({ error: code }, { status });
   }
 }
 

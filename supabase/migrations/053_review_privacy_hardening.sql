@@ -72,7 +72,7 @@ CREATE POLICY reviews_soft_delete ON reviews FOR UPDATE
                          WHERE p.id = reviews.product_id AND p.seller_id = auth.uid()));
 
 CREATE OR REPLACE FUNCTION public.restrict_review_soft_delete() RETURNS trigger
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql SET search_path = public AS $$
 BEGIN
   IF NEW.status IS DISTINCT FROM OLD.status
      OR NEW.deleted_at IS DISTINCT FROM OLD.deleted_at
