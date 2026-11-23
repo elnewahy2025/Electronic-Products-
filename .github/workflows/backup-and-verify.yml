@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       verify_postgres:
-        image: postgres:15
+        image: postgres:17
         env:
           POSTGRES_PASSWORD: verify_password
           POSTGRES_USER: postgres
@@ -44,10 +44,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install PostgreSQL 15 client tools
+      - name: Install PostgreSQL client tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-client-15
+          sudo apt-get install -y postgresql-client
 
       - name: Install Supabase JS client
         run: npm install --no-save @supabase/supabase-js
