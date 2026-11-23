@@ -130,8 +130,14 @@ test('CSP header present and nonce matches inline scripts', async ({ page }) => 
 
 ## What is NOT covered
 
-- **HTTP → HTTPS redirect**: must be handled at the edge (Vercel does this
-  automatically; or configure nginx/Cloudflare).
+- **HTTP → HTTPS redirect / canonical host**: must still be handled at the edge
+  (Vercel project settings, Cloudflare, or nginx). `next.config.mjs` adds a
+  production-only fallback redirect when `NEXT_PUBLIC_APP_URL` is an `https://`
+  URL and the request arrives with `x-forwarded-proto: http`; it is deliberately
+  inactive for localhost/CI. Verify the first request over plain HTTP with
+  `curl -I http://<host>/` and confirm a `308` to the canonical HTTPS origin.
+  Choose the apex vs `www` host and configure custom domains at the edge; do
+  not trust arbitrary `x-forwarded-host` values in application code.
 - **Cookie flags**: set per-cookie via Supabase + our own (`httpOnly`, `secure`,
   `sameSite`).
 - **Subresource Integrity (SRI)**: relevant only for external scripts; we don't

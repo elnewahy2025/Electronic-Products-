@@ -60,6 +60,7 @@ export async function linkDriveAccount(params: {
     entityType: 'seller_drive_accounts',
     entityId: data.id,
     after: { google_email: params.googleEmail },
+    required: true,
   });
 
   return { id: data.id };
@@ -120,6 +121,7 @@ export async function revokeDriveAccount(sellerId: string, accountId: string): P
     entityType: 'seller_drive_accounts',
     entityId: accountId,
     before: { google_email: acc.google_account_email },
+    required: true,
   });
 }
 
@@ -153,6 +155,7 @@ export async function setDefaultDriveAccount(sellerId: string, accountId: string
     entityType: 'seller_drive_accounts',
     entityId: accountId,
     after: { google_email: acc.google_account_email },
+    required: true,
   });
 }
 

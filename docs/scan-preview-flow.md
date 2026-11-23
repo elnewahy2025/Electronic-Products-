@@ -1,4 +1,9 @@
-# Scan & Preview Pipeline
+# Screening & Preview Pipeline
+
+> **Scope:** The `scan_jobs` pipeline performs **file type/signature screening**,
+> not malware scanning. It checks the first 8 KiB against known magic bytes and
+> the seller-declared extension. It does not run an antivirus engine, download
+> whole objects, or expand archives. See `docs/file-screening-risk.md`.
 
 ## 1. Trigger
 When a seller completes an upload (`/api/upload/complete`), the server:
@@ -7,7 +12,7 @@ When a seller completes an upload (`/api/upload/complete`), the server:
 
 Nothing is visible to visitors until `file_versions.scan_status = 'ready'`.
 
-## 2. Scan worker (cron every 2 min)
+## 2. Screening worker (daily cron)
 `POST /api/internal/worker/scan` (Bearer `CRON_SECRET`, fallback `WORKER_SECRET`) **or** Vercel cron
 calls `/api/internal/worker/scan-cron`. Both verify the same Bearer secret;
 `x-vercel-cron: 1` is spoofable and is no longer accepted.
@@ -64,11 +69,14 @@ Applied via `sharp` compositing an SVG text layer:
   is referenced by a `product_version`. Deletes from Drive (best-effort) and marks
   `scan_status='deleted'`.
 
-## 6. Extending to external scanning (ClamAV, VirusTotal)
-Set `scan_jobs.engine = 'clamav'` and add a new branch in `processScanJob`:
-- Send the first N MB to the external service.
-- Use its verdict to decide pass/quarantine.
-- Record the result in `scan_jobs.result` (JSONB).
+## 6. Extending to malware scanning (ClamAV, VirusTotal)
+Current behavior is type screening only. Adding real malware scanning requires an
+isolated full-object scan with bounded size/time and archive expansion limits:
+- Download the complete object (not just the first 8 KiB) into an isolated worker.
+- Extract archives with file-count/size/depth limits; reject bombs and encrypted archives.
+- Set `scan_jobs.engine` (for example `'clamav'`) and store the verdict in `scan_jobs.result` (JSONB).
+- Quarantine on scanner error, timeout, or positive verdict — never fail open.
+This is an external-service/product decision; it is not implemented by this pipeline.
 
 ## 7. What's NOT covered (Phase 2)
 - **Video watermarking with ffmpeg**: needs a dedicated worker (Lambda, Cloudflare
@@ -98,8 +106,8 @@ RLS policy on the bucket:
 
 ## 10. Cron scheduling
 `vercel.json`:
-- `scan-cron` every 2 minutes
-- `preview-cron` every 5 minutes
+- `scan-cron` daily
+- `preview-cron` daily
 
 On Hobby plan, cron runs once per day only — use a free external cron
 (cron-job.org) hitting the `/api/internal/worker/*` endpoints with the

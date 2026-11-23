@@ -49,5 +49,6 @@ export async function updateSettings(
     entityId: '1',
     before,
     after: patch,
+    required: true,
   });
 }

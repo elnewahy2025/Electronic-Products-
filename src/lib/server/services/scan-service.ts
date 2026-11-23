@@ -20,7 +20,8 @@ export type ScanJob = {
 
 /**
  * Download the first bytes of a Drive file via a ranged request.
- * Much cheaper than full download.
+ * This is signature/type screening only, not malware scanning; see
+ * docs/file-screening-risk.md for the accepted scope and risk.
  */
 async function fetchFileHead(
   refreshToken: string,

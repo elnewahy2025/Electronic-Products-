@@ -34,6 +34,33 @@ const nextConfig = {
     ];
   },
 
+  // Defense in depth only: the edge must still enforce HTTPS and the canonical
+  // host. This redirect is intentionally disabled for local/http app URLs so
+  // CI, previews and localhost development are not diverted.
+  async redirects() {
+    if (process.env.NODE_ENV !== 'production') return [];
+
+    const configured = process.env.NEXT_PUBLIC_APP_URL;
+    if (!configured) return [];
+
+    let appUrl;
+    try {
+      appUrl = new URL(configured);
+    } catch {
+      return [];
+    }
+    if (appUrl.protocol !== 'https:') return [];
+
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'header', key: 'x-forwarded-proto', value: '^http$' }],
+        destination: `${appUrl.origin}/:path*`,
+        permanent: true,
+      },
+    ];
+  },
+
   async headers() {
     return [
       // Belt-and-braces: headers that are static (no nonce needed).

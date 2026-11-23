@@ -200,7 +200,11 @@ export default async function RequestDetailPage(props: { params: Promise<{ id: s
       )}
 
       {!alreadyApproved && req.status !== 'rejected' && req.status !== 'cancelled' && (
-        <RequestActions requestId={params.id} />
+        <RequestActions
+          requestId={params.id}
+          totalAmount={Number(req.total_amount)}
+          currency={String(req.currency)}
+        />
       )}
     </main>
   );

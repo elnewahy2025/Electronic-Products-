@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { publicError } from '@/lib/api/errors';
 import { createClient } from '@/lib/supabase/server';
 import { exchangeDriveCode, fetchGoogleUserEmail, verifyState } from '@/lib/drive/oauth';
 import { linkDriveAccount } from '@/lib/server/services/drive-account-service';
@@ -37,7 +38,8 @@ export async function GET(req: NextRequest) {
     res.cookies.delete('drive_oauth_state');
     return res;
   } catch (e: any) {
-    const reason = encodeURIComponent(e.message ?? 'unknown');
+    // Never reflect provider/PostgREST error text into a redirect URL.
+    const reason = encodeURIComponent(publicError(e, 'DRIVE_LINK_FAILED'));
     return NextResponse.redirect(`${origin}/seller/drive-accounts?error=${reason}`);
   }
 }

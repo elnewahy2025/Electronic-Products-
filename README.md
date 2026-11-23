@@ -4,7 +4,7 @@ A high-security Arabic multi-vendor platform for selling and delivering digital 
 
 ## Core Features
 - **Direct-to-Drive Resumable Upload:** Files are uploaded directly from the seller's browser to linked Google Drive accounts without passing through Vercel servers, featuring automatic quota distribution (`quota`) and resumable upload support.
-- **Automated Scanning and Watermarked Previews:** Digital signature inspection (`Magic Bytes`) and quarantine of suspicious files, with generation of diagonally watermarked previews (`{platform_name} — Unlicensed Copy`), while the original file is delivered cleanly to the buyer without a watermark.
+- **Signature Screening and Watermarked Previews:** File type/extension validation (`Magic Bytes`, first 8 KiB) and quarantine of mismatches, with generation of diagonally watermarked previews (`{platform_name} — Unlicensed Copy`), while the original file is delivered cleanly to the buyer without a watermark. This is type screening, not malware scanning; see [`docs/file-screening-risk.md`](docs/file-screening-risk.md).
 - **Purchase Code System and Protected Download Sessions:**
   - Unique purchase codes stored as `HMAC-SHA256` hashes with brute-force protection (`Rate Limiting`) and a redemption attempts log.
   - Download sessions limited to 4 hours (configurable by Super Admin) and a maximum of 3 completed download attempts per product (full ZIP or completion of all individual files).
@@ -71,6 +71,17 @@ A high-security Arabic multi-vendor platform for selling and delivering digital 
    cp .env.test.example .env.test
    pnpm test:e2e
    ```
+
+## Deployment notes
+
+- Set `NEXT_PUBLIC_APP_URL` to the canonical `https://` origin. `next.config.mjs`
+  includes a production-only HTTP→HTTPS fallback for requests carrying
+  `x-forwarded-proto: http`; it is not a replacement for edge configuration.
+- Configure HTTP→HTTPS redirection and the canonical host (apex or `www`) in the
+  hosting platform for every custom domain. First-visit plaintext requests and
+  alternate hostnames are handled at the edge, not reliably by application code.
+- Verify with `curl -I http://<host>/` and `curl -I http://<alternate-host>/`;
+  both should redirect to the same canonical HTTPS origin.
 
 ## Download Streaming Worker
 

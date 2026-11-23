@@ -14,17 +14,18 @@ This module automates PostgreSQL backups according to `backup_settings.schedule`
    - `update_backup_settings` — Super Admin RPC for updating `backup_settings` from `/admin/backups`.
 
 2. **Real Backup & Restore Runner (`scripts/backup-and-verify.mjs`):**
-   - Runs real `pg_dump --schema=public --no-owner --no-privileges`, gzips at level 9, computes SHA-256, uploads to `database-backups`, and records `complete_backup_job`.
-   - In `--verify` / `--force-verify` mode: downloads the latest archive from `database-backups`, verifies its SHA-256 against `backup_archives.checksum`, creates an isolated temporary PostgreSQL database (`restore_verify_<timestamp>`), restores the full dump with `psql -v ON_ERROR_STOP=1`, verifies core table row counts (`backup_settings`, `profiles`, `products`), drops the temporary DB, and logs the result in `restore_jobs`.
+   - Runs real `pg_dump --schema=public --no-owner --no-privileges`, gzips at level 9, computes SHA-256, captures the source PostgreSQL major version and core table row counts, uploads to `database-backups`, and records `complete_backup_job`.
+   - In `--verify` / `--force-verify` mode: fails closed when the archive lookup fails, no archive exists, the checksum is missing/invalid/mismatched, PostgreSQL major versions differ, or row-count evidence is missing. On success it downloads the latest archive from `database-backups`, verifies SHA-256 against `backup_archives.checksum`, creates an isolated temporary PostgreSQL database (`restore_verify_<timestamp>`), restores the full dump with `psql -v ON_ERROR_STOP=1`, asserts the recorded row counts (`backup_settings`, `profiles`, `products`), drops the temporary DB, and logs the result and evidence in `restore_jobs`.
 
 3. **External Cron & Watchdog:**
-   - **GitHub Actions** (`.github/workflows/backup-and-verify.yml`): runs daily at `03:00 UTC` with an ephemeral PostgreSQL 15 service container for isolated restore verification.
+   - **GitHub Actions** (`.github/workflows/backup-and-verify.yml`): runs daily at `03:00 UTC` with an ephemeral PostgreSQL 17 service container for isolated restore verification, matching production.
    - **Vercel Cron Watchdog** (`/api/internal/worker/backup-cron`, `0 4 * * *`): checks `is_backup_due()` and `is_restore_test_due()`, optionally dispatches the GitHub Actions workflow (`BACKUP_GITHUB_REPO` + `BACKUP_GITHUB_TOKEN`), and raises an admin notification (`backup_overdue`) if a scheduled backup is missed.
 
 ## Required Secrets (Production / GitHub Actions)
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `BACKUP_DATABASE_URL` (direct PostgreSQL connection string for `pg_dump`)
+- `BACKUP_DATABASE_URL` — mapped to `DATABASE_URL` in the GitHub Actions workflow; direct PostgreSQL connection string for `pg_dump` and source evidence queries
+- Independent object storage credentials are **not yet wired**. Backups currently live only in Supabase Storage; provision a separate provider/bucket and map its credentials before treating this as full disaster recovery (see `docs/backup-storage-config.md`).
 - Optional for Vercel watchdog dispatch: `BACKUP_GITHUB_REPO`, `BACKUP_GITHUB_TOKEN`
 
 ## Local Verification (Docker Supabase)

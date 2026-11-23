@@ -157,6 +157,7 @@ export async function startMfaSetup(): Promise<{ secret: string; qr: string }> {
     action: 'auth.mfa.enrollment_started',
     entityType: 'profiles',
     entityId: ctx.userId,
+    required: true,
   });
 
   return { secret, qr };
@@ -206,6 +207,7 @@ export async function verifyMfaAndEnable(code: string): Promise<string> {
     action: 'auth.mfa.enabled',
     entityType: 'profiles',
     entityId: ctx.userId,
+    required: true,
   });
 
   return createMfaSessionToken(ctx.userId, ctx.sessionId);
@@ -240,6 +242,7 @@ export async function verifyMfaLogin(code: string): Promise<string> {
       action: 'auth.mfa.challenge_failed',
       entityType: 'profiles',
       entityId: ctx.userId,
+      required: true,
     });
     throw new Error('INVALID_MFA_CODE');
   }
@@ -249,6 +252,7 @@ export async function verifyMfaLogin(code: string): Promise<string> {
     action: 'auth.mfa.challenge_success',
     entityType: 'profiles',
     entityId: ctx.userId,
+    required: true,
   });
 
   return createMfaSessionToken(ctx.userId, ctx.sessionId);

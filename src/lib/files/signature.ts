@@ -7,8 +7,12 @@ export type DetectedType = {
 };
 
 /**
- * Detect file type from the first bytes (magic numbers).
+ * Detect declared file type from the first bytes (magic numbers).
  * Never trust the extension or client-reported MIME.
+ *
+ * This is type/signature screening only — NOT malware scanning. Zip-based
+ * containers are not expanded, and executable payloads inside allowed types
+ * are not detected here. See docs/file-screening-risk.md.
  */
 export function detectFileType(buffer: Buffer): DetectedType | null {
   if (buffer.length < 4) return null;

@@ -21,6 +21,9 @@ import { gzipSync, gunzipSync } from 'node:zlib';
 import { createClient } from '@supabase/supabase-js';
 
 const BUCKET = 'database-backups';
+const SHA256_RE = /^[a-f0-9]{64}$/i;
+// These tables are present in every migration set and give a stable restore signal.
+const EVIDENCE_TABLES = ['backup_settings', 'profiles', 'products'];
 const args = new Set(process.argv.slice(2));
 const modeBackup = args.has('--backup');
 const modeScheduled = args.has('--scheduled');
@@ -112,6 +115,54 @@ function runPsql(dbName, sql, inputBuffer) {
   return res.stdout;
 }
 
+function querySource(sql) {
+  if (dockerContainer) {
+    const res = spawnSync(
+      'docker',
+      ['exec', dockerContainer, 'psql', '-tA', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', 'postgres', '-c', sql],
+      { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 },
+    );
+    if (res.status !== 0) {
+      throw new Error(`source psql failed: ${res.stderr || res.stdout}`);
+    }
+    return res.stdout;
+  }
+
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL or LOCAL_PG_DOCKER_CONTAINER is required for backup evidence');
+  }
+
+  return execFileSync(
+    'psql',
+    ['-tA', '-v', 'ON_ERROR_STOP=1', databaseUrl, '-c', sql],
+    { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 },
+  );
+}
+
+function collectBackupEvidence() {
+  const sourceVersionNum = querySource('SHOW server_version_num;').trim();
+  if (!/^\d+$/.test(sourceVersionNum)) {
+    throw new Error(`invalid source PostgreSQL version: ${sourceVersionNum}`);
+  }
+
+  const rowCounts = {};
+  for (const table of EVIDENCE_TABLES) {
+    const value = querySource(`SELECT count(*) FROM public.${table};`).trim();
+    if (!/^\d+$/.test(value)) {
+      throw new Error(`invalid row count for public.${table}: ${value}`);
+    }
+    rowCounts[table] = Number(value);
+  }
+
+  return { sourceVersionNum, rowCounts };
+}
+
+function pgMajorFromVersionNum(versionNum) {
+  const parsed = Number(versionNum);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  return parsed >= 100000 ? Math.floor(parsed / 10000) : Math.floor(parsed / 100);
+}
+
 async function performBackup(type) {
   const { data: jobId, error: startErr } = await supabase.rpc('start_backup_job', {
     p_type: type,
@@ -123,6 +174,7 @@ async function performBackup(type) {
 
   try {
     console.log(`[backup] Running pg_dump for job ${jobId}...`);
+    const evidence = collectBackupEvidence();
     const sqlBuffer = runPgDump();
     const gzBuffer = gzipSync(sqlBuffer, { level: 9 });
     const checksum = createHash('sha256').update(gzBuffer).digest('hex');
@@ -147,6 +199,8 @@ async function performBackup(type) {
       p_size_bytes: gzBuffer.length,
       p_storage_location: `${BUCKET}/${objectPath}`,
       p_checksum: checksum,
+      p_source_pg_version: evidence.sourceVersionNum,
+      p_row_counts: evidence.rowCounts,
     });
     if (completeErr) {
       throw new Error(`complete_backup_job failed: ${completeErr.message}`);
@@ -200,18 +254,53 @@ async function pruneExpiredArchives() {
 async function verifyLatestArchive() {
   const { data: archive, error } = await supabase
     .from('backup_archives')
-    .select('id, storage_location, checksum, created_at')
+    .select('id, storage_location, checksum, created_at, source_pg_version, row_counts')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  if (error || !archive) {
-    console.log('[verify] No backup archive found to verify.');
-    return;
+  if (error) {
+    throw new Error(`archive lookup failed: ${error.message}`);
+  }
+  if (!archive) {
+    throw new Error('no backup archive found to verify');
+  }
+
+  if (!archive.checksum || !SHA256_RE.test(archive.checksum)) {
+    throw new Error(`archive ${archive.id} has no valid SHA-256 checksum`);
+  }
+  if (!archive.row_counts || typeof archive.row_counts !== 'object') {
+    throw new Error(`archive ${archive.id} has no row-count evidence`);
+  }
+  if (!/^\d+$/.test(String(archive.source_pg_version ?? ''))) {
+    throw new Error(`archive ${archive.id} has no source PostgreSQL version evidence`);
+  }
+
+  const verifyVersionNum = runPsql('postgres', 'SHOW server_version_num;').trim();
+  const sourceMajor = pgMajorFromVersionNum(archive.source_pg_version);
+  const verifyMajor = pgMajorFromVersionNum(verifyVersionNum);
+  if (!sourceMajor || !verifyMajor || sourceMajor !== verifyMajor) {
+    throw new Error(
+      `PostgreSQL major version mismatch: backup ${sourceMajor ?? 'unknown'} (${archive.source_pg_version}), verify ${verifyMajor ?? 'unknown'} (${verifyVersionNum})`,
+    );
+  }
+
+  const locationPrefix = `${BUCKET}/`;
+  if (typeof archive.storage_location !== 'string' || !archive.storage_location.startsWith(locationPrefix)) {
+    throw new Error(`invalid storage location for archive ${archive.id}: ${String(archive.storage_location)}`);
+  }
+  const objectPath = archive.storage_location.slice(locationPrefix.length);
+  if (!objectPath || objectPath.includes('..') || objectPath.startsWith('/')) {
+    throw new Error(`invalid archive object path: ${objectPath}`);
   }
 
   const tempDb = `restore_verify_${Date.now()}`;
-  const objectPath = archive.storage_location.replace(`${BUCKET}/`, '');
+  const evidence = {
+    archive_id: archive.id,
+    checksum: archive.checksum,
+    source_pg_version: archive.source_pg_version,
+    verify_pg_version: verifyVersionNum,
+  };
 
   try {
     console.log(`[verify] Downloading archive ${archive.id} (${objectPath})...`);
@@ -226,7 +315,7 @@ async function verifyLatestArchive() {
     const gzBuffer = Buffer.from(await blob.arrayBuffer());
     const actualChecksum = createHash('sha256').update(gzBuffer).digest('hex');
 
-    if (archive.checksum && actualChecksum !== archive.checksum) {
+    if (actualChecksum !== archive.checksum.toLowerCase()) {
       throw new Error(`checksum mismatch: expected ${archive.checksum}, got ${actualChecksum}`);
     }
 
@@ -260,11 +349,22 @@ async function verifyLatestArchive() {
         sqlBuffer.toString('utf8').replace(/^CREATE SCHEMA public;$/m, 'CREATE SCHEMA IF NOT EXISTS public;') +
         "\nSET session_replication_role = 'origin';\n";
       runPsql(tempDb, null, Buffer.from(restoreSql, 'utf8'));
-      const checkOut = runPsql(
-        tempDb,
-        `SELECT (SELECT count(*) FROM public.backup_settings) AS settings_cnt, (SELECT count(*) FROM public.profiles) AS profiles_cnt, (SELECT count(*) FROM public.products) AS products_cnt;`,
-      );
-      console.log(`[verify] Isolated restore succeeded!\n${checkOut.trim()}`);
+
+      const countSql = `SELECT jsonb_build_object(${EVIDENCE_TABLES
+        .map((table) => `'${table}', (SELECT count(*) FROM public.${table})`)
+        .join(', ')})::text;`;
+      const restoredCounts = JSON.parse(runPsql(tempDb, countSql).trim());
+      for (const table of EVIDENCE_TABLES) {
+        const expected = Number(archive.row_counts[table]);
+        const actual = Number(restoredCounts[table]);
+        if (!Number.isFinite(expected) || !Number.isFinite(actual) || expected !== actual) {
+          throw new Error(
+            `restore row-count mismatch for public.${table}: expected ${expected}, got ${actual}`,
+          );
+        }
+      }
+      evidence.row_counts = restoredCounts;
+      console.log(`[verify] Isolated restore succeeded! Row counts match: ${JSON.stringify(restoredCounts)}`);
     } finally {
       try {
         runPsql('postgres', `DROP DATABASE IF EXISTS "${tempDb}" WITH (FORCE);`);
@@ -278,6 +378,7 @@ async function verifyLatestArchive() {
       p_status: 'completed',
       p_error: null,
       p_performed_by: null,
+      p_evidence: evidence,
     });
     console.log(`[verify] Recorded restore_jobs=completed for archive ${archive.id}.`);
   } catch (err) {
@@ -288,6 +389,7 @@ async function verifyLatestArchive() {
       p_status: 'failed',
       p_error: message,
       p_performed_by: null,
+      p_evidence: Object.keys(evidence).length > 0 ? evidence : null,
     });
     throw err;
   }

@@ -5,9 +5,23 @@ import { useRouter } from 'next/navigation';
 
 type IssuedCode = { code_id: string; code_prefix: string; plaintext: string };
 
-export function RequestActions({ requestId }: { requestId: string }) {
+export function RequestActions({
+  requestId,
+  totalAmount,
+  currency,
+}: {
+  requestId: string;
+  totalAmount: number;
+  currency: string;
+}) {
   const [busy, setBusy] = useState(false);
   const [reason, setReason] = useState('');
+  const [attestation, setAttestation] = useState({
+    amount: String(totalAmount),
+    currency: currency.toUpperCase(),
+    reference: '',
+    method: 'manual_transfer',
+  });
   const [error, setError] = useState<string | null>(null);
   const [issued, setIssued] = useState<IssuedCode[] | null>(null);
   const router = useRouter();
@@ -15,7 +29,21 @@ export function RequestActions({ requestId }: { requestId: string }) {
   async function approve() {
     setBusy(true); setError(null);
     try {
-      const res = await fetch(`/api/admin/requests/${requestId}/approve`, { method: 'POST' });
+      const amount = Number(attestation.amount);
+      if (!Number.isFinite(amount) || amount <= 0) throw new Error('ATTESTATION_AMOUNT_INVALID');
+      if (!attestation.currency || attestation.currency.trim().length !== 3) throw new Error('ATTESTATION_CURRENCY_INVALID');
+      if (attestation.reference.trim().length < 3) throw new Error('ATTESTATION_REFERENCE_REQUIRED');
+
+      const res = await fetch(`/api/admin/requests/${requestId}/approve`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          amount,
+          currency: attestation.currency.trim().toUpperCase(),
+          reference: attestation.reference.trim(),
+          method: attestation.method.trim() || undefined,
+        }),
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
 
@@ -86,13 +114,56 @@ export function RequestActions({ requestId }: { requestId: string }) {
 
   return (
     <section className="ui-box space-y-3">
+      <div className="space-y-2">
+        <p className="text-xs text-muted-foreground">
+          الموافقة تُسجَّل كإقرار تسوية يدوي. أدخل المبلغ والعملة والمرجع قبل إصدار الأكواد.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <label className="text-xs font-medium text-muted-foreground">
+            المبلغ المستلم
+            <input
+              value={attestation.amount}
+              onChange={e => setAttestation(a => ({ ...a, amount: e.target.value }))}
+              inputMode="decimal"
+              className="mt-1 w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm ui-num"
+            />
+          </label>
+          <label className="text-xs font-medium text-muted-foreground">
+            العملة
+            <input
+              value={attestation.currency}
+              onChange={e => setAttestation(a => ({ ...a, currency: e.target.value.toUpperCase() }))}
+              maxLength={3}
+              className="mt-1 w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm ui-num"
+            />
+          </label>
+        </div>
+        <label className="block text-xs font-medium text-muted-foreground">
+          مرجع التحويل/الإيصال
+          <input
+            value={attestation.reference}
+            onChange={e => setAttestation(a => ({ ...a, reference: e.target.value }))}
+            placeholder="رقم العملية أو مرجع الإيصال"
+            className="mt-1 w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm"
+          />
+        </label>
+        <label className="block text-xs font-medium text-muted-foreground">
+          طريقة الدفع (اختياري)
+          <input
+            value={attestation.method}
+            onChange={e => setAttestation(a => ({ ...a, method: e.target.value }))}
+            placeholder="manual_transfer"
+            className="mt-1 w-full bg-background border border-border rounded-xl px-3.5 py-2 text-sm"
+          />
+        </label>
+      </div>
       <button
         type="button"
         onClick={approve}
-        disabled={busy}
+        disabled={busy || attestation.reference.trim().length < 3}
         className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
       >
-        {busy ? 'جارٍ المعالجة...' : 'الموافقة وإصدار الأكواد'}
+        {busy ? 'جارٍ المعالجة...' : 'تسجيل الإقرار والموافقة وإصدار الأكواد'}
       </button>
       <div className="border-t border-border pt-3 space-y-2">
         <label htmlFor="request-reject-reason" className="block text-xs font-medium text-muted-foreground">

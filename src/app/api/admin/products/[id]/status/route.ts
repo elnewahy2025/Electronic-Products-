@@ -58,6 +58,7 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
       before,
       after: patch,
       reason: reason?.trim(),
+      required: true,
     });
 
     revalidateTag('storefront-products');

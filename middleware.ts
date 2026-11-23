@@ -8,6 +8,24 @@ import { assertSameOrigin } from '@/lib/security/origin';
 const ADMIN_PREFIXES = ['/admin'];
 const SELLER_PREFIXES = ['/seller'];
 const BUYER_PREFIXES = ['/account'];
+
+// Machine-to-machine routes authenticate with bearer/webhook secrets or are
+// browser navigations protected by their own signed state; they are not
+// cookie-authenticated mutations and must stay outside the CSRF guard.
+const CSRF_EXEMPT_API_PREFIXES = ['/api/internal/'];
+const CSRF_EXEMPT_API_PATHS = new Set([
+  '/api/csp-report',
+  '/api/seller/drive/callback',
+]);
+
+function isCsrfExemptApiRoute(pathname: string): boolean {
+  return (
+    CSRF_EXEMPT_API_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
+    CSRF_EXEMPT_API_PATHS.has(pathname) ||
+    /^\/api\/download\/[^/]+\/complete$/.test(pathname)
+  );
+}
+
 const MFA_WHITELIST = [
   '/verify-mfa',
   '/api/auth/login',
@@ -120,6 +138,21 @@ export async function middleware(request: NextRequest) {
   // 3. Prepare base response
   let response = NextResponse.next({ request: { headers: requestHeaders } });
 
+  // 3b. Centralized CSRF guard for every unsafe /api/** request except
+  // explicitly token-authenticated machine routes. Runs before Supabase work.
+  if (request.nextUrl.pathname.startsWith('/api/') && !isCsrfExemptApiRoute(request.nextUrl.pathname)) {
+    try {
+      assertSameOrigin(request);
+    } catch {
+      const forbidden = NextResponse.json(
+        { error: 'CSRF_INVALID_ORIGIN' },
+        { status: 403 },
+      );
+      applySecurityHeaders(forbidden, csp);
+      return forbidden;
+    }
+  }
+
   // 4. Supabase session handling (existing logic)
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -142,20 +175,6 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
-
-  // 4b. CSRF/Origin guard for state-changing admin/seller API calls.
-  if (pathname.startsWith('/api/admin/') || pathname.startsWith('/api/seller/')) {
-    try {
-      assertSameOrigin(request);
-    } catch {
-      const forbidden = NextResponse.json(
-        { error: 'CSRF_INVALID_ORIGIN' },
-        { status: 403 },
-      );
-      applySecurityHeaders(forbidden, csp);
-      return forbidden;
-    }
-  }
 
   // 5. Route guards
   const isProtected =

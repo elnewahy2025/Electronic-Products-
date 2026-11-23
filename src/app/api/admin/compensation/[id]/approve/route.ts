@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { publicError } from '@/lib/api/errors';
 import { createClient } from '@/lib/supabase/server';
 import { requirePerm } from '@/lib/auth/admin-guard';
 
@@ -27,9 +28,9 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
       p_reason: parsed.data.reason,
     });
     if (error) {
-      const code = error.message.includes('compensation_') || error.message === 'not_authorized'
-        ? error.message
-        : 'COMPENSATION_APPROVE_FAILED';
+      // publicError only allows token-shaped DB sentinels through; everything
+      // else becomes a fixed code so raw SQL/PostgREST text is never returned.
+      const code = publicError(error, 'COMPENSATION_APPROVE_FAILED');
       return NextResponse.json(
         { error: code },
         { status: STATUS_BY_ERROR[code] ?? 400 },

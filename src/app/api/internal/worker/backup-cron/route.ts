@@ -48,10 +48,14 @@ export async function GET(req: NextRequest) {
       if (res.ok) {
         dispatched = true;
       } else {
-        dispatchError = `GitHub API ${res.status}: ${(await res.text()).slice(0, 200)}`;
+        // Keep provider details in server logs only; API/notification consumers
+        // receive a fixed sentinel instead of a raw GitHub response body.
+        console.error('[backup-cron] dispatch failed', { status: res.status, body: (await res.text()).slice(0, 200) });
+        dispatchError = 'DISPATCH_FAILED';
       }
     } catch (err: any) {
-      dispatchError = err?.message ?? 'dispatch_failed';
+      console.error('[backup-cron] dispatch threw', { message: err?.message ?? String(err) });
+      dispatchError = 'DISPATCH_FAILED';
     }
   }
 

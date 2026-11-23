@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (ticketErr || !ticket) {
-    return NextResponse.json({ error: ticketErr?.message ?? 'failed_to_create_ticket' }, { status: 400 });
+    return NextResponse.json({ error: publicError(ticketErr, 'failed_to_create_ticket') }, { status: 400 });
   }
 
   const { error: msgErr } = await db

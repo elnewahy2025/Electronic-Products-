@@ -213,6 +213,7 @@ export async function createSellerProduct(input: {
       attached_files: uniqueFileVersionIds.length,
       published,
     },
+    required: true,
   });
 
   revalidateTag('storefront-products');
@@ -264,6 +265,7 @@ export async function updateSellerProduct(input: {
     entityType: 'products',
     entityId: input.productId,
     after: patch,
+    required: true,
   });
   revalidateTag('storefront-products');
 }
@@ -295,6 +297,7 @@ export async function deleteSellerProduct(sellerId: string, productId: string): 
       entityType: 'products',
       entityId: productId,
       reason: 'soft_delete_has_orders',
+      required: true,
     });
     revalidateTag('storefront-products');
     return;
@@ -307,7 +310,12 @@ export async function deleteSellerProduct(sellerId: string, productId: string): 
     throw new Error('soft_deleted');
   }
 
-  await logAudit({ action: 'product.deleted', entityType: 'products', entityId: productId });
+  await logAudit({
+    action: 'product.deleted',
+    entityType: 'products',
+    entityId: productId,
+    required: true,
+  });
   revalidateTag('storefront-products');
 }
 

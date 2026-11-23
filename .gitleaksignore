@@ -1,0 +1,3 @@
+# Fixed 32-byte ASCII test key shared by the disposable-Supabase CI app and
+# Playwright. It is not a credential and has been allowlisted inline as well.
+6792faff90d618ac9ca27cde8d5f0308eb41bd35:.github/workflows/ci.yml:generic-api-key:51

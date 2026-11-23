@@ -3,7 +3,7 @@
 ## Prerequisites
 1. A **dedicated test Supabase project** (never production).
 2. `.env.test` with the variables from `.env.test.example`.
-3. Migrations `001` → `060` applied to the test project.
+3. Migrations `001` → `061` applied to the test project.
 4. A running Next.js dev server pointing at the test project (`pnpm dev`).
 
 ## First-time setup
@@ -29,7 +29,7 @@ pnpm test:e2e -- --grep "security hardening"
 In CI, set `CI=1` and Playwright will build/start the app automatically.
 
 ### CI high-security job
-The `e2e-high-security` job in `.github/workflows/ci.yml` needs **no repository secrets**. It boots a disposable local Supabase with the CLI, applies all migrations (`001` → `060`), exports the generated anon/service-role keys into both the app and test environments, then runs only `05-high-security-fixes.spec.ts`. The fake Google/token/encryption values in that job are shared by the app and Playwright so the origin guard and crypto helpers behave consistently.
+The `e2e-high-security` job in `.github/workflows/ci.yml` needs **no repository secrets**. It boots a disposable local Supabase with the CLI, applies all migrations, exports the generated anon/service-role keys into both the app and test environments, then runs the security gate specs (`05-high-security-fixes.spec.ts`, `06-medium-security-fixes.spec.ts`). The fake Google/token/encryption values in that job are shared by the app and Playwright so the origin guard and crypto helpers behave consistently.
 
 ## Test structure
 | Spec | Covers |
@@ -39,6 +39,7 @@ The `e2e-high-security` job in `.github/workflows/ci.yml` needs **no repository 
 | `03-security.spec.ts` | Auth required, ownership checks, rate limits, code/session revocation blocks after delivery, seller isolation, audit append-only |
 | `04-security-hardening.spec.ts` | Direct PostgREST admin RPC blocking, service-only RPC revocation, `files_update` `WITH CHECK` ownership protection, `seller_payouts` direct insert block, field-level protection on `notifications`, `reviews`, and `purchase_codes` |
 | `05-high-security-fixes.spec.ts` | Reproducible H1–H4 verification: `purchase_requests` RLS/trigger guards, auth-route Origin guard + enumeration-safe recovery + atomic rate-limit RPC, and distributed concurrency-lock contention/anon denial |
+| `06-medium-security-fixes.spec.ts` | Medium verification: CSRF origin guard coverage, support sender binding, payment attestation atomicity, and atomic upload-completion behavior |
 
 ## How seeding works
 To avoid hitting Google Drive, scan workers, and preview generators during tests,

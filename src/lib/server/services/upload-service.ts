@@ -10,7 +10,6 @@ import {
   getDriveQuota,
   isFileInsideFolder,
 } from '@/lib/drive/client';
-import { logAudit } from '@/lib/audit/logger';
 
 export type InitUploadInput = {
   sellerId: string;
@@ -300,65 +299,20 @@ export async function completeUpload(params: {
       throw new Error('FILE_OUTSIDE_STORE_FOLDER');
     }
 
-    // Create file + storage + file_version in a transaction-like sequence
-    const { data: file, error: fe } = await admin
-      .from('files')
-      .insert({
-        seller_id: params.sellerId,
-        original_name: session.original_name!,
-        display_name: session.display_name ?? session.original_name,
-        mime: session.mime,
-        extension: session.extension,
-      })
-      .select('id')
-      .single();
-    if (fe || !file) throw new Error('FILE_CREATE_FAILED');
-
-    const { data: storage, error: ste } = await admin
-      .from('file_storage_locations')
-      .insert({
-        provider: 'google_drive',
-        seller_drive_account_id: session.drive_account_id,
-        provider_file_id: meta.id,
-        status: 'active',
-      })
-      .select('id')
-      .single();
-    if (ste || !storage) throw new Error('STORAGE_CREATE_FAILED');
-
-    const { data: fv, error: fve } = await admin
-      .from('file_versions')
-      .insert({
-        file_id: file.id,
-        version_number: 1,
-        storage_location_id: storage.id,
-        size_bytes: meta.size,
-        checksum_sha256: meta.md5Checksum ?? session.checksum_sha256,
-        mime: session.mime,
-        extension: session.extension,
-        scan_status: 'uploaded',
-      })
-      .select('id')
-      .single();
-    if (fve || !fv) throw new Error('FILE_VERSION_CREATE_FAILED');
-
-    await admin.from('scan_jobs').insert({
-      file_version_id: fv.id,
-      status: 'queued',
-      engine: 'pending',
+    // Atomic DB registration: file, storage location, version, scan job, audit
+    // and session completion all commit or roll back together.
+    const { data: registered, error: regError } = await admin.rpc('complete_upload_session', {
+      p_session_id: params.sessionId,
+      p_provider_file_id: meta.id,
+      p_size_bytes: meta.size,
+      p_checksum: meta.md5Checksum ?? session.checksum_sha256 ?? null,
     });
+    if (regError) throw new Error(regError.message || 'UPLOAD_COMPLETE_FAILED');
 
-    await admin
-      .from('upload_sessions')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        file_id: file.id,
-      })
-      .eq('id', params.sessionId);
-
-    fileId = file.id;
-    fileVersionId = fv.id;
+    const reg = registered as { file_id?: string; file_version_id?: string; fileId?: string; fileVersionId?: string } | null;
+    fileId = reg?.file_id ?? reg?.fileId ?? '';
+    fileVersionId = reg?.file_version_id ?? reg?.fileVersionId ?? '';
+    if (!fileId || !fileVersionId) throw new Error('UPLOAD_COMPLETE_FAILED');
   } catch (e) {
     // Roll the claim back so the seller can retry.
     await admin
@@ -381,12 +335,6 @@ export async function completeUpload(params: {
     /* non-fatal */
   }
 
-  await logAudit({
-    action: 'file.uploaded',
-    entityType: 'file_versions',
-    entityId: fileVersionId,
-    after: { size: meta!.size, mime: session.mime },
-  });
 
   return { fileVersionId, fileId };
 }
@@ -537,67 +485,30 @@ export async function importDriveFiles(params: {
         continue;
       }
 
-      // 5. Register file + storage location + version + scan job
-      const { data: file, error: fe } = await admin
-        .from('files')
-        .insert({
-          seller_id: params.sellerId,
-          original_name: originalName,
-          display_name: originalName,
-          mime,
-          extension: ext,
-        })
-        .select('id')
-        .single();
-      if (fe || !file) throw new Error('FILE_CREATE_FAILED');
-
-      const { data: storage, error: ste } = await admin
-        .from('file_storage_locations')
-        .insert({
-          provider: 'google_drive',
-          seller_drive_account_id: acc.id,
-          provider_file_id: meta.id,
-          status: 'active',
-        })
-        .select('id')
-        .single();
-      if (ste || !storage) throw new Error('STORAGE_CREATE_FAILED');
-
-      const { data: fv, error: fve } = await admin
-        .from('file_versions')
-        .insert({
-          file_id: file.id,
-          version_number: 1,
-          storage_location_id: storage.id,
-          size_bytes: meta.size,
-          checksum_sha256: meta.md5Checksum ?? null,
-          mime,
-          extension: ext,
-          scan_status: 'uploaded',
-        })
-        .select('id')
-        .single();
-      if (fve || !fv) throw new Error('FILE_VERSION_CREATE_FAILED');
-
-      await admin.from('scan_jobs').insert({
-        file_version_id: fv.id,
-        status: 'queued',
-        engine: 'pending',
+      // 5. Register file + storage location + version + scan job atomically.
+      const { data: registered, error: regError } = await admin.rpc('register_drive_file', {
+        p_seller_id: params.sellerId,
+        p_drive_account_id: acc.id,
+        p_provider_file_id: meta.id,
+        p_original_name: originalName,
+        p_mime: mime,
+        p_extension: ext,
+        p_size_bytes: meta.size,
+        p_checksum: meta.md5Checksum ?? null,
+        p_audit_action: 'file.imported_from_drive',
       });
-
-      await logAudit({
-        action: 'file.imported_from_drive',
-        entityType: 'file_versions',
-        entityId: fv.id,
-        after: { drive_file_id: meta.id, size: meta.size, mime },
-      });
+      if (regError) throw new Error(regError.message || 'FILE_CREATE_FAILED');
+      const reg = registered as { file_id?: string; file_version_id?: string; fileId?: string; fileVersionId?: string } | null;
+      const fileId = reg?.file_id ?? reg?.fileId;
+      const fileVersionId = reg?.file_version_id ?? reg?.fileVersionId;
+      if (!fileId || !fileVersionId) throw new Error('FILE_CREATE_FAILED');
 
       results.push({
         driveFileId: meta.id,
         name: originalName,
         status: 'imported',
-        fileId: file.id,
-        fileVersionId: fv.id,
+        fileId,
+        fileVersionId,
         sizeBytes: meta.size,
       });
     } catch (e: any) {

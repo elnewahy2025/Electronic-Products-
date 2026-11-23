@@ -72,6 +72,7 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
       reason: parsed.data.reason,
       ip: req.headers.get('x-forwarded-for') ?? undefined,
       userAgent: req.headers.get('user-agent') ?? undefined,
+      required: true,
     });
 
     return NextResponse.json({ ok: true });
