@@ -84,7 +84,14 @@ This plan documents the fifteen approved phases (0–14) for building the Digita
 - **`053_review_privacy_hardening.sql`**: Scopes seller review stats, restricts soft-delete to admin/staff with `review.delete`, and masks buyer identity.
 - **`054_review_delete_ticket_guard.sql`**: Structured seller support ticket (`product_id`, `order_item_id`, `review_id`); admin/staff-only `delete_review_from_ticket` with buyer-case guards; legacy `delete_review` becomes service-role-only; trigger defence in depth; `review.deleted_from_ticket` audit event.
 - **`055_download_token_ledger.sql`**: Enforced single-use download token ledger (`register_download_token`, `claim_download_token`, `mark_download_token_completed`, service-role-only) with token hash registration, atomic claim before Drive resolution, byte/checksum verification against `file_versions`, and an atomic completion step that rejects replayed callbacks.
-- **Download Worker (`workers/download`)**: Cloudflare Worker implementing `docs/download-service-contract.md` (HMAC token verification, short-lived Drive URL resolution, streaming or store-only ZIP, measured bytes/checksum completion callbacks, retry only on transport errors). Source and tests are in the repo; deployment and secret configuration remain operational tasks.
+- **`056_category_covers.sql`**: Optional admin-uploaded category cover artwork (`cover_image_url`, `cover_storage_path`).
+- **`057_security_audit_rls_hardening.sql`**: Hardened `purchase_requests`, `support_messages`, `seller_commissions` RLS, table-level `REVOKE SELECT` + safe column grant on `profiles` (hiding `mfa_secret_encrypted`), and `'completing'` upload session state.
+- **`058_high_security_fixes.sql`**: Dedicated `request.update` permission (removing `request.read.any` from `pr_update`), full column guard trigger for all non-service-role callers on `purchase_requests`, and persistent PostgreSQL `api_rate_limit_hits` + atomic `consume_rate_limit()` RPC.
+- **`059_serverless_rate_and_lock_hardening.sql`**: Distributed PostgreSQL `api_concurrency_locks` (`acquire_concurrency_lock` / `release_concurrency_lock`) and encrypted Drive access-token cache columns on `seller_drive_accounts`.
+- **`060_token_cache_column_protection.sql`**: Table-level `REVOKE SELECT, UPDATE` + explicit non-token column grants on `seller_drive_accounts`.
+- **`061_medium_security_fixes.sql`**: `support_messages.sender_id = auth.uid()` RLS + trigger, atomic `purchase_request_attestations` + 3-arg `approve_purchase_request`, service-role-only `register_drive_file` / `complete_upload_session` RPCs, and backup/restore evidence columns + strict RPCs.
+- **`062_low_security_fixes.sql`**: `pg_advisory_xact_lock` serialization in `create_purchase_request` per `(email, product_id)` to eliminate duplicate-request races.
+- **Download Worker (`workers/download`)**: Cloudflare Worker implementing `docs/download-service-contract.md` (HMAC token verification, short-lived Drive URL resolution, streaming or store-only ZIP, measured bytes/checksum completion callbacks, strict canonical CORS + `Referrer-Policy: no-referrer`, 7 unit tests gated in CI).
 
 ---
 
@@ -113,7 +120,7 @@ Related cross-cutting controls already documented: append-only audit events
 
 ## 4. Pre-Deployment Checklist
 
-1. Apply all migrations **up to `055`** in order on staging and then production
+1. Apply all migrations **up to `062`** in order on staging and then production
    (`pnpm db:push` / reviewed migration workflow). Confirm the applied version by checking
    `supabase_migrations.schema_migrations` (or the Supabase migration dashboard) rather than
    assuming success.
@@ -136,11 +143,13 @@ Related cross-cutting controls already documented: append-only audit events
    including MFA roles and the mandatory no-refund checkout statement.
 7. Obtain external legal sign-off on the DRAFT texts in `docs/legal-review-drafts.md` before
    public launch; confirm vendor limits in `docs/plan-limits.md`.
-8. Verify typechecking (`pnpm typecheck`) and all four Playwright suites (`pnpm test:e2e`):
+8. Verify typechecking (`pnpm typecheck`) and all six Playwright suites (`pnpm test:e2e`):
    - `01-full-journey.spec.ts`
    - `02-attempts-and-compensation.spec.ts`
    - `03-security.spec.ts`
    - `04-security-hardening.spec.ts`
+   - `05-high-security-fixes.spec.ts`
+   - `06-medium-security-fixes.spec.ts`
    Also include the review-deletion ticket guards from `docs/06-testing-checklist.md` and the
    Worker tests before opening the soft launch.
 9. Execute the gate in `docs/soft-launch-plan.md` for Phase 0 before inviting sellers.

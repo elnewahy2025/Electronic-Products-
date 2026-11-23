@@ -15,12 +15,12 @@ This file is the authoritative instruction manual for any AI coding agent (Antig
 
 ## 2. Tech Stack & Repository Structure
 
-- **Framework:** Next.js `14.2.15` (App Router, React 18, TypeScript 5.6, Tailwind CSS 3.4)
-- **Database & Auth:** Supabase (PostgreSQL + Auth + RLS + Storage)
-- **File Storage:** Direct-to-Google-Drive Resumable Uploads (`googleapis`) per seller account (`AES-256-GCM` encrypted refresh tokens) + Supabase Storage buckets (`product-images`, `previews`, `database-backups`)
+- **Framework:** Next.js `15.5.29` (App Router, React 18, TypeScript 5.9, Tailwind CSS 3.4)
+- **Database & Auth:** Supabase (PostgreSQL 17 + Auth + RLS + Storage)
+- **File Storage:** Direct-to-Google-Drive Resumable Uploads (`googleapis`) per seller account (`AES-256-GCM` encrypted tokens) + Supabase Storage buckets (`product-images`, `previews`, `database-backups`)
 - **Media Processing:** `sharp` (WebP optimization, EXIF stripping, SVG watermarking, first-page cover compositing), `pdf-to-img`, `@google/genai` (optional AI cover generation)
 - **Email & Notifications:** Transactional outbox (`email_outbox`) via `nodemailer` (SMTP) or Resend API + real-time in-app `notifications`
-- **Testing:** Playwright E2E (`tests/e2e/specs/01..04`)
+- **Testing:** Playwright E2E (`tests/e2e/specs/01..06`) + Cloudflare Worker Node unit tests (`workers/download`)
 
 ```text
 ├── AGENT.md                  # This file — AI agent rules, invariants & skills
@@ -29,7 +29,7 @@ This file is the authoritative instruction manual for any AI coding agent (Antig
 ├── docs/                     # Requirements, ERD, RLS matrix, security, performance, implementation plan
 ├── supabase/
 │   ├── config.toml           # Local Supabase configuration (project_id = "electronic-products")
-│   └── migrations/           # Ordered SQL migrations (001 through 039+)
+│   └── migrations/           # Ordered SQL migrations (001 through 062)
 ├── src/
 │   ├── middleware.ts         # Per-request CSP Nonce, HSTS, security headers, route guards
 │   ├── app/
@@ -121,7 +121,7 @@ This file is the authoritative instruction manual for any AI coding agent (Antig
 ### 4.2 Windows Command Rules (Critical)
 - **Typecheck:** Always run `.\node_modules\.bin\tsc.cmd --noEmit` directly (avoids pnpm v11 `ERR_PNPM_IGNORED_BUILDS` script issues on Windows).
 - **Dev Server:** `.\node_modules\.bin\next.cmd dev -p 3010`
-- **Production Build:** `.\node_modules\.bin\next.cmd build` (note: `next.config.mjs` includes `serverComponentsExternalPackages: ['sharp', 'canvas', 'pdf-to-img', 'nodemailer']`).
+- **Production Build:** `.\node_modules\.bin\next.cmd build` (note: `next.config.mjs` includes `serverExternalPackages: ['sharp', 'canvas', 'pdf-to-img', 'nodemailer']`).
 - **Installing Packages:** Use `pnpm add --config.ignore-scripts=true <pkg>` when native build scripts fail under pnpm v11 on Windows.
 - **Git Push on Windows:** If OpenSSL resets connections to `github.com:443`, push using Windows native TLS:
   ```powershell
@@ -146,6 +146,8 @@ Before marking any task complete:
    - `02-attempts-and-compensation.spec.ts`
    - `03-security.spec.ts`
    - `04-security-hardening.spec.ts`
+   - `05-high-security-fixes.spec.ts`
+   - `06-medium-security-fixes.spec.ts`
 
 ---
 
