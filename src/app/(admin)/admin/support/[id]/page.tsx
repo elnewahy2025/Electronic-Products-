@@ -5,11 +5,12 @@ import { createClient } from '@/lib/supabase/server';
 import { TicketReplyForm } from '@/app/support/[id]/reply-form';
 import { ReviewDeleteFromTicket } from './review-delete-from-ticket';
 
-export default async function AdminSupportDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function AdminSupportDetailPage(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const params = await props.params;
   const db = await createClient();
   const [{ data: ticket }, { data: messages }] = await Promise.all([
     db.from('support_tickets')

@@ -2,11 +2,12 @@ import Link from 'next/link';
 import { CategoryArtwork } from '@/components/storefront/category-artwork';
 import { getAllCategories } from '@/lib/server/services/storefront-service';
 
-export default async function CategoriesPage({
-  searchParams,
-}: {
-  searchParams: { q?: string };
-}) {
+export default async function CategoriesPage(
+  props: {
+    searchParams: Promise<{ q?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const categories = await getAllCategories();
   const query = (searchParams.q ?? '').trim();
 

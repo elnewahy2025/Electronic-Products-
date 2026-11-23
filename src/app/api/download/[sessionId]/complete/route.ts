@@ -21,10 +21,8 @@ const bodySchema = z.object({
  * this after it has read every byte from Drive and computed SHA-256 locally.
  * A signed-in buyer can no longer self-report a successful download.
  */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { sessionId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ sessionId: string }> }) {
+  const params = await props.params;
   if (!constantTimeEqual(
     req.headers.get('x-internal-secret'),
     process.env.DOWNLOAD_SERVICE_TOKEN

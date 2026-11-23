@@ -12,7 +12,8 @@ const STATUS_META: Record<string, { label: string; tone: BadgeTone }> = {
   completed: { label: 'مكتمل', tone: 'green' },
 };
 
-export default async function RequestsPage({ searchParams }: { searchParams: { status?: string } }) {
+export default async function RequestsPage(props: { searchParams: Promise<{ status?: string }> }) {
+  const searchParams = await props.searchParams;
   const db = await createClient();
 
   let q = db

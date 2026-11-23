@@ -18,7 +18,8 @@ import { SimilarProducts } from '@/components/storefront/similar-products';
 import { FavoriteButton } from '@/components/storefront/favorite-button';
 import { PurchaseRequestForm } from './purchase-request-form';
 
-export default async function ProductPage({ params }: { params: { slug: string } }) {
+export default async function ProductPage(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const db = await createClient();
   let slug = params.slug;
   try {

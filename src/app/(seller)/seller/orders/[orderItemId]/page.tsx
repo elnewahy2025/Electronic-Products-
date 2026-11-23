@@ -66,11 +66,12 @@ function formatBytes(bytes: number | null): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
-export default async function SellerOrderDetailPage({
-  params,
-}: {
-  params: { orderItemId: string };
-}) {
+export default async function SellerOrderDetailPage(
+  props: {
+    params: Promise<{ orderItemId: string }>;
+  }
+) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user || user.accountType !== 'seller') redirect('/');
 

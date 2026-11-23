@@ -9,7 +9,8 @@ const body = z.object({
   extra_hours: z.number().int().positive().max(168),
 });
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     await requirePerm('download.session.extend');
     const parsed = body.safeParse(await req.json().catch(() => null));

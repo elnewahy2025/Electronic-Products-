@@ -1,6 +1,6 @@
 import 'server-only';
 import crypto from 'node:crypto';
-import sharp from 'sharp';
+import sharp, { type Metadata } from 'sharp';
 import { google } from 'googleapis';
 import { GoogleGenAI } from '@google/genai';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -35,7 +35,7 @@ export async function processAndUploadProductImage(input: {
     throw new Error('image_too_large');
   }
 
-  let metadata: sharp.Metadata;
+  let metadata: Metadata;
   try {
     metadata = await sharp(input.buffer, { limitInputPixels: 64_000_000 }).metadata();
   } catch {

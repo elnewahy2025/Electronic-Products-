@@ -6,10 +6,8 @@ import {
   setDefaultDriveAccount,
 } from '@/lib/server/services/drive-account-service';
 
-export async function PATCH(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const db = await createClient();
   const { data: { user } } = await db.auth.getUser();
   if (!user) return NextResponse.json({ error: 'UNAUTHENTICATED' }, { status: 401 });
@@ -22,10 +20,8 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const db = await createClient();
   const { data: { user } } = await db.auth.getUser();
   if (!user) return NextResponse.json({ error: 'UNAUTHENTICATED' }, { status: 401 });

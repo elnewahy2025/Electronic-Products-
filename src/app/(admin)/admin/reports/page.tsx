@@ -29,7 +29,8 @@ const FILTERS = [
   { k: '', label: 'الكل' },
 ];
 
-export default async function ReportsPage({ searchParams }: { searchParams: { status?: string } }) {
+export default async function ReportsPage(props: { searchParams: Promise<{ status?: string }> }) {
+  const searchParams = await props.searchParams;
   const db = await createClient();
   let q = db
     .from('content_reports')

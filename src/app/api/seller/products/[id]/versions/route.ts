@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireUser } from '@/lib/auth/session';
 import { createVersion } from '@/lib/server/services/seller-version-service';
 
-export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await requireUser();
     if (user.accountType !== 'seller') throw new Error('FORBIDDEN');

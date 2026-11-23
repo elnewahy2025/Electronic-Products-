@@ -11,7 +11,8 @@ const STATUS_META: Record<string, { label: string; tone: BadgeTone }> = {
   revoked: { label: 'ملغى', tone: 'red' },
 };
 
-export default async function CodesPage({ searchParams }: { searchParams: { status?: string } }) {
+export default async function CodesPage(props: { searchParams: Promise<{ status?: string }> }) {
+  const searchParams = await props.searchParams;
   const db = await createClient();
   let q = db
     .from('purchase_codes')

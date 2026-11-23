@@ -4,7 +4,11 @@ import { z } from 'zod';
 import { requireUser } from '@/lib/auth/session';
 import { removeFileFromVersion, updateVersionFile } from '@/lib/server/services/seller-version-service';
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string; pvfId: string } }) {
+export async function DELETE(
+  _req: NextRequest,
+  props: { params: Promise<{ id: string; pvfId: string }> }
+) {
+  const params = await props.params;
   try {
     const user = await requireUser();
     if (user.accountType !== 'seller') throw new Error('FORBIDDEN');
@@ -21,7 +25,11 @@ const patchBody = z.object({
   included_in_zip: z.boolean().optional(),
 });
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string; pvfId: string } }) {
+export async function PATCH(
+  req: NextRequest,
+  props: { params: Promise<{ id: string; pvfId: string }> }
+) {
+  const params = await props.params;
   try {
     const user = await requireUser();
     if (user.accountType !== 'seller') throw new Error('FORBIDDEN');

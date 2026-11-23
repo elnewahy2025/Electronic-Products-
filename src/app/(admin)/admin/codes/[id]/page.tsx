@@ -30,7 +30,8 @@ const ATTEMPT_RESULT_META: Record<string, { label: string; tone: BadgeTone }> = 
   error: { label: 'فشل', tone: 'red' },
 };
 
-export default async function CodeDetailPage({ params }: { params: { id: string } }) {
+export default async function CodeDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const db = await createClient();
   const { data: code } = await db
     .from('purchase_codes')

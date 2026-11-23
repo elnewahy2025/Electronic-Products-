@@ -8,7 +8,8 @@ const body = z.object({
   role_code: z.enum(['super_admin', 'admin', 'staff']),
 });
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     await requireSuperAdmin();
     const parsed = body.safeParse(await req.json().catch(() => null));

@@ -12,7 +12,8 @@ const FILTERS = [
   { k: 'deleted', label: 'محذوف' },
 ];
 
-export default async function ReviewsPage({ searchParams }: { searchParams: { status?: string } }) {
+export default async function ReviewsPage(props: { searchParams: Promise<{ status?: string }> }) {
+  const searchParams = await props.searchParams;
   const db = await createClient();
   let q = db
     .from('reviews')

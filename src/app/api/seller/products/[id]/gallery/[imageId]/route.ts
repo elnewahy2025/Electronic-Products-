@@ -7,8 +7,9 @@ import { deleteProductImageFromStorage } from '@/lib/server/services/product-ima
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string; imageId: string } }
+  props: { params: Promise<{ id: string; imageId: string }> }
 ) {
+  const params = await props.params;
   try {
     const user = await requireUser();
     if (user.accountType !== 'seller') throw new Error('FORBIDDEN');

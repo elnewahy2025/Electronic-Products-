@@ -1,16 +1,14 @@
 import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { requireAdmin } from '@/lib/auth/admin-guard';
+import { requirePerm } from '@/lib/auth/admin-guard';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
-    await requireAdmin();
+    await requirePerm('commission.seller.override');
     if (!UUID_RE.test(params.id)) {
       return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
     }

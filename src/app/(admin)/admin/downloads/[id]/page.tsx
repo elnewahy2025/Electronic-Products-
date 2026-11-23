@@ -21,7 +21,8 @@ const DELIVERY_TYPE_LABELS: Record<string, string> = {
   individual: 'ملف مفرد',
 };
 
-export default async function SessionDetailPage({ params }: { params: { id: string } }) {
+export default async function SessionDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const db = await createClient();
   const { data: session } = await db
     .from('download_sessions')

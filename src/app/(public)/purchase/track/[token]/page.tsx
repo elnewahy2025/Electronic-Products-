@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { trackPurchaseByToken } from '@/lib/server/services/purchase-request-service';
 
-export default async function TrackPage({ params }: { params: { token: string } }) {
+export default async function TrackPage(props: { params: Promise<{ token: string }> }) {
+  const params = await props.params;
   const req = await trackPurchaseByToken(params.token);
   if (!req) notFound();
 

@@ -9,7 +9,8 @@ const body = z.object({
   note: z.string().min(3),
 });
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     await requirePerm('report.resolve');
     const parsed = body.safeParse(await req.json().catch(() => null));

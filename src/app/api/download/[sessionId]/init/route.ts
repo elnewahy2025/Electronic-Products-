@@ -8,10 +8,8 @@ const bodySchema = z.union([
   z.object({ type: z.literal('single'), file_version_id: z.string().uuid() }),
 ]);
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { sessionId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ sessionId: string }> }) {
+  const params = await props.params;
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: 'INVALID_BODY' }, { status: 400 });

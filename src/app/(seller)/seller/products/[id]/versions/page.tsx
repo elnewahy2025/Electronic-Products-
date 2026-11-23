@@ -5,7 +5,8 @@ import { getSellerProduct } from '@/lib/server/services/seller-product-service';
 import { listVersions } from '@/lib/server/services/seller-version-service';
 import { CreateVersionButton } from './create-version-button';
 
-export default async function VersionsPage({ params }: { params: { id: string } }) {
+export default async function VersionsPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const db = await createClient();
   const { data: { user } } = await db.auth.getUser();
   if (!user) notFound();

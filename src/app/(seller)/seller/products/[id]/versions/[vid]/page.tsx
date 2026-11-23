@@ -5,11 +5,12 @@ import { getVersionFiles } from '@/lib/server/services/seller-version-service';
 import { listReadyFilesForLinking } from '@/lib/server/services/seller-file-service';
 import { VersionEditor } from './version-editor';
 
-export default async function VersionDetailPage({
-  params,
-}: {
-  params: { id: string; vid: string };
-}) {
+export default async function VersionDetailPage(
+  props: {
+    params: Promise<{ id: string; vid: string }>;
+  }
+) {
+  const params = await props.params;
   const db = await createClient();
   const { data: { user } } = await db.auth.getUser();
   if (!user) notFound();

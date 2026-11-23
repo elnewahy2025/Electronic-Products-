@@ -14,7 +14,8 @@ const body = z.object({
   cover_image_url: z.string().url().max(1000).nullable().optional(),
 });
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await requireUser();
     if (user.accountType !== 'seller') throw new Error('FORBIDDEN');
@@ -43,7 +44,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await requireUser();
     if (user.accountType !== 'seller') throw new Error('FORBIDDEN');

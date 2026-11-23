@@ -6,18 +6,19 @@ import { ProductsGrid } from './products-grid';
 import { ProductsSkeleton } from './products-skeleton';
 import { Pagination } from '@/components/storefront/pagination';
 
-export default async function ProductsPage({
-  searchParams,
-}: {
-  searchParams: {
-    q?: string;
-    category?: string;
-    sort?: SP['sort'];
-    min?: string;
-    max?: string;
-    page?: string;
-  };
-}) {
+export default async function ProductsPage(
+  props: {
+    searchParams: Promise<{
+      q?: string;
+      category?: string;
+      sort?: SP['sort'];
+      min?: string;
+      max?: string;
+      page?: string;
+    }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const page = Math.max(1, parseInt(searchParams.page ?? '1', 10));
   const categories = await getAllCategories();
 

@@ -8,11 +8,12 @@ const STATUS_LABELS: Record<string, string> = {
   suspended: 'موقوف',
 };
 
-export default async function SellersListPage({
-  searchParams,
-}: {
-  searchParams: { status?: string };
-}) {
+export default async function SellersListPage(
+  props: {
+    searchParams: Promise<{ status?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const db = await createClient();
   let q = db
     .from('seller_profiles')

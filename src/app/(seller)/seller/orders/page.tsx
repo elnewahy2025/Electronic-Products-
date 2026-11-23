@@ -14,17 +14,18 @@ import { Pagination } from '@/components/storefront/pagination';
 
 const PER_PAGE = 50;
 
-export default async function SellerOrdersPage({
-  searchParams,
-}: {
-  searchParams: {
-    product?: string;
-    status?: string;
-    from?: string;
-    to?: string;
-    page?: string;
-  };
-}) {
+export default async function SellerOrdersPage(
+  props: {
+    searchParams: Promise<{
+      product?: string;
+      status?: string;
+      from?: string;
+      to?: string;
+      page?: string;
+    }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user || user.accountType !== 'seller') redirect('/');
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { publicError } from '@/lib/api/errors';
 import { requireUser } from '@/lib/auth/session';
 import { importDriveFiles } from '@/lib/server/services/upload-service';
 import { processPendingScans } from '@/lib/server/services/scan-service';
@@ -51,9 +52,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ results });
   } catch (e: any) {
+    const error = publicError(e, 'DRIVE_IMPORT_FAILED');
     return NextResponse.json(
-      { error: e?.message ?? 'DRIVE_IMPORT_FAILED' },
-      { status: e?.message === 'UNAUTHENTICATED' ? 401 : 400 },
+      { error },
+      { status: error === 'UNAUTHENTICATED' ? 401 : 400 },
     );
   }
 }

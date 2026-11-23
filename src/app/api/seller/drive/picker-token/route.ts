@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
+import { publicError } from '@/lib/api/errors';
 import { requireUser } from '@/lib/auth/session';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { decrypt } from '@/lib/crypto/encryption';
@@ -79,9 +80,10 @@ export async function GET(req: NextRequest) {
       storeFolderId,
     });
   } catch (e: any) {
+    const error = publicError(e, 'PICKER_TOKEN_FAILED');
     return NextResponse.json(
-      { error: e?.message ?? 'PICKER_TOKEN_FAILED' },
-      { status: e?.message === 'UNAUTHENTICATED' ? 401 : 400 },
+      { error },
+      { status: error === 'UNAUTHENTICATED' ? 401 : 400 },
     );
   }
 }

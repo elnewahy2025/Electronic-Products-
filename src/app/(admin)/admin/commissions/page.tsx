@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
+import { requirePerm } from '@/lib/auth/admin-guard';
 import { CommissionManager, ExpireCommissionButton } from './commission-manager';
 
 export default async function AdminCommissionsPage() {
+  await requirePerm('commission.seller.override');
   const db = await createClient();
   const [{ data: settings }, { data: overrides }, { data: sellers }, { data: categories }] =
     await Promise.all([

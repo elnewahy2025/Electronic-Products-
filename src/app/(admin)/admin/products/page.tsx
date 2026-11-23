@@ -13,11 +13,12 @@ const STATUS_META: Record<string, { label: string; badge: string }> = {
   deleted: { label: 'محذوف', badge: 'bg-zinc-100 text-zinc-500 border-zinc-200' },
 };
 
-export default async function AdminProductsPage({
-  searchParams,
-}: {
-  searchParams: { status?: string; q?: string };
-}) {
+export default async function AdminProductsPage(
+  props: {
+    searchParams: Promise<{ status?: string; q?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const db = await createClient();
   const canModerate = await can('product.suspend');
 

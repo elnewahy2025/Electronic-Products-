@@ -6,7 +6,8 @@ import { addFileToVersion } from '@/lib/server/services/seller-version-service';
 
 const body = z.object({ file_version_id: z.string().uuid() });
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await requireUser();
     if (user.accountType !== 'seller') throw new Error('FORBIDDEN');

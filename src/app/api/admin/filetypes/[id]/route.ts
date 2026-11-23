@@ -6,7 +6,8 @@ import { requirePerm } from '@/lib/auth/admin-guard';
 
 const body = z.object({ is_enabled: z.boolean() });
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     await requirePerm('filetype.manage');
     const parsed = body.safeParse(await req.json().catch(() => null));

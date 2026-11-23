@@ -1,14 +1,14 @@
 import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { requireAdmin } from '@/lib/auth/admin-guard';
+import { requirePerm } from '@/lib/auth/admin-guard';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SCOPES = new Set(['global', 'category', 'product_type']);
 
 export async function GET() {
   try {
-    await requireAdmin();
+    await requirePerm('commission.seller.override');
     const db = await createClient();
     const { data, error } = await db
       .from('seller_commissions')
@@ -28,7 +28,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAdmin();
+    await requirePerm('commission.seller.override');
     const body = await req.json().catch(() => null);
     const sellerId = String(body?.seller_id ?? '');
     const scope = String(body?.scope ?? 'global');

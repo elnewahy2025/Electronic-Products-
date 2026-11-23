@@ -3,13 +3,14 @@ import { getAllCategories, searchStorefront } from '@/lib/server/services/storef
 import { ProductCard } from '@/components/storefront/product-card';
 import Link from 'next/link';
 
-export default async function CategoryPage({
-  params,
-  searchParams,
-}: {
-  params: { slug: string };
-  searchParams: { sort?: string; page?: string };
-}) {
+export default async function CategoryPage(
+  props: {
+    params: Promise<{ slug: string }>;
+    searchParams: Promise<{ sort?: string; page?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   let slug = params.slug;
   try {
     slug = decodeURIComponent(params.slug);

@@ -16,11 +16,12 @@ const METHOD_LABELS: Record<string, string> = {
   wise: 'Wise',
 };
 
-export default async function PayoutsPage({
-  searchParams,
-}: {
-  searchParams: { status?: string };
-}) {
+export default async function PayoutsPage(
+  props: {
+    searchParams: Promise<{ status?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const db = await createClient();
   let q = db
     .from('seller_payouts')

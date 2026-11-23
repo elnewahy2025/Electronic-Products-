@@ -5,9 +5,10 @@ import { logAudit } from '@/lib/audit/logger';
 import { uploadCategoryCover } from '@/lib/server/services/category-cover-service';
 import { clearCategoryCover, setCategoryCover } from '@/lib/server/services/category-service';
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
-export async function POST(req: NextRequest, { params }: Ctx) {
+export async function POST(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   try {
     await requirePerm('category.manage');
 
@@ -54,7 +55,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
+export async function DELETE(_req: NextRequest, props: Ctx) {
+  const params = await props.params;
   try {
     await requirePerm('category.manage');
     await clearCategoryCover(params.id);

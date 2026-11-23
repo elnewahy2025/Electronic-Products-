@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import type { Database } from '@/lib/supabase/types';
 import { MFA_COOKIE, readMfaSessionToken, sessionIdFromJwt } from '@/lib/auth/mfa-session';
 import { THEME_INIT_SCRIPT_HASH } from '@/lib/theme-init';
+import { assertSameOrigin } from '@/lib/security/origin';
 
 const ADMIN_PREFIXES = ['/admin'];
 const SELLER_PREFIXES = ['/seller'];
@@ -138,6 +139,20 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
+
+  // 4b. CSRF/Origin guard for state-changing admin/seller API calls.
+  if (pathname.startsWith('/api/admin/') || pathname.startsWith('/api/seller/')) {
+    try {
+      assertSameOrigin(request);
+    } catch {
+      const forbidden = NextResponse.json(
+        { error: 'CSRF_INVALID_ORIGIN' },
+        { status: 403 },
+      );
+      applySecurityHeaders(forbidden, csp);
+      return forbidden;
+    }
+  }
 
   // 5. Route guards
   const isProtected =

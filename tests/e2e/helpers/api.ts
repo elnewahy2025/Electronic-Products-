@@ -14,6 +14,7 @@ export async function apiRequest(
     method,
     headers: {
       'content-type': 'application/json',
+      origin: BASE,
       ...(cookieHeader ? { cookie: cookieHeader } : {}),
       ...(extraHeaders ?? {}),
     },

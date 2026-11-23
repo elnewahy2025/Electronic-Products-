@@ -12,7 +12,8 @@ const patchSchema = z.object({
   sort_order: z.number().int().min(0).optional(),
 });
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     await requirePerm('category.manage');
     const parsed = patchSchema.safeParse(await req.json().catch(() => null));
@@ -38,7 +39,8 @@ const deleteSchema = z.object({
   fallback_category_id: z.string().uuid().nullable().optional(),
 });
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     await requirePerm('category.manage');
     const parsed = deleteSchema.safeParse(await req.json().catch(() => null));

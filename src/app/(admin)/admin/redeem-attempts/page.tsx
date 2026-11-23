@@ -13,11 +13,12 @@ const RESULT_LABELS: Record<string, { label: string; cls: string }> = {
   error: { label: 'خطأ', cls: 'ui-badge-red' },
 };
 
-export default async function RedeemAttemptsPage({
-  searchParams,
-}: {
-  searchParams: { result?: string; page?: string };
-}) {
+export default async function RedeemAttemptsPage(
+  props: {
+    searchParams: Promise<{ result?: string; page?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const db = await createClient();
   const page = Math.max(1, parseInt(searchParams.page ?? '1', 10));
   const perPage = 50;

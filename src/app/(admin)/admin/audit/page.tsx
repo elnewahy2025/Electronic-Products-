@@ -2,11 +2,12 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { AuditFilters } from './audit-filters';
 
-export default async function AuditPage({
-  searchParams,
-}: {
-  searchParams: { action?: string; actor?: string; from?: string; to?: string; page?: string };
-}) {
+export default async function AuditPage(
+  props: {
+    searchParams: Promise<{ action?: string; actor?: string; from?: string; to?: string; page?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const db = await createClient();
   const page = parseInt(searchParams.page ?? '1', 10);
   const perPage = 50;

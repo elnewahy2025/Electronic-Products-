@@ -247,73 +247,127 @@ export async function completeUpload(params: {
   }
   if (session.status !== 'uploading') throw new Error('SESSION_NOT_ACTIVE');
 
-  // Fetch Drive file to verify
-  const { data: accRow } = await admin
-    .from('seller_drive_accounts')
-    .select('encrypted_refresh_token')
-    .eq('id', session.drive_account_id!)
-    .single();
-  if (!accRow?.encrypted_refresh_token) throw new Error('DRIVE_NOT_LINKED');
-
-  const refreshToken = decrypt(accRow.encrypted_refresh_token);
-  const meta = await getDriveFileMeta(refreshToken, params.driveFileId);
-
-  // Create file + storage + file_version in a transaction-like sequence
-  const { data: file, error: fe } = await admin
-    .from('files')
-    .insert({
-      seller_id: params.sellerId,
-      original_name: session.original_name!,
-      display_name: session.display_name ?? session.original_name,
-      mime: session.mime,
-      extension: session.extension,
-    })
-    .select('id')
-    .single();
-  if (fe || !file) throw new Error('FILE_CREATE_FAILED');
-
-  const { data: storage, error: ste } = await admin
-    .from('file_storage_locations')
-    .insert({
-      provider: 'google_drive',
-      seller_drive_account_id: session.drive_account_id,
-      provider_file_id: meta.id,
-      status: 'active',
-    })
-    .select('id')
-    .single();
-  if (ste || !storage) throw new Error('STORAGE_CREATE_FAILED');
-
-  const { data: fv, error: fve } = await admin
-    .from('file_versions')
-    .insert({
-      file_id: file.id,
-      version_number: 1,
-      storage_location_id: storage.id,
-      size_bytes: meta.size,
-      checksum_sha256: meta.md5Checksum ?? session.checksum_sha256,
-      mime: session.mime,
-      extension: session.extension,
-      scan_status: 'uploaded',
-    })
-    .select('id')
-    .single();
-  if (fve || !fv) throw new Error('FILE_VERSION_CREATE_FAILED');
-
-  await admin.from('scan_jobs').insert({
-    file_version_id: fv.id,
-    status: 'queued',
-    engine: 'pending',
-  });
-
-  await admin
+  // Atomically claim the session so concurrent completions cannot duplicate rows.
+  const { data: claimed, error: claimError } = await admin
     .from('upload_sessions')
-    .update({
-      status: 'completed',
-      completed_at: new Date().toISOString(),
-      file_id: file.id,
-    })
-    .eq('id', params.sessionId);
+    .update({ status: 'completing' as any })
+    .eq('id', params.sessionId)
+    .eq('status', 'uploading')
+    .select('id')
+    .maybeSingle();
+  if (claimError || !claimed) throw new Error('SESSION_NOT_ACTIVE');
+
+  let refreshToken = '';
+  let meta: Awaited<ReturnType<typeof getDriveFileMeta>> | null = null;
+  let fileId = '';
+  let fileVersionId = '';
+
+  try {
+    // Fetch Drive file and seller account to verify metadata and folder.
+    const { data: accRow } = await admin
+      .from('seller_drive_accounts')
+      .select('encrypted_refresh_token, store_folder_id')
+      .eq('id', session.drive_account_id!)
+      .single();
+    if (!accRow?.encrypted_refresh_token) throw new Error('DRIVE_NOT_LINKED');
+
+    refreshToken = decrypt(accRow.encrypted_refresh_token);
+    meta = await getDriveFileMeta(refreshToken, params.driveFileId);
+
+    const { data: allowedType } = await admin
+      .from('allowed_file_types')
+      .select('mime, max_size_bytes')
+      .eq('extension', session.extension ?? '')
+      .eq('is_enabled', true)
+      .maybeSingle();
+    if (!allowedType) throw new Error('FILE_TYPE_NOT_ALLOWED');
+
+    if (!meta.size || !session.total_bytes || meta.size !== Number(session.total_bytes)) {
+      throw new Error('SIZE_MISMATCH');
+    }
+    if (allowedType.max_size_bytes && meta.size > Number(allowedType.max_size_bytes)) {
+      throw new Error('FILE_TOO_LARGE');
+    }
+    if (session.mime !== allowedType.mime || meta.mimeType !== allowedType.mime) {
+      throw new Error('MIME_MISMATCH');
+    }
+
+    const storeFolderId = (accRow as any).store_folder_id as string | null;
+    if (
+      !storeFolderId ||
+      !(await isFileInsideFolder(refreshToken, params.driveFileId, storeFolderId))
+    ) {
+      throw new Error('FILE_OUTSIDE_STORE_FOLDER');
+    }
+
+    // Create file + storage + file_version in a transaction-like sequence
+    const { data: file, error: fe } = await admin
+      .from('files')
+      .insert({
+        seller_id: params.sellerId,
+        original_name: session.original_name!,
+        display_name: session.display_name ?? session.original_name,
+        mime: session.mime,
+        extension: session.extension,
+      })
+      .select('id')
+      .single();
+    if (fe || !file) throw new Error('FILE_CREATE_FAILED');
+
+    const { data: storage, error: ste } = await admin
+      .from('file_storage_locations')
+      .insert({
+        provider: 'google_drive',
+        seller_drive_account_id: session.drive_account_id,
+        provider_file_id: meta.id,
+        status: 'active',
+      })
+      .select('id')
+      .single();
+    if (ste || !storage) throw new Error('STORAGE_CREATE_FAILED');
+
+    const { data: fv, error: fve } = await admin
+      .from('file_versions')
+      .insert({
+        file_id: file.id,
+        version_number: 1,
+        storage_location_id: storage.id,
+        size_bytes: meta.size,
+        checksum_sha256: meta.md5Checksum ?? session.checksum_sha256,
+        mime: session.mime,
+        extension: session.extension,
+        scan_status: 'uploaded',
+      })
+      .select('id')
+      .single();
+    if (fve || !fv) throw new Error('FILE_VERSION_CREATE_FAILED');
+
+    await admin.from('scan_jobs').insert({
+      file_version_id: fv.id,
+      status: 'queued',
+      engine: 'pending',
+    });
+
+    await admin
+      .from('upload_sessions')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        file_id: file.id,
+      })
+      .eq('id', params.sessionId);
+
+    fileId = file.id;
+    fileVersionId = fv.id;
+  } catch (e) {
+    // Roll the claim back so the seller can retry.
+    await admin
+      .from('upload_sessions')
+      .update({ status: 'uploading' })
+      .eq('id', params.sessionId)
+      .eq('status', 'completing');
+    throw e;
+  }
 
   // Refresh quota after upload
   try {
@@ -330,11 +384,11 @@ export async function completeUpload(params: {
   await logAudit({
     action: 'file.uploaded',
     entityType: 'file_versions',
-    entityId: fv.id,
-    after: { size: meta.size, mime: session.mime },
+    entityId: fileVersionId,
+    after: { size: meta!.size, mime: session.mime },
   });
 
-  return { fileVersionId: fv.id, fileId: file.id };
+  return { fileVersionId, fileId };
 }
 
 export type ImportedDriveFileResult = {

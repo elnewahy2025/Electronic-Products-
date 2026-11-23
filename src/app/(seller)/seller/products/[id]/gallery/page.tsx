@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 import { getSellerProduct } from '@/lib/server/services/seller-product-service';
 import { GalleryManager } from './gallery-manager';
 
-export default async function GalleryPage({ params }: { params: { id: string } }) {
+export default async function GalleryPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const db = await createClient();
   const { data: { user } } = await db.auth.getUser();
   if (!user) notFound();

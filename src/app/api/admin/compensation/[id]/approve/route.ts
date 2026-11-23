@@ -14,7 +14,8 @@ const STATUS_BY_ERROR: Record<string, number> = {
   compensation_limit_reached: 409,
 };
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     await requirePerm('download.compensation.approve');
     const parsed = body.safeParse(await req.json().catch(() => null));

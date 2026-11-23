@@ -14,11 +14,12 @@ const FILTERS = [
   { k: 'closed', label: 'مغلقة' },
 ];
 
-export default async function AdminSupportPage({
-  searchParams,
-}: {
-  searchParams: { status?: string };
-}) {
+export default async function AdminSupportPage(
+  props: {
+    searchParams: Promise<{ status?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const db = await createClient();
   const statusFilter = searchParams.status;
 

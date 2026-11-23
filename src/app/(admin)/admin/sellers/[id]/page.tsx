@@ -9,7 +9,8 @@ const STATUS_LABELS: Record<string, string> = {
   suspended: 'موقوف',
 };
 
-export default async function SellerDetailPage({ params }: { params: { id: string } }) {
+export default async function SellerDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const db = await createClient();
   const { data: seller } = await db
     .from('seller_profiles')

@@ -11,6 +11,8 @@ type AuditInput = {
   ip?: string;
   userAgent?: string;
   requestId?: string;
+  /** Fail closed when the audit write fails (for critical privileged mutations). */
+  required?: boolean;
 };
 
 /**
@@ -30,5 +32,14 @@ export async function logAudit(input: AuditInput): Promise<void> {
     p_user_agent: input.userAgent ?? null,
     p_request_id: input.requestId ?? null,
   });
-  if (error) console.error('[audit] failed', error, input);
+  if (error) {
+    const code = (error as any)?.code ?? 'AUDIT_WRITE_FAILED';
+    console.error('[audit] failed', {
+      action: input.action,
+      entityType: input.entityType ?? null,
+      entityId: input.entityId ?? null,
+      code,
+    });
+    if (input.required) throw new Error(code);
+  }
 }

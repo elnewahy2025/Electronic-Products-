@@ -9,16 +9,17 @@ import { SellerReviewsList } from './seller-reviews-list';
 import { ReviewsStats } from './reviews-stats';
 import { ReviewsFilters } from './reviews-filters';
 
-export default async function SellerReviewsPage({
-  searchParams,
-}: {
-  searchParams: {
-    product?: string;
-    rating?: string;
-    unreplied?: string;
-    deleted?: string;
-  };
-}) {
+export default async function SellerReviewsPage(
+  props: {
+    searchParams: Promise<{
+      product?: string;
+      rating?: string;
+      unreplied?: string;
+      deleted?: string;
+    }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user || user.accountType !== 'seller') redirect('/');
 

@@ -8,6 +8,7 @@ import {
   verifyMfaLogin,
 } from '@/lib/auth/mfa';
 import { MFA_COOKIE, clearMfaCookieOptions, mfaCookieOptions } from '@/lib/auth/mfa-session';
+import { assertSameOrigin } from '@/lib/security/origin';
 
 const bodySchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('begin') }),
@@ -18,6 +19,12 @@ const bodySchema = z.discriminatedUnion('action', [
 ]);
 
 export async function POST(req: NextRequest) {
+  try {
+    assertSameOrigin(req);
+  } catch {
+    return NextResponse.json({ error: 'CSRF_INVALID_ORIGIN' }, { status: 403 });
+  }
+
   const json = await req.json().catch(() => null);
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {

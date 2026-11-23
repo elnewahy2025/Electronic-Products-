@@ -3,7 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentUser } from '@/lib/auth/session';
 import { requirePerm } from '@/lib/auth/admin-guard';
 
-export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     await requirePerm('code.confirm_delivery');
     const admin = createAdminClient();

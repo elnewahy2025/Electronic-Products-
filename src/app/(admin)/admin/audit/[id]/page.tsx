@@ -9,7 +9,8 @@ const ACTOR_ROLE_LABEL: Record<string, string> = {
   system: 'النظام',
 };
 
-export default async function AuditDetailPage({ params }: { params: { id: string } }) {
+export default async function AuditDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const db = await createClient();
   const { data: log } = await db
     .from('audit_logs')

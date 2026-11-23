@@ -11,11 +11,12 @@ import {
 import { NotificationList } from './notification-list';
 import { MarkAllReadButton } from './mark-all-read-button';
 
-export default async function NotificationsPage({
-  searchParams,
-}: {
-  searchParams: { filter?: string };
-}) {
+export default async function NotificationsPage(
+  props: {
+    searchParams: Promise<{ filter?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/notifications');
 

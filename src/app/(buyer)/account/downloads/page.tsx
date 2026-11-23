@@ -10,11 +10,12 @@ const FILTERS = [
   { key: 'completed', label: 'مكتملة' },
 ];
 
-export default async function DownloadsPage({
-  searchParams,
-}: {
-  searchParams: { status?: string };
-}) {
+export default async function DownloadsPage(
+  props: {
+    searchParams: Promise<{ status?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const sessions = await listBuyerSessions(searchParams.status);
 
   return (

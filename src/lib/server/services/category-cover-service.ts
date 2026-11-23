@@ -1,5 +1,5 @@
 import 'server-only';
-import sharp from 'sharp';
+import sharp, { type Metadata } from 'sharp';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { PRODUCT_IMAGES_BUCKET } from './product-image-service';
 
@@ -21,7 +21,7 @@ export async function uploadCategoryCover(input: {
   if (buffer.length > MAX_CATEGORY_COVER_BYTES) throw new Error('image_too_large');
   if (!/^[0-9a-f-]{36}$/i.test(categoryId)) throw new Error('invalid_category_id');
 
-  let metadata: sharp.Metadata;
+  let metadata: Metadata;
   try {
     metadata = await sharp(buffer, { limitInputPixels: 64_000_000 }).metadata();
   } catch {

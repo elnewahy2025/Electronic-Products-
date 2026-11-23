@@ -1,13 +1,12 @@
 import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { can } from '@/lib/auth/permissions';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   }
@@ -27,17 +26,15 @@ export async function GET(
       .order('created_at', { ascending: true }),
   ]);
 
-  if (tErr) return NextResponse.json({ error: tErr.message }, { status: 400 });
+  if (tErr) return NextResponse.json({ error: publicError(tErr) }, { status: 400 });
   if (!ticket) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  if (mErr) return NextResponse.json({ error: mErr.message }, { status: 400 });
+  if (mErr) return NextResponse.json({ error: publicError(mErr) }, { status: 400 });
 
   return NextResponse.json({ ticket, messages: messages ?? [] });
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   }
@@ -49,6 +46,10 @@ export async function POST(
   const body = await req.json().catch(() => null);
   const text = String(body?.body ?? '').trim();
   const isInternal = Boolean(body?.is_internal);
+
+  if (isInternal && !(await can('support.read'))) {
+    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+  }
 
   if (text.length < 2 || text.length > 5000) {
     return NextResponse.json({ error: 'الرسالة يجب أن تكون بين حرفين و5000 حرف.' }, { status: 400 });
@@ -69,10 +70,8 @@ export async function POST(
   return NextResponse.json({ ok: true, message: msg }, { status: 201 });
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   }

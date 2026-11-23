@@ -10,11 +10,12 @@ const STATUS_LABELS: Record<string, string> = {
   closed: 'مغلقة',
 };
 
-export default async function SupportTicketDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function SupportTicketDetailPage(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const params = await props.params;
   const user = await getCurrentUser();
   if (!user) redirect(`/login?next=/support/${params.id}`);
 

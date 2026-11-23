@@ -15,11 +15,12 @@ const nextConfig = {
     minimumCacheTTL: 60 * 60 * 24, // 24h
   },
 
+  serverExternalPackages: ['sharp', 'canvas', 'pdf-to-img', 'nodemailer'],
+
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
     },
-    serverComponentsExternalPackages: ['sharp', 'canvas', 'pdf-to-img', 'nodemailer'],
   },
 
   async rewrites() {
@@ -48,9 +49,17 @@ const nextConfig = {
             value:
               'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=()',
           },
-          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
           { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
           { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
+          ...(process.env.NODE_ENV === 'production'
+            ? [
+                {
+                  key: 'Strict-Transport-Security',
+                  value: 'max-age=63072000; includeSubDomains; preload',
+                },
+              ]
+            : []),
         ],
       },
       // API routes: no HTML, but ensure no sniffing

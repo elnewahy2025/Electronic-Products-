@@ -10,7 +10,8 @@ import { logAudit } from '@/lib/audit/logger';
 
 const body = z.object({ reason: z.string().min(3) });
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     await requirePerm('file.delete');
     const parsed = body.safeParse(await req.json().catch(() => null));

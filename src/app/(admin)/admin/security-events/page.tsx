@@ -8,11 +8,12 @@ const SEVERITY_BADGE: Record<string, { label: string; cls: string }> = {
   critical: { label: 'حرجة', cls: 'ui-badge-red' },
 };
 
-export default async function AdminSecurityEventsPage({
-  searchParams,
-}: {
-  searchParams: { severity?: string };
-}) {
+export default async function AdminSecurityEventsPage(
+  props: {
+    searchParams: Promise<{ severity?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const db = await createClient();
   const sev = searchParams.severity;
 

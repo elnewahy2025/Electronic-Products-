@@ -8,7 +8,8 @@ function isTab(x: string): x is SettingsTab {
   return x in SETTINGS_TABLES;
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { tab: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ tab: string }> }) {
+  const params = await props.params;
   try {
     await requireSuperAdmin();
     if (!isTab(params.tab)) return NextResponse.json({ error: 'INVALID_TAB' }, { status: 400 });
@@ -21,7 +22,8 @@ export async function GET(_req: NextRequest, { params }: { params: { tab: string
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { tab: string } }) {
+export async function PUT(req: NextRequest, props: { params: Promise<{ tab: string }> }) {
+  const params = await props.params;
   try {
     await requireSuperAdmin();
     if (!isTab(params.tab)) return NextResponse.json({ error: 'INVALID_TAB' }, { status: 400 });

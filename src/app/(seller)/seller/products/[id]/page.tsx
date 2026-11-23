@@ -6,7 +6,8 @@ import { listCategoriesFlat } from '@/lib/server/services/category-service';
 import { ProductForm } from '../product-form';
 import { ProductActions } from './product-actions';
 
-export default async function EditProductPage({ params }: { params: { id: string } }) {
+export default async function EditProductPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const db = await createClient();
   const { data: { user } } = await db.auth.getUser();
   if (!user) notFound();

@@ -22,7 +22,8 @@ const CODE_STATUS_META: Record<string, { label: string; tone: BadgeTone }> = {
   revoked: { label: 'ملغى', tone: 'red' },
 };
 
-export default async function RequestDetailPage({ params }: { params: { id: string } }) {
+export default async function RequestDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const db = await createClient();
   const { data: req } = await db
     .from('purchase_requests')

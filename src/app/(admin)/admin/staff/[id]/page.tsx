@@ -4,7 +4,8 @@ import { getStaffDetail, listRoles } from '@/lib/server/services/staff-service';
 import { getCurrentUser } from '@/lib/auth/session';
 import { StaffEditor } from './staff-editor';
 
-export default async function StaffDetailPage({ params }: { params: { id: string } }) {
+export default async function StaffDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const [me, detail, roles] = await Promise.all([
     getCurrentUser(),
     getStaffDetail(params.id),

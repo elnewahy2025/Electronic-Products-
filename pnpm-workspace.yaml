@@ -2,3 +2,7 @@ allowBuilds:
   canvas: set this to true or false
   sharp: set this to true or false
   supabase: set this to true or false
+
+overrides:
+  tar: ^7.5.21
+  postcss: ^8.5.18

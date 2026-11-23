@@ -4,7 +4,8 @@ import { getBuyerOrderDetail } from '@/lib/server/services/buyer-service';
 import { StatusBadge } from '@/components/buyer/status-badge';
 import { Countdown } from '@/components/buyer/countdown';
 
-export default async function OrderDetailPage({ params }: { params: { id: string } }) {
+export default async function OrderDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const detail = await getBuyerOrderDetail(params.id);
   if (!detail) notFound();
 

@@ -26,7 +26,8 @@ const ENTITY_LABEL: Record<string, string> = {
   report: 'بلاغ',
 };
 
-export default async function ReportDetailPage({ params }: { params: { id: string } }) {
+export default async function ReportDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const db = await createClient();
   const { data: report } = await db
     .from('content_reports')

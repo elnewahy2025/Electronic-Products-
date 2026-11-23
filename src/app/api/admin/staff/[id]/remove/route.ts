@@ -6,7 +6,8 @@ import { requireSuperAdmin } from '@/lib/auth/admin-guard';
 
 const body = z.object({ reason: z.string().min(3).max(500) });
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     await requireSuperAdmin();
     const parsed = body.safeParse(await req.json().catch(() => null));
