@@ -25,13 +25,39 @@ function patchConnectSrc(csp: string, origin: string, legacy: string): string {
   });
 }
 
+function sentryOrigin(): string | null {
+  const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
+  if (!dsn) return null;
+  try {
+    const parsed = new URL(dsn);
+    return parsed.protocol === 'https:' ? parsed.origin : null;
+  } catch {
+    return null;
+  }
+}
+
+function appendConnectSrc(csp: string, origin: string): string {
+  return csp.replace(/connect-src ([^;]*)/, (_match: string, sources: string) => {
+    if (sources.split(/\s+/).includes(origin)) return `connect-src ${sources}`;
+    return `connect-src ${sources} ${origin}`;
+  });
+}
+
 export async function middleware(request: NextRequest) {
   const response = await rootMiddleware(request);
-  const sources = downloadSources();
-  const csp = sources && response.headers.get('content-security-policy');
-  if (!sources || !csp) return response;
+  const csp = response.headers.get('content-security-policy');
+  if (!csp) return response;
 
-  const patched = patchConnectSrc(csp, sources.origin, sources.legacy);
+  let patched = csp;
+  const sources = downloadSources();
+  if (sources) {
+    patched = patchConnectSrc(patched, sources.origin, sources.legacy);
+  }
+  const sentry = sentryOrigin();
+  if (sentry) {
+    patched = appendConnectSrc(patched, sentry);
+  }
+
   if (patched !== csp) response.headers.set('content-security-policy', patched);
   return response;
 }

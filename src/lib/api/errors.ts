@@ -1,4 +1,5 @@
 import 'server-only';
+import * as Sentry from '@sentry/nextjs';
 
 const SAFE_TOKEN_RE = /^[A-Za-z][A-Za-z0-9_]*$/;
 const SAFE_CODE_RE = /^[A-Za-z0-9_.:-]{1,64}$/;
@@ -78,6 +79,18 @@ export function logServerError(
   if (typeof meta?.status === 'number') entry.status = meta.status;
 
   console.error(JSON.stringify(entry));
+
+  if (process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN) {
+    Sentry.captureException(error instanceof Error ? error : new Error(publicToken), {
+      tags: {
+        scope,
+        publicToken,
+        sanitized: String(!isSafeToken),
+        ...(errorCode ? { errorCode } : {}),
+      },
+      extra: typeof meta?.status === 'number' ? { status: meta.status } : undefined,
+    });
+  }
 }
 
 /**
