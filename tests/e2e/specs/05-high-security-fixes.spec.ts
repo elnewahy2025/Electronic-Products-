@@ -97,7 +97,7 @@ test.describe('HIGH Security Fixes (H1–H4) — Reproducible Verification', () 
       const staffJwt = await signInForJwt(readOnlyStaff.email, readOnlyStaff.password);
 
       // 1. Buyer cannot tamper with total_amount
-      const tamperAmt = await restAsJwt(`/rest/v1/purchase_requests?id=eq.${prId}`, buyerJwt, {
+      const tamperAmt = await restAsJwt(`/rest/v1/purchase_requests?id=eq.${prId}&select=id,status,total_amount`, buyerJwt, {
         method: 'PATCH',
         prefer: 'return=representation',
         body: { total_amount: 0.01 },
@@ -106,7 +106,7 @@ test.describe('HIGH Security Fixes (H1–H4) — Reproducible Verification', () 
       expect(String(tamperAmt.json?.message ?? '')).toContain('purchase_request_protected_field_change');
 
       // 2. Buyer cannot self-approve
-      const selfApprove = await restAsJwt(`/rest/v1/purchase_requests?id=eq.${prId}`, buyerJwt, {
+      const selfApprove = await restAsJwt(`/rest/v1/purchase_requests?id=eq.${prId}&select=id,status,total_amount`, buyerJwt, {
         method: 'PATCH',
         prefer: 'return=representation',
         body: { status: 'approved' },
@@ -115,7 +115,7 @@ test.describe('HIGH Security Fixes (H1–H4) — Reproducible Verification', () 
       expect(String(selfApprove.json?.message ?? '')).toContain('purchase_request_status_change_forbidden');
 
       // 3. Read-only staff (`request.read.any`) cannot update purchase_requests at all
-      const staffPatch = await restAsJwt(`/rest/v1/purchase_requests?id=eq.${prId}`, staffJwt, {
+      const staffPatch = await restAsJwt(`/rest/v1/purchase_requests?id=eq.${prId}&select=id,status,total_amount`, staffJwt, {
         method: 'PATCH',
         prefer: 'return=representation',
         body: { status: 'rejected' },
@@ -123,7 +123,7 @@ test.describe('HIGH Security Fixes (H1–H4) — Reproducible Verification', () 
       expect(Array.isArray(staffPatch.json) ? staffPatch.json.length : 0).toBe(0);
 
       // 4. Buyer CAN legitimately cancel their own pending request
-      const cancel = await restAsJwt(`/rest/v1/purchase_requests?id=eq.${prId}`, buyerJwt, {
+      const cancel = await restAsJwt(`/rest/v1/purchase_requests?id=eq.${prId}&select=id,status,total_amount`, buyerJwt, {
         method: 'PATCH',
         prefer: 'return=representation',
         body: { status: 'cancelled', cancelled_by: buyer.id },
