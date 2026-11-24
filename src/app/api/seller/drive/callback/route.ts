@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { publicError } from '@/lib/api/errors';
-import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/auth/session';
 import { exchangeDriveCode, fetchGoogleUserEmail, verifyState } from '@/lib/drive/oauth';
 import { linkDriveAccount } from '@/lib/server/services/drive-account-service';
 
@@ -19,9 +19,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${origin}/seller/drive-accounts?error=state_invalid`);
   }
 
-  const db = await createClient();
-  const { data: { user } } = await db.auth.getUser();
-  if (!user || user.id !== verified.sellerId) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch {
+    return NextResponse.redirect(`${origin}/seller/drive-accounts?error=session_mismatch`);
+  }
+  if (user.accountType !== 'seller' || user.id !== verified.sellerId) {
     return NextResponse.redirect(`${origin}/seller/drive-accounts?error=session_mismatch`);
   }
 

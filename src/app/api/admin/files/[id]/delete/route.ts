@@ -7,6 +7,7 @@ import { requirePerm } from '@/lib/auth/admin-guard';
 import { decrypt } from '@/lib/crypto/encryption';
 import { deleteDriveFile } from '@/lib/drive/client';
 import { logAudit } from '@/lib/audit/logger';
+import { getTrustedClientIp } from '@/lib/security/rate-limit';
 
 const body = z.object({ reason: z.string().min(3) });
 
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
       entityId: params.id,
       after: { scan_status: 'deleted' },
       reason: parsed.data.reason,
-      ip: req.headers.get('x-forwarded-for') ?? undefined,
+      ip: getTrustedClientIp(req) ?? undefined,
       userAgent: req.headers.get('user-agent') ?? undefined,
       required: true,
     });

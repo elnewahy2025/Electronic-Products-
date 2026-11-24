@@ -319,7 +319,29 @@ test.describe('HIGH Security Fixes (H1–H4) — Reproducible Verification', () 
     expect(editName.json?.[0]?.display_name).toBe('Updated Pending Seller');
     expect(editName.json?.[0]?.status).toBe('pending');
 
-    // 4. Health endpoint returns 200 ok
+    // 4. Positive test: Super Admin CAN still approve pending seller via approve_seller RPC after 063
+    const admin = await createTestUser({
+      accountType: 'staff',
+      roleCode: 'super_admin',
+      mfaEnabled: false,
+    });
+    const adminJwt = await signInForJwt(admin.email, admin.password);
+    const approveRes = await restAsJwt('/rest/v1/rpc/approve_seller', adminJwt, {
+      method: 'POST',
+      body: { p_profile_id: pendingSeller.id },
+    });
+    expect(approveRes.status).toBeLessThan(300);
+
+    const { data: approvedRow } = await adminDb
+      .from('seller_profiles')
+      .select('status, approved_by')
+      .eq('profile_id', pendingSeller.id)
+      .single();
+    expect(approvedRow?.status).toBe('approved');
+    expect(approvedRow?.approved_by).toBe(admin.id);
+  });
+
+  test('health: GET /api/health returns 200 ok with db up', async () => {
     const health = await fetch(`${APP_URL}/api/health`);
     expect(health.status).toBe(200);
     const healthJson = await health.json();
