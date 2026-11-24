@@ -7,6 +7,7 @@ export const PERMISSIONS = {
   // products
   PRODUCT_READ_ANY: 'product.read.any',
   PRODUCT_SUSPEND: 'product.suspend',
+  PRODUCT_PUBLISH: 'product.publish',
   PRODUCT_REJECT: 'product.reject',
   PRODUCT_DELETE_ANY: 'product.delete.any',
   CATEGORY_MANAGE: 'category.manage',

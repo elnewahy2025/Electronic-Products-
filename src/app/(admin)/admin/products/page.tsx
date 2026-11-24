@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import type { Enums } from '@/lib/types/database';
 import { can } from '@/lib/auth/permissions';
 import { ProductModerationActions } from './product-moderation-actions';
 
@@ -34,7 +35,7 @@ export default async function AdminProductsPage(
     .order('created_at', { ascending: false })
     .limit(100);
 
-  if (searchParams.status) query = query.eq('status', searchParams.status);
+  if (searchParams.status) query = query.eq('status', searchParams.status as Enums<'product_status_enum'>);
   if (searchParams.q?.trim()) query = query.ilike('title', `%${searchParams.q.trim()}%`);
 
   const { data } = await query;

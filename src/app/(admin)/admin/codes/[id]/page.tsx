@@ -181,7 +181,7 @@ export default async function CodeDetailPage(props: { params: Promise<{ id: stri
             </span>
           </p>
           <p className="text-xs text-muted-foreground">
-            IP: <span className="ui-num text-foreground" dir="ltr">{redemptions.ip ?? '—'}</span>
+            IP: <span className="ui-num text-foreground" dir="ltr">{String(redemptions.ip ?? '—')}</span>
           </p>
         </section>
       )}

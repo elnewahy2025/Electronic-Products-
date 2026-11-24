@@ -216,8 +216,7 @@ export async function listBuyerCodes(): Promise<BuyerCodeRow[]> {
   const allowedIds = new Set((allowed ?? []).map(row => row.id));
 
   return (rows ?? [])
-    .filter(row => allowedIds.has(row.code_id))
-    .filter((row): row is BuyerCodeRow => Boolean(row));
+    .filter(row => allowedIds.has(row.code_id)) as BuyerCodeRow[];
 }
 
 export type BuyerSessionRow = {

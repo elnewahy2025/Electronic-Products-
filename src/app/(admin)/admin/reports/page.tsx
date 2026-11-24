@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import type { Enums } from '@/lib/types/database';
 import Link from 'next/link';
 
 const STATUS_META: Record<string, { label: string; badge: string }> = {
@@ -38,7 +39,7 @@ export default async function ReportsPage(props: { searchParams: Promise<{ statu
     .order('created_at', { ascending: false })
     .limit(100);
 
-  if (searchParams.status) q = q.eq('status', searchParams.status);
+  if (searchParams.status) q = q.eq('status', searchParams.status as Enums<'report_status_enum'>);
 
   const { data } = await q;
 

@@ -1,5 +1,6 @@
 import 'server-only';
 import { createClient } from '@/lib/supabase/server';
+import type { Json } from '@/lib/types/database';
 
 type AuditInput = {
   action: string;
@@ -23,14 +24,14 @@ export async function logAudit(input: AuditInput): Promise<void> {
   const supabase = await createClient();
   const { error } = await supabase.rpc('log_audit', {
     p_action: input.action,
-    p_entity_type: input.entityType ?? null,
-    p_entity_id: input.entityId ?? null,
-    p_before: input.before ?? null,
-    p_after: input.after ?? null,
-    p_reason: input.reason ?? null,
-    p_ip: input.ip ?? null,
-    p_user_agent: input.userAgent ?? null,
-    p_request_id: input.requestId ?? null,
+    p_entity_type: input.entityType,
+    p_entity_id: input.entityId,
+    p_before: input.before as Json | undefined,
+    p_after: input.after as Json | undefined,
+    p_reason: input.reason,
+    p_ip: input.ip,
+    p_user_agent: input.userAgent,
+    p_request_id: input.requestId,
   });
   if (error) {
     const code = (error as any)?.code ?? 'AUDIT_WRITE_FAILED';

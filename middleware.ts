@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import type { Database } from '@/lib/supabase/types';
+import { asTypedSupabaseClient } from '@/lib/supabase/types';
 import { MFA_COOKIE, readMfaSessionToken, sessionIdFromJwt } from '@/lib/auth/mfa-session';
 import { THEME_INIT_SCRIPT_HASH } from '@/lib/theme-init';
 import { assertSameOrigin } from '@/lib/security/origin';
@@ -154,7 +154,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // 4. Supabase session handling (existing logic)
-  const supabase = createServerClient<Database>(
+  const supabase = asTypedSupabaseClient(createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -171,7 +171,7 @@ export async function middleware(request: NextRequest) {
         },
       },
     }
-  );
+  ));
 
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;

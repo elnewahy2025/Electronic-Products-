@@ -2,6 +2,7 @@ import { publicError } from '@/lib/api/errors';
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requireSuperAdmin } from '@/lib/auth/admin-guard';
+import type { Enums } from '@/lib/types/database';
 
 const VALID_SCHEDULES = new Set(['daily', 'weekly', 'manual_only']);
 
@@ -28,7 +29,7 @@ export async function PATCH(req: Request) {
 
     const db = await createClient();
     const { error } = await db.rpc('update_backup_settings', {
-      p_schedule: schedule,
+      p_schedule: schedule as Enums<'backup_schedule_enum'>,
       p_retention_days: retentionDays,
       p_restore_test_frequency_days: restoreFreqDays,
       p_include_files: includeFiles,

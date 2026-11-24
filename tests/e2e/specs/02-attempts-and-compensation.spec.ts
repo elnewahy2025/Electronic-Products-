@@ -7,6 +7,84 @@ import {
 import { getCookieHeader } from '../helpers/auth';
 import { apiRequest, claimDownloadToken, completeDownloadAsWorker } from '../helpers/api';
 
+// Multi-step attempt/compensation journey; the default 30s is too tight.
+test.setTimeout(120_000);
+
+type DeliverableFile = {
+  fileVersionId: string;
+  bytesSent: number;
+  checksum: string;
+  includedInZip: boolean;
+};
+
+/** Read the real seeded file metadata instead of inventing byte counts. */
+async function versionFiles(versionId: string): Promise<DeliverableFile[]> {
+  const { data: links, error: linkError } = await adminDb
+    .from('product_version_files')
+    .select('file_version_id, included_in_zip')
+    .eq('product_version_id', versionId)
+    .order('file_version_id');
+  if (linkError) throw new Error(`versionFiles links: ${linkError.message}`);
+
+  const files: DeliverableFile[] = [];
+  for (const link of links ?? []) {
+    const { data: version, error: versionError } = await adminDb
+      .from('file_versions')
+      .select('size_bytes, checksum_sha256')
+      .eq('id', link.file_version_id)
+      .single();
+    if (versionError || !version) throw new Error(`versionFiles version: ${versionError?.message}`);
+    files.push({
+      fileVersionId: link.file_version_id as string,
+      bytesSent: Number(version.size_bytes),
+      checksum: String(version.checksum_sha256).toLowerCase(),
+      includedInZip: Boolean(link.included_in_zip),
+    });
+  }
+  return files;
+}
+
+async function deliverSingle(sessionId: string, file: DeliverableFile, cookies: string) {
+  const init = await apiRequest(
+    'POST',
+    `/api/download/${sessionId}/init`,
+    { type: 'single', file_version_id: file.fileVersionId },
+    cookies,
+  );
+  expect(init.status, JSON.stringify(init.json)).toBe(200);
+  const token = new URL(init.json.url).searchParams.get('token')!;
+  expect(token).toBeTruthy();
+  return completeDownloadAsWorker(sessionId, token, [{
+    file_version_id: file.fileVersionId,
+    bytes_sent: file.bytesSent,
+    checksum: file.checksum,
+  }]);
+}
+
+async function deliverZip(sessionId: string, files: DeliverableFile[], cookies: string) {
+  const init = await apiRequest('POST', `/api/download/${sessionId}/init`, { type: 'zip' }, cookies);
+  expect(init.status, JSON.stringify(init.json)).toBe(200);
+  const token = new URL(init.json.url).searchParams.get('token')!;
+  expect(token).toBeTruthy();
+  return completeDownloadAsWorker(sessionId, token, files
+    .filter((file) => file.includedInZip)
+    .map((file) => ({
+      file_version_id: file.fileVersionId,
+      bytes_sent: file.bytesSent,
+      checksum: file.checksum,
+    })));
+}
+
+async function attemptRows(orderItemId: string) {
+  const { data, error } = await adminDb
+    .from('download_attempts')
+    .select('attempt_number, completed, type, session_id')
+    .eq('order_item_id', orderItemId)
+    .order('attempt_number');
+  if (error) throw new Error(`attemptRows: ${error.message}`);
+  return data ?? [];
+}
+
 test.describe('Attempts, single-file delivery, and compensation', () => {
   test.afterAll(async () => {
     await cleanupTestData();
@@ -22,6 +100,43 @@ test.describe('Attempts, single-file delivery, and compensation', () => {
       title: 'Attempts Product',
       price: 15,
     });
+
+    // A second ready file makes partial delivery possible: the first single
+    // delivery does not complete the session and therefore consumes no attempt.
+    const { data: firstVersion, error: firstVersionError } = await adminDb
+      .from('file_versions')
+      .select('file_id, storage_location_id, mime, extension')
+      .eq('id', product.fileVersionIds[0])
+      .single();
+    if (firstVersionError || !firstVersion) {
+      throw new Error(`first file version: ${firstVersionError?.message}`);
+    }
+    const { data: secondVersion, error: secondVersionError } = await adminDb
+      .from('file_versions')
+      .insert({
+        file_id: firstVersion.file_id,
+        version_number: 2,
+        storage_location_id: firstVersion.storage_location_id,
+        size_bytes: 50_000,
+        checksum_sha256: '1'.repeat(64),
+        mime: firstVersion.mime,
+        extension: firstVersion.extension,
+        scan_status: 'ready',
+      })
+      .select('id')
+      .single();
+    if (secondVersionError || !secondVersion) {
+      throw new Error(`second file version: ${secondVersionError?.message}`);
+    }
+    const { error: linkError } = await adminDb
+      .from('product_version_files')
+      .insert({
+        product_version_id: product.versionId,
+        file_version_id: secondVersion.id,
+        included_in_zip: true,
+        sort_order: 1,
+      });
+    if (linkError) throw new Error(`link second file: ${linkError.message}`);
 
     const buyer = await createTestUser({
       accountType: 'buyer',
@@ -53,105 +168,100 @@ test.describe('Attempts, single-file delivery, and compensation', () => {
     expect(redeemRes.status).toBe(200);
     const sessionId = redeemRes.json.session_id as string;
 
-    // ─── STEP 2: consume 3 single-file attempts ─────
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      // Start download
-      const init = await apiRequest('POST', `/api/download/${sessionId}/init`, {
-        type: 'single',
-        file_version_id: product.fileVersionIds[0],
-      }, buyerCookies);
-
-      // Session may be expired by now if 4h passed; our test runs fast, so
-      // assume session is active. Expect 200 on attempts 1-3.
-      expect(init.status).toBe(200);
-
-      const token = new URL(init.json.url).searchParams.get('token')!;
-
-      // Complete through the internal worker contract with verified byte counts.
-      const complete = await completeDownloadAsWorker(sessionId, token, [{
-        file_version_id: product.fileVersionIds[0],
-        bytes_sent: 100_000,
-        checksum: '0'.repeat(64),
-      }]);
-
-      // First attempt marks the session completed (single file = only file)
-      if (attempt === 1) {
-        expect(complete.status).toBe(200);
-        expect(complete.json.sessionCompleted).toBe(true);
-        break;  // one file = session completed on first delivery
-      }
-    }
-
-    // ─── STEP 3: attempts recorded correctly ────────
-    const attemptsRes = await apiRequest('GET', `/api/download/${sessionId}`, undefined, buyerCookies);
-    // After session completed, API may return 400 SESSION_NOT_ACTIVE
-    // Instead, query DB directly
-    const { data: attempts } = await adminDb
-      .from('download_attempts')
-      .select('attempt_number, completed')
-      .eq('session_id', sessionId)
-      .order('attempt_number');
-    expect(attempts).toHaveLength(1);
-    expect(attempts![0].completed).toBe(true);
-
-    // ─── STEP 4: admin cannot create compensation without a pending/expired session ─
-    const compRes1 = await apiRequest('POST', `/api/admin/downloads/${sessionId}/compensate`, {
-      reason: 'test',
-    }, adminCookies);
-    // Should fail — session is completed, not expired
-    expect([400, 409]).toContain(compRes1.status);
-
-    // ─── STEP 5: force session to expired_partial to test compensation ─
-    await adminDb
+    // ─── STEP 2: partial single-file delivery consumes NO attempt ─────
+    const { data: sessionRow, error: sessionError } = await adminDb
       .from('download_sessions')
-      .update({ status: 'expired_partial', ended_at: new Date().toISOString() })
-      .eq('id', sessionId);
-
-    // ─── STEP 6: admin creates compensation session ─
-    const compRes2 = await apiRequest('POST', `/api/admin/downloads/${sessionId}/compensate`, {
-      reason: 'المشتري لم يكمل التنزيل',
-    }, adminCookies);
-    expect(compRes2.status).toBe(200);
-    const compSessionId = compRes2.json.session_id as string;
-    expect(compSessionId).toBeTruthy();
-
-    // ─── STEP 7: compensation session is active, doesn't consume attempts ─
-    const { data: compSession } = await adminDb
-      .from('download_sessions')
-      .select('status, is_compensation, parent_session_id, compensation_request_id')
-      .eq('id', compSessionId)
+      .select('order_item_id')
+      .eq('id', sessionId)
       .single();
-    expect(compSession!.status).toBe('compensation_active');
-    expect(compSession!.is_compensation).toBe(true);
-    expect(compSession!.parent_session_id).toBeNull();  // code-level, not session-level parent
+    if (sessionError || !sessionRow) throw new Error(`session lookup: ${sessionError?.message}`);
+    const orderItemId = sessionRow.order_item_id as string;
 
-    // Buyer can now download from compensation session
-    const compInit = await apiRequest('POST', `/api/download/${compSessionId}/init`, {
-      type: 'zip',
-    }, buyerCookies);
-    expect(compInit.status).toBe(200);
+    const files = await versionFiles(product.versionId);
+    expect(files).toHaveLength(2);
 
-    // ─── STEP 8: cannot create 4th compensation (max 3 per code) ─
-    // First, mark compensation session as expired to allow more
-    await adminDb
-      .from('download_sessions')
-      .update({ status: 'expired_partial' })
-      .eq('id', compSessionId);
+    const partial = await deliverSingle(sessionId, files[0], buyerCookies);
+    expect(partial.status, JSON.stringify(partial.json)).toBe(200);
+    expect(partial.json.sessionCompleted).toBe(false);
+    expect(await attemptRows(orderItemId)).toHaveLength(0);
 
-    // Second and third compensation
-    for (let i = 2; i <= 3; i++) {
-      const r = await apiRequest('POST', `/api/admin/downloads/${sessionId}/compensate`, {
-        reason: `تعويض رقم ${i}`,
-      }, adminCookies);
-      expect([200, 409]).toContain(r.status);
+    // ─── STEP 3: create all 3 compensations BEFORE any session completes ───
+    // create_compensation_session() rejects once any session for the code is
+    // completed, so the sessions must be opened up front.
+    const compensationIds: string[] = [];
+    for (let i = 1; i <= 3; i++) {
+      const compensation = await apiRequest(
+        'POST',
+        `/api/admin/downloads/${sessionId}/compensate`,
+        { reason: `تعويض رقم ${i}` },
+        adminCookies,
+      );
+      expect(compensation.status, JSON.stringify(compensation.json)).toBe(200);
+      expect(compensation.json.session_id).toBeTruthy();
+      compensationIds.push(compensation.json.session_id as string);
     }
 
-    // Fourth should fail
-    const fourth = await apiRequest('POST', `/api/admin/downloads/${sessionId}/compensate`, {
-      reason: 'تعويض رابع',
-    }, adminCookies);
+    const fourth = await apiRequest(
+      'POST',
+      `/api/admin/downloads/${sessionId}/compensate`,
+      { reason: 'تعويض رابع' },
+      adminCookies,
+    );
     expect(fourth.status).toBe(409);
     expect(fourth.json.error).toContain('compensation_limit_reached');
+
+    const { data: compensationSession } = await adminDb
+      .from('download_sessions')
+      .select('status, is_compensation, parent_session_id, compensation_request_id')
+      .eq('id', compensationIds[0])
+      .single();
+    expect(compensationSession).toMatchObject({
+      status: 'compensation_active',
+      is_compensation: true,
+      parent_session_id: null,
+    });
+    expect(compensationSession!.compensation_request_id).toBeTruthy();
+
+    // ─── STEP 4: consume 3 REAL attempts across 3 sessions ─────────────
+    const originalFinal = await deliverSingle(sessionId, files[1], buyerCookies);
+    expect(originalFinal.status, JSON.stringify(originalFinal.json)).toBe(200);
+    expect(originalFinal.json.sessionCompleted).toBe(true);
+    expect(originalFinal.json.attemptNumber).toBe(1);
+
+    for (let i = 0; i < 2; i++) {
+      const delivery = await deliverZip(compensationIds[i], files, buyerCookies);
+      expect(delivery.status, JSON.stringify(delivery.json)).toBe(200);
+      expect(delivery.json.sessionCompleted).toBe(true);
+      expect(delivery.json.attemptNumber).toBe(i + 2);
+    }
+
+    // The third compensation is still active, but the shared attempt counter is full.
+    const exhausted = await apiRequest(
+      'POST',
+      `/api/download/${compensationIds[2]}/init`,
+      { type: 'zip' },
+      buyerCookies,
+    );
+    expect(exhausted.status).toBe(409);
+    expect(exhausted.json.error).toBe('ATTEMPTS_EXHAUSTED');
+
+    const attempts = await attemptRows(orderItemId);
+    expect(attempts).toHaveLength(3);
+    expect(attempts.map((attempt) => attempt.attempt_number)).toEqual([1, 2, 3]);
+    expect(attempts.every((attempt) => attempt.completed)).toBe(true);
+    expect(attempts.map((attempt) => attempt.type)).toEqual(['single_files', 'zip', 'zip']);
+    expect(attempts[0].session_id).toBe(sessionId);
+    expect(attempts.slice(1).map((attempt) => attempt.session_id).sort())
+      .toEqual(compensationIds.slice(0, 2).sort());
+
+    const stats = await apiRequest(
+      'GET',
+      `/api/download/${compensationIds[2]}`,
+      undefined,
+      buyerCookies,
+    );
+    expect(stats.status).toBe(200);
+    expect(stats.json.attempts).toMatchObject({ max: 3, used: 3, remaining: 0 });
 
     // ─── STEP 9: super_admin grants attempt exception ─
     const exception = await apiRequest('POST', '/api/admin/exceptions', {
@@ -221,15 +331,16 @@ test.describe('Attempts, single-file delivery, and compensation', () => {
     expect(token).toBeTruthy();
     await claimDownloadToken(token);
 
+    const [file] = await versionFiles(product.versionId);
     const badReceipt = await apiRequest(
       'POST',
       `/api/download/${sessionId}/complete`,
       {
         token,
         files: [{
-          file_version_id: product.fileVersionIds[0],
-          bytes_sent: 99_999,
-          checksum: '0'.repeat(64),
+          file_version_id: file.fileVersionId,
+          bytes_sent: file.bytesSent + 1,
+          checksum: file.checksum,
         }],
       },
       undefined,

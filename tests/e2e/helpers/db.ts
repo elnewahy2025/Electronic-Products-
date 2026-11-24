@@ -9,6 +9,18 @@ if (!SUPABASE_URL || !SERVICE_ROLE || !ANON) {
   throw new Error('Missing TEST_SUPABASE_* env variables in .env.test');
 }
 
+// These helpers run destructive cleanup with the service-role key. Refuse to
+// run against anything that is not a local Supabase instance unless the
+// operator explicitly opts in for an isolated disposable project.
+const TEST_DB_HOST = new URL(SUPABASE_URL).hostname;
+const LOCAL_DB_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]', '0.0.0.0']);
+if (!LOCAL_DB_HOSTS.has(TEST_DB_HOST) && process.env.ALLOW_REMOTE_TEST_DB !== '1') {
+  throw new Error(
+    `Refusing to run destructive E2E helpers against non-local Supabase host "${TEST_DB_HOST}". ` +
+      'Point TEST_SUPABASE_URL at a local instance, or set ALLOW_REMOTE_TEST_DB=1 only for a disposable, non-production project.',
+  );
+}
+
 export const adminDb: SupabaseClient = createClient(SUPABASE_URL, SERVICE_ROLE, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -71,6 +83,8 @@ export async function createTestUser(opts: {
     email,
     account_type: accountType,
     status: 'active',
+    // H-08: email-based guest ownership requires a verified profile email.
+    email_verified_at: new Date().toISOString(),
     mfa_enabled: mfaEnabled,
     phone: opts.phone ?? '+201000000000',
     full_name: opts.fullName ?? 'Test User',

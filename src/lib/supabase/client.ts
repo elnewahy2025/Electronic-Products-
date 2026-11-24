@@ -1,9 +1,9 @@
 'use client';
 
 import { createBrowserClient } from '@supabase/ssr';
-import type { Database } from './types';
+import { asTypedSupabaseClient, type TypedSupabaseClient } from './types';
 
-let client: ReturnType<typeof createBrowserClient<Database>> | undefined;
+let client: TypedSupabaseClient | undefined;
 
 function resolveBrowserSupabaseUrl(): string {
   const configured = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -23,9 +23,9 @@ function resolveBrowserSupabaseUrl(): string {
 
 export function createClient() {
   if (client) return client;
-  client = createBrowserClient<Database>(
+  client = asTypedSupabaseClient(createBrowserClient(
     resolveBrowserSupabaseUrl(),
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  ));
   return client;
 }

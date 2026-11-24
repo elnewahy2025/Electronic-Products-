@@ -19,6 +19,7 @@ const { buildZipStream, crc32Update, crc32Finalize } = await import('../src/zip'
 const { auditFileStream, fetchDriveFile } = await import('../src/drive');
 const { resolveToken } = await import('../src/resolve');
 const { postCompletion } = await import('../src/complete');
+const worker = (await import('../src/index')).default;
 
 const encoder = new TextEncoder();
 const SECRET = 'test-shared-secret';
@@ -329,4 +330,113 @@ test('completion: retry rules and callback body with injected fetch', async () =
   assert.deepEqual(exhausted.failures, [{ code: 'COMPLETE_FAILED', status: undefined }]);
 
   assert.deepEqual(delays, [100, 200, 100, 100, 200]);
+});
+
+test('worker /stream: real streamed bytes, audit receipt and security headers', async () => {
+  const originalFetch = globalThis.fetch;
+  const payload = basePayload();
+  const token = signedToken(payload);
+  const bytes = encoder.encode('abc');
+  const sha256 = createHash('sha256').update(bytes).digest('hex');
+  const appBase = 'https://app.example.test';
+  const driveUrl = 'https://drive.example.test/file-abc';
+  const calls = [];
+
+  // Stub every network boundary. An unexpected URL throws instead of
+  // reaching the network, so this test is fully self-contained.
+  globalThis.fetch = async (input, init = {}) => {
+    const url = typeof input === 'string' ? input : input.url;
+    const headers = new Headers(init.headers);
+
+    if (url === `${appBase}/api/internal/resolve-token`) {
+      calls.push({
+        kind: 'resolve',
+        url,
+        secret: headers.get('x-internal-secret'),
+        body: JSON.parse(init.body),
+      });
+      return new Response(
+        JSON.stringify({
+          type: 'single',
+          session_id: payload.sid,
+          files: [{
+            file_version_id: payload.fid,
+            drive_url: driveUrl,
+            filename: 'file.bin',
+            mime: 'application/octet-stream',
+            size_bytes: bytes.length,
+            sha256,
+            access_token: 'per-file-token',
+          }],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      );
+    }
+
+    if (url === driveUrl) {
+      calls.push({ kind: 'drive', url, authorization: headers.get('authorization') });
+      // Multiple chunks exercise incremental hashing over the real handler.
+      return new Response(streamOf([bytes.subarray(0, 1), bytes.subarray(1)]), { status: 200 });
+    }
+
+    if (url === `${appBase}/api/download/${payload.sid}/complete`) {
+      calls.push({
+        kind: 'complete',
+        url,
+        secret: headers.get('x-internal-secret'),
+        body: JSON.parse(init.body),
+      });
+      return new Response(
+        JSON.stringify({ sessionCompleted: true, attemptNumber: 1 }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      );
+    }
+
+    throw new Error(`unexpected fetch: ${url}`);
+  };
+
+  const env = { DOWNLOAD_SERVICE_TOKEN: SECRET, APP_INTERNAL_URL: appBase };
+  const pending = [];
+  const ctx = { waitUntil(promise) { pending.push(promise); } };
+
+  try {
+    const request = new Request(
+      `https://worker.test/stream?token=${encodeURIComponent(token)}`,
+      { headers: { origin: appBase } }
+    );
+
+    const response = await worker.fetch(request, env, ctx);
+    assert.equal(response.status, 200);
+
+    // headers.ts applies both download metadata and download security headers.
+    assert.equal(response.headers.get('content-type'), 'application/octet-stream');
+    assert.equal(response.headers.get('content-length'), String(bytes.length));
+    assert.equal(
+      response.headers.get('content-disposition'),
+      `attachment; filename="file.bin"; filename*=UTF-8''file.bin`
+    );
+    assert.equal(response.headers.get('cache-control'), 'private, no-store, max-age=0');
+    assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+    assert.equal(response.headers.get('referrer-policy'), 'no-referrer');
+    assert.equal(response.headers.get('content-security-policy'), "default-src 'none'; sandbox");
+    assert.equal(response.headers.get('access-control-allow-origin'), appBase);
+    assert.equal(response.headers.get('vary'), 'Origin');
+
+    // Drain the real handler body; the completion gate resolves on flush.
+    const streamed = await collect(response.body);
+    assert.equal(streamed.toString('hex'), Buffer.from(bytes).toString('hex'));
+    await Promise.all(pending);
+
+    assert.deepEqual(calls.map((call) => call.kind), ['resolve', 'drive', 'complete']);
+    assert.equal(calls[0].secret, SECRET);
+    assert.deepEqual(calls[0].body, { token });
+    assert.equal(calls[1].authorization, 'Bearer per-file-token');
+    assert.equal(calls[2].secret, SECRET);
+    assert.deepEqual(calls[2].body, {
+      token,
+      files: [{ file_version_id: payload.fid, bytes_sent: bytes.length, checksum: sha256 }],
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

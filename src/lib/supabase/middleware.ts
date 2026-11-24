@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import type { Database } from './types';
+import { asTypedSupabaseClient } from './types';
 
 const ADMIN_PREFIXES = ['/admin'];
 const SELLER_PREFIXES = ['/seller'];
@@ -16,7 +16,7 @@ const MFA_WHITELIST = [
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient<Database>(
+  const supabase = asTypedSupabaseClient(createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -31,7 +31,7 @@ export async function updateSession(request: NextRequest) {
         },
       },
     }
-  );
+  ));
 
   // IMPORTANT: do not add logic between createServerClient and auth.getUser()
   const { data: { user } } = await supabase.auth.getUser();

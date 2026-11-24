@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import type { Enums } from '@/lib/types/database';
 import Link from 'next/link';
 
 type BadgeTone = 'green' | 'amber' | 'red' | 'blue' | 'neutral';
@@ -25,7 +26,7 @@ export default async function DownloadsPage(props: { searchParams: Promise<{ sta
     .order('started_at', { ascending: false })
     .limit(100);
 
-  if (searchParams.status) q = q.eq('status', searchParams.status);
+  if (searchParams.status) q = q.eq('status', searchParams.status as Enums<'download_session_status_enum'>);
 
   const { data } = await q;
   const rows: any[] = data ?? [];

@@ -97,9 +97,11 @@ export async function POST(req: NextRequest) {
   await adminDb.rpc('notify_staff_with_permission', {
     p_permission: 'support.read',
     p_type: 'support_ticket_opened',
+    p_category: 'support',
     p_title: 'تذكرة دعم فني جديدة',
     p_body: subject,
-    p_metadata: { ticket_id: ticket.id },
+    p_link: `/admin/support/${ticket.id}`,
+    p_data: { ticket_id: ticket.id },
   });
 
   return NextResponse.json({ ok: true, ticket }, { status: 201 });

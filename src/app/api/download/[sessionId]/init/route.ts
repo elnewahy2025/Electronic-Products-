@@ -23,7 +23,9 @@ export async function POST(req: NextRequest, props: { params: Promise<{ sessionI
     });
     return NextResponse.json(result);
   } catch (e: any) {
-    const code = e.message === 'ATTEMPTS_EXHAUSTED' ? 409
+    const code = e.message === 'FORBIDDEN' ? 403
+              : e.message === 'UNAUTHENTICATED' ? 401
+              : e.message === 'ATTEMPTS_EXHAUSTED' ? 409
               : e.message === 'FILE_ALREADY_DELIVERED' ? 409
               : e.message === 'SESSION_EXPIRED' ? 410
               : 400;

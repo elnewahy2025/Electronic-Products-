@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/lib/types/database';
 
 export const revalidate = 3600;
 
@@ -18,7 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (!supabaseUrl || !anonKey) return staticEntries;
 
   try {
-    const db = createClient(supabaseUrl, anonKey, {
+    const db = createClient<Database>(supabaseUrl, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 

@@ -78,19 +78,20 @@ test.describe('Full All-Roles Workflow: Admin -> Seller -> Buyer -> Purchase -> 
     await adminPage.goto('/admin');
     await expect(adminPage).toHaveURL(/\/admin/);
 
-    // Approve pending seller via RPC using admin session
+    // Approve pending seller through the real admin API. No service-role
+    // direct-update fallback: a broken approve_seller RPC must fail the test.
     const adminCookies = await getCookieHeader(superAdmin.email, superAdmin.password);
-    const approveSellerRes = await adminDb.rpc('approve_seller', {
-      p_seller_id: sellerUser.id,
-    });
-    // Also verify status is approved
-    if (approveSellerRes.error) {
-      // Fallback: approve_seller checks auth.uid() when called as user; call via PostgREST with admin JWT
-      await adminDb
-        .from('seller_profiles')
-        .update({ status: 'approved', approved_by: superAdmin.id, approved_at: new Date().toISOString() })
-        .eq('profile_id', sellerUser.id);
-    }
+    const approveSellerRes = await apiRequest(
+      'POST',
+      `/api/admin/sellers/${sellerUser.id}/approve`,
+      undefined,
+      adminCookies,
+    );
+    expect(
+      approveSellerRes.status,
+      `approve_seller API failed: ${JSON.stringify(approveSellerRes.json)}`,
+    ).toBe(200);
+    expect(approveSellerRes.json.ok).toBe(true);
 
     const { data: spCheck } = await adminDb
       .from('seller_profiles')

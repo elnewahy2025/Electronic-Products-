@@ -17,7 +17,6 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
     const { error } = await db.rpc('grant_member_permission', {
       p_profile_id: params.id,
       p_permission_code: parsed.data.permission_code,
-      p_expires_at: null,
     });
     if (error) {
       if (error.message.includes('permission_not_found')) {

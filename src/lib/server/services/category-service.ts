@@ -2,6 +2,8 @@ import 'server-only';
 import { revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { logAudit } from '@/lib/audit/logger';
+import type { TablesUpdate } from '@/lib/types/database';
+import { rpcNullable } from '@/lib/types/rpc-nullable';
 import { deleteProductImageFromStorage } from './product-image-service';
 
 export type CategoryNode = {
@@ -193,7 +195,7 @@ export async function updateCategory(input: {
 
   if (!current) throw new Error('category_not_found');
 
-  const patch: Record<string, unknown> = {};
+  const patch: TablesUpdate<'categories'> = {};
 
   if (input.name !== undefined) {
     patch.name = validateName(input.name);
@@ -220,7 +222,7 @@ export async function updateCategory(input: {
   if (patch.parent_id !== undefined) {
     const { error: parentErr } = await db.rpc('set_category_parent', {
       p_category_id: input.id,
-      p_parent_id: patch.parent_id as string | null,
+      p_parent_id: rpcNullable<string>(patch.parent_id),
     });
     if (parentErr) {
       if (parentErr.message.includes('category_cycle_detected')) {
@@ -261,7 +263,7 @@ export async function deleteCategory(input: {
   const { data, error } = await db.rpc('delete_category_safe', {
     p_category_id: input.id,
     p_mode: input.mode,
-    p_fallback_category_id: input.fallbackCategoryId ?? null,
+    p_fallback_category_id: rpcNullable<string>(input.fallbackCategoryId),
   });
 
   if (error) {

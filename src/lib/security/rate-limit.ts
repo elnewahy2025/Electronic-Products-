@@ -2,6 +2,7 @@ import 'server-only';
 import { isIP } from 'node:net';
 import type { NextRequest } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import type { Json } from '@/lib/types/database';
 
 function sanitizeIp(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -16,7 +17,11 @@ function sanitizeIp(raw: string | null | undefined): string | null {
  * - On Vercel (`VERCEL=1`), trusts ONLY `x-vercel-forwarded-for`, which Vercel's
  *   edge overwrites and clients cannot spoof.
  * - Behind Cloudflare (`TRUST_CLOUDFLARE_IP=1`), trusts `cf-connecting-ip`.
- * - Otherwise (local dev / generic proxy), falls back to `x-real-ip` / `x-forwarded-for`.
+ * - For any other deployment, the operator must explicitly set
+ *   `TRUST_PROXY_HEADERS=1` and guarantee the reverse proxy overwrites
+ *   `x-real-ip`/`x-forwarded-for`. Without that opt-in we return null instead
+ *   of accepting a client-controlled header (see `instrumentation.ts`, which
+ *   fails production startup when no trusted source is configured).
  */
 export function getTrustedClientIp(req: NextRequest | Request): string | null {
   if (process.env.VERCEL === '1') {
@@ -25,10 +30,13 @@ export function getTrustedClientIp(req: NextRequest | Request): string | null {
   if (process.env.TRUST_CLOUDFLARE_IP === '1') {
     return sanitizeIp(req.headers.get('cf-connecting-ip'));
   }
-  return (
-    sanitizeIp(req.headers.get('x-real-ip')) ??
-    sanitizeIp(req.headers.get('x-forwarded-for'))
-  );
+  if (process.env.TRUST_PROXY_HEADERS === '1') {
+    return (
+      sanitizeIp(req.headers.get('x-real-ip')) ??
+      sanitizeIp(req.headers.get('x-forwarded-for'))
+    );
+  }
+  return null;
 }
 
 export type RateLimitDecision = {
@@ -49,7 +57,7 @@ export async function consumeRateLimit(params: {
   ip?: string | null;
 }): Promise<RateLimitDecision> {
   const admin = createAdminClient();
-  const { data, error } = await (admin.rpc as any)('consume_rate_limit', {
+  const { data, error } = await admin.rpc('consume_rate_limit', {
     p_scope: params.scope,
     p_bucket_key: params.key,
     p_limit: params.limit,
@@ -118,7 +126,7 @@ export async function logSecurityEvent(params: {
       ip: params.ip ?? null,
       user_agent: params.userAgent ? params.userAgent.slice(0, 500) : null,
       severity: params.severity ?? 'medium',
-      details: (params.details ?? {}) as any,
+      details: (params.details ?? {}) as Json,
     });
   } catch {
     // Non-fatal: never block response formatting on telemetry write failure
@@ -141,7 +149,7 @@ export async function acquireConcurrencyLock(
   ttlSeconds = 120,
 ): Promise<ConcurrencyLease> {
   const admin = createAdminClient();
-  const { data, error } = await (admin.rpc as any)('acquire_concurrency_lock', {
+  const { data, error } = await admin.rpc('acquire_concurrency_lock', {
     p_key: key,
     p_ttl_seconds: ttlSeconds,
   });
@@ -169,7 +177,7 @@ export async function acquireConcurrencyLock(
       if (released) return;
       released = true;
       try {
-        await (admin.rpc as any)('release_concurrency_lock', {
+        await admin.rpc('release_concurrency_lock', {
           p_key: key,
           p_owner_token: ownerToken,
         });

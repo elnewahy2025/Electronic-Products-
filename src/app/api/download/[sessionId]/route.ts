@@ -8,6 +8,10 @@ export async function GET(_req: NextRequest, props: { params: Promise<{ sessionI
     const data = await getSessionWithFiles(params.sessionId);
     return NextResponse.json(data);
   } catch (e: any) {
-    return NextResponse.json({ error: publicError(e) }, { status: 400 });
+    const status = e.message === 'FORBIDDEN' ? 403
+      : e.message === 'UNAUTHENTICATED' ? 401
+        : e.message === 'SESSION_EXPIRED' ? 410
+          : 400;
+    return NextResponse.json({ error: publicError(e) }, { status });
   }
 }

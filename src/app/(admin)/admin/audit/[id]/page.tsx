@@ -67,7 +67,7 @@ export default async function AuditDetailPage(props: { params: Promise<{ id: str
         <div className="ui-box">
           <p className="text-xs text-muted-foreground">IP</p>
           <p className="mt-1.5 text-sm font-medium text-foreground ui-num" dir="ltr">
-            {log.ip ?? '—'}
+            {String(log.ip ?? '—')}
           </p>
         </div>
       </section>

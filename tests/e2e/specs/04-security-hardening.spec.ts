@@ -35,12 +35,46 @@ test.describe('Security hardening — verify critical fixes', () => {
       { name: 'record_successful_attempt', args: { p_order_item_id: '00000000-0000-0000-0000-000000000000', p_session_id: '00000000-0000-0000-0000-000000000000', p_type: 'zip' } },
       { name: 'mark_session_completed', args: { p_session_id: '00000000-0000-0000-0000-000000000000' } },
       { name: 'pick_drive_account', args: { p_seller_id: '00000000-0000-0000-0000-000000000000', p_size_bytes: 1 } },
+      // C-01: quarantine/preview workers must not be reachable from a buyer JWT.
+      { name: 'release_from_quarantine', args: { p_file_version_id: '00000000-0000-0000-0000-000000000000', p_reason: 'e2e' } },
+      { name: 'finalize_preview', args: { p_preview_id: '00000000-0000-0000-0000-000000000000', p_storage_path: 'x', p_public_url: 'x' } },
     ];
 
     for (const rpc of rpcAttempts) {
       const { error } = await buyerClient.rpc(rpc.name, rpc.args);
       expect(error, `RPC ${rpc.name} should be blocked`).not.toBeNull();
       // Either "not_authorized" or "permission denied for function"
+      const msg = error?.message?.toLowerCase() ?? '';
+      expect(
+        msg.includes('not_authorized') ||
+        msg.includes('permission denied') ||
+        msg.includes('does not exist')
+      ).toBe(true);
+    }
+  });
+
+  test('seller without file.quarantine cannot release quarantine or finalize previews', async () => {
+    // C-01 regression: grant to `authenticated` alone must not be enough.
+    // 065 keeps the grant (for auth.uid()/audit) but gates on admin/staff
+    // permission inside the SECURITY DEFINER functions.
+    const seller = await createSeller();
+    const { createClient } = await import('@supabase/supabase-js');
+    const sellerClient = createClient(
+      process.env.TEST_SUPABASE_URL!,
+      process.env.TEST_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false } }
+    );
+    await sellerClient.auth.signInWithPassword({ email: seller.email, password: seller.password });
+
+    const attempts = [
+      { name: 'release_from_quarantine', args: { p_file_version_id: '00000000-0000-0000-0000-000000000000', p_reason: 'e2e' } },
+      { name: 'finalize_preview', args: { p_preview_id: '00000000-0000-0000-0000-000000000000', p_storage_path: 'x', p_public_url: 'x' } },
+      { name: 'quarantine_file', args: { p_file_version_id: '00000000-0000-0000-0000-000000000000', p_reason: 'e2e' } },
+    ];
+
+    for (const rpc of attempts) {
+      const { error } = await sellerClient.rpc(rpc.name, rpc.args);
+      expect(error, `RPC ${rpc.name} should be blocked for a seller`).not.toBeNull();
       const msg = error?.message?.toLowerCase() ?? '';
       expect(
         msg.includes('not_authorized') ||

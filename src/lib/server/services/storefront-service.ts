@@ -2,6 +2,7 @@ import 'server-only';
 import { unstable_cache } from 'next/cache';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
+import { rpcNullable } from '@/lib/types/rpc-nullable';
 
 function createPublicClient() {
   return createSupabaseClient<Database>(
@@ -59,11 +60,11 @@ export async function searchStorefront(params: SearchParams): Promise<SearchResu
     async () => {
       const db = createPublicClient();
       const { data, error } = await db.rpc('search_storefront', {
-        p_query: params.query ?? null,
-        p_category_slug: params.categorySlug ?? null,
-        p_seller_id: params.sellerId ?? null,
-        p_min_price: params.minPrice ?? null,
-        p_max_price: params.maxPrice ?? null,
+        p_query: rpcNullable<string>(params.query),
+        p_category_slug: rpcNullable<string>(params.categorySlug),
+        p_seller_id: rpcNullable<string>(params.sellerId),
+        p_min_price: rpcNullable<number>(params.minPrice),
+        p_max_price: rpcNullable<number>(params.maxPrice),
         p_sort: params.sort ?? 'newest',
         p_limit: Math.min(params.limit ?? 24, 60),
         p_offset: params.offset ?? 0,

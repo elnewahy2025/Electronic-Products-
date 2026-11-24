@@ -64,9 +64,11 @@ export async function GET(req: NextRequest) {
     await db.rpc('notify_staff_with_permission', {
       p_permission: 'backup.read',
       p_type: 'backup_overdue',
+      p_category: 'backups',
       p_title: 'تنبيه: نسخة احتياطية مجدولة متأخرة',
       p_body: 'تجاوزت المنصة موعد النسخة الاحتياطية المجدولة في backup_settings. يرجى التحقق من تشغيل GitHub Actions أو تنفيذ النسخة يدوياً.',
-      p_metadata: { backupDue, restoreDue, dispatchError },
+      p_link: '/admin/backups',
+      p_data: { backupDue, restoreDue, dispatchError },
     });
   }
 

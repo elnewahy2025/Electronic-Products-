@@ -7,6 +7,9 @@ import {
 import { getCookieHeader } from '../helpers/auth';
 import { apiRequest, completeDownloadAsWorker } from '../helpers/api';
 
+// Several tests chain multiple admin/buyer API calls; give them headroom.
+test.setTimeout(90_000);
+
 test.describe('Security: ownership, rate limits, blocked operations', () => {
   test.afterAll(async () => {
     await cleanupTestData();

@@ -2,6 +2,7 @@ import 'server-only';
 import { revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { logAudit } from '@/lib/audit/logger';
+import type { TablesUpdate } from '@/lib/types/database';
 
 export type SellerProduct = {
   id: string;
@@ -233,7 +234,7 @@ export async function updateSellerProduct(input: {
 }): Promise<void> {
   const db = await createClient();
 
-  const patch: Record<string, unknown> = {};
+  const patch: TablesUpdate<'products'> = {};
   if (input.title !== undefined) patch.title = input.title.trim();
   if (input.shortDescription !== undefined) patch.short_description = input.shortDescription?.trim() || null;
   if (input.description !== undefined) patch.description = input.description?.trim() || null;

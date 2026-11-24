@@ -26,6 +26,17 @@ All settings tables are singletons (`id SMALLINT PRIMARY KEY CHECK (id = 1)`), w
 by Super Admin, and each update is audited. Staff and Admin cannot change settings, roles or
 exchange rates.
 
+### Pre-launch auth invariant (H-08)
+
+- Supabase Auth email confirmation **must be enabled** in production: Dashboard →
+  Authentication → Providers → Email → **Confirm email**. Local/self-hosted stacks set
+  `[auth.email] enable_confirmations = true` in `supabase/config.toml`.
+- Migration `068_verified_email_ownership.sql` only grants guest-email ownership when
+  `profiles.email_verified_at` is populated from `auth.users.email_confirmed_at`. Verify a
+  sample of real accounts has a non-null `email_verified_at` before launch.
+- Never create real users with `email_confirm: false` to unblock a test. E2E users may do so
+  only in disposable local databases.
+
 ---
 
 ## 2. Proposed launch values

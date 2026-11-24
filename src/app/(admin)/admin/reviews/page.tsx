@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import type { Enums } from '@/lib/types/database';
 
 const STATUS_META: Record<string, { label: string; badge: string }> = {
   published: { label: 'منشور', badge: 'ui-badge ui-badge-green' },
@@ -25,7 +26,7 @@ export default async function ReviewsPage(props: { searchParams: Promise<{ statu
     .order('created_at', { ascending: false })
     .limit(100);
 
-  if (searchParams.status) q = q.eq('status', searchParams.status);
+  if (searchParams.status) q = q.eq('status', searchParams.status as Enums<'review_status_enum'>);
 
   const { data } = await q;
 

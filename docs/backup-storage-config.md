@@ -17,11 +17,13 @@
 | Least privilege reads | Restore verification uses a read-only identity where the provider supports it; writes are performed by the backup runner identity. |
 
 The in-repo backup runner (`scripts/backup-and-verify.mjs`) currently writes compressed,
-SHA-256-checked dumps to the private Supabase Storage bucket `database-backups` and records
-them in `backup_archives` ([`docs/backups.md`](backups.md)). Provisioning an R2/S3 bucket,
-and any replication of those artifacts to it, is an **external operational step**. Do not
-assume the application already writes to R2/S3 until the bucket, credentials and runner
-configuration are in place and verified.
+SHA-256-checked multi-schema (`public`, `auth`, `storage`) dumps **and a point-in-time snapshot
+of Storage object bytes** to the private Supabase Storage bucket `database-backups`, and records
+them in `backup_archives` ([`docs/backups.md`](backups.md)). This is same-project recovery
+evidence, not off-site replication. Provisioning an R2/S3 bucket and copying both the SQL
+archives and the blob snapshots to it is an **external operational step**. Do not assume the
+application already writes to R2/S3 until the bucket, credentials and runner configuration are
+in place and verified.
 
 ---
 
@@ -88,10 +90,10 @@ Notes:
 
 | Item | Value |
 |---|---|
-| Database dump | `pg_dump --schema=public --no-owner --no-privileges`, gzipped, SHA-256 checksum recorded in `backup_archives` (see `scripts/backup-and-verify.mjs`) |
+| Database dump | `pg_dump` with mandatory `--schema=public --schema=auth --schema=storage --no-owner --no-privileges`, gzipped, SHA-256 checksum recorded in `backup_archives` (see `scripts/backup-and-verify.mjs`) |
 | Schedule | Weekly by default (`backup_settings.schedule = 'weekly'`, proposed); GitHub Actions runs daily at 03:00 UTC and `is_backup_due()` decides whether to execute |
 | Manual backup | Super Admin only via `/admin/backups`; logged in `audit_logs` |
-| File copies | `backup_settings.include_files` is proposed `true`, but original files live in seller Drive accounts; any copy to the operator bucket must be scoped, consented to in the seller terms, and verified with the buyer/seller data policy before enabling |
+| Blob snapshot | The runner always copies Storage object bytes (excluding `database-backups`) into the same project bucket under `<archive-prefix>/blobs/...` with a SHA-256 manifest. This is not off-site DR; replicate it to the operator bucket along with the SQL dump. `backup_settings.include_files` does not control this snapshot. |
 | Naming | `<env>/db/YYYY-MM-DDTHH-MM-SSZ.sql.gz` plus a `.sha256` sidecar; no seller identifiers in object keys |
 | Encryption in transit | TLS only; S3-compatible endpoint must use HTTPS |
 

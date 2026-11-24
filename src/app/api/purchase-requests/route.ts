@@ -57,8 +57,8 @@ export async function POST(req: NextRequest) {
   } catch (e: any) {
     const message = MESSAGES[e.message] ?? 'تعذر إنشاء الطلب.';
     const status = e.message === 'duplicate_request' ? 409
-                 : e.message?.startsWith('rate_limit') ? 429
-                 : 400;
+      : e.message?.startsWith('rate_limit') ? 429
+        : 400;
     return NextResponse.json(
       { error: message, code: publicError(e, 'REQUEST_FAILED', 'api/purchase-requests') },
       { status },

@@ -6,6 +6,10 @@ import {
 import { authenticateContext, getCookieHeader } from '../helpers/auth';
 import { apiRequest, completeDownloadAsWorker } from '../helpers/api';
 
+// This is a full UI + API journey (storefront, form, admin approval, redeem,
+// download); it routinely exceeds the 30s default in local dev.
+test.setTimeout(120_000);
+
 test.describe('Full journey: publish → request → code → redeem → download', () => {
   test.afterAll(async () => {
     await cleanupTestData();
@@ -74,14 +78,24 @@ test.describe('Full journey: publish → request → code → redeem → downloa
     // Get the request via DB (more reliable)
     const { data: requests } = await adminDb
       .from('purchase_requests')
-      .select('id')
+      .select('id, total_amount, currency')
       .eq('buyer_id', buyer.id)
       .eq('status', 'created');
     expect(requests).toHaveLength(1);
     const requestId = requests![0].id;
 
-    // Approve via API (returns codes array with plaintext via handoff)
-    const approveRes = await apiRequest('POST', `/api/admin/requests/${requestId}/approve`, undefined, adminCookies);
+    // Approve via API (payment attestation is mandatory since migration 061).
+    const approveRes = await apiRequest(
+      'POST',
+      `/api/admin/requests/${requestId}/approve`,
+      {
+        amount: Number(requests![0].total_amount),
+        currency: String(requests![0].currency),
+        reference: `E2E-${requestId.slice(0, 8)}`,
+        method: 'manual',
+      },
+      adminCookies,
+    );
     expect(approveRes.status).toBe(200);
 
     const codes = approveRes.json.codes as Array<{ code_id: string; code_prefix: string }>;
@@ -108,7 +122,9 @@ test.describe('Full journey: publish → request → code → redeem → downloa
     await page.getByRole('button', { name: 'تفعيل الكود وبدء التنزيل' }).click();
 
     await page.waitForURL(/\/account\/downloads\/[a-f0-9-]+/);
-    await expect(page.getByText('تنزيل المنتج')).toBeVisible();
+    // The client page fetches the session after navigation; in dev the route
+    // may compile on first hit, so allow more than the 5s default.
+    await expect(page.getByText('تنزيل المنتج')).toBeVisible({ timeout: 15_000 });
 
     const sessionId = page.url().match(/\/downloads\/([a-f0-9-]+)/)![1];
 

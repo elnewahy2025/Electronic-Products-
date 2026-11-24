@@ -1,6 +1,7 @@
 import 'server-only';
 import nodemailer from 'nodemailer';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { rpcNullable } from '@/lib/types/rpc-nullable';
 
 type SendInput = {
   to: string;
@@ -216,10 +217,10 @@ export async function sendAdminDigest(): Promise<{
       p_to_email: to,
       p_subject: `ملخص الإدارة اليومي (${pendingTotal} عنصر معلّق) — ${platformName}`,
       p_text_body: textBody,
-      p_html_body: null,
+      p_html_body: rpcNullable<string>(null),
       p_template: 'admin_digest',
-      p_reference_type: null,
-      p_reference_id: null,
+      p_reference_type: rpcNullable<string>(null),
+      p_reference_id: rpcNullable<string>(null),
     });
   }
 

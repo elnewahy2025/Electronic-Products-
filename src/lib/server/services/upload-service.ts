@@ -1,6 +1,7 @@
 import 'server-only';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { rpcNullable } from '@/lib/types/rpc-nullable';
 import { decrypt } from '@/lib/crypto/encryption';
 import { initiateResumableUpload, checkResumableUploadStatus } from '@/lib/drive/resumable';
 import {
@@ -308,7 +309,7 @@ export async function completeUpload(params: {
       p_session_id: params.sessionId,
       p_provider_file_id: meta.id,
       p_size_bytes: meta.size,
-      p_checksum: meta.md5Checksum ?? session.checksum_sha256 ?? null,
+      p_checksum: rpcNullable<string>(meta.md5Checksum ?? session.checksum_sha256 ?? null),
     });
     if (regError) throw new Error(regError.message || 'UPLOAD_COMPLETE_FAILED');
 
@@ -497,7 +498,7 @@ export async function importDriveFiles(params: {
         p_mime: mime,
         p_extension: ext,
         p_size_bytes: meta.size,
-        p_checksum: meta.md5Checksum ?? null,
+        p_checksum: rpcNullable<string>(meta.md5Checksum ?? null),
         p_audit_action: 'file.imported_from_drive',
       });
       if (regError) throw new Error(regError.message || 'FILE_CREATE_FAILED');

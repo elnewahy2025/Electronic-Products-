@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { hashCode } from '@/lib/crypto/code-generator';
 import { getTrustedClientIp } from '@/lib/security/rate-limit';
+import { rpcNullable } from '@/lib/types/rpc-nullable';
+
+const nullableText = rpcNullable<string>;
 
 export type RedeemResult =
   | { ok: true; sessionId: string }
@@ -55,10 +58,10 @@ export async function redeemCode(
     await admin.rpc('log_redeem_attempt', {
       p_ip: ip,
       p_user_id: user.id,
-      p_email: email,
+      p_email: nullableText(email),
       p_result: 'rate_limited',
-      p_code_hash_prefix: null,
-      p_reason: rl?.reason ?? null,
+      p_code_hash_prefix: nullableText(null),
+      p_reason: nullableText(rl?.reason ?? null),
     });
     const m = ERROR_MESSAGES[rl?.reason ?? 'user_rate_limited'] ?? ERROR_MESSAGES.user_rate_limited;
     return {
@@ -100,10 +103,10 @@ export async function redeemCode(
     await admin.rpc('log_redeem_attempt', {
       p_ip: ip,
       p_user_id: user.id,
-      p_email: email,
+      p_email: nullableText(email),
       p_result: 'not_found',
       p_code_hash_prefix: prefix,
-      p_reason: null,
+      p_reason: nullableText(null),
     });
     return {
       ok: false,
@@ -116,8 +119,8 @@ export async function redeemCode(
   // ── 4. Pre-checks (for clean UX, RPC re-verifies) ────────
   if (code.status === 'revoked') {
     await admin.rpc('log_redeem_attempt', {
-      p_ip: ip, p_user_id: user.id, p_email: email,
-      p_result: 'revoked', p_code_hash_prefix: prefix, p_reason: null,
+      p_ip: ip, p_user_id: user.id, p_email: nullableText(email),
+      p_result: 'revoked', p_code_hash_prefix: prefix, p_reason: nullableText(null),
     });
     return {
       ok: false,
@@ -129,8 +132,8 @@ export async function redeemCode(
 
   if (code.redeemed_at) {
     await admin.rpc('log_redeem_attempt', {
-      p_ip: ip, p_user_id: user.id, p_email: email,
-      p_result: 'already_redeemed', p_code_hash_prefix: prefix, p_reason: null,
+      p_ip: ip, p_user_id: user.id, p_email: nullableText(email),
+      p_result: 'already_redeemed', p_code_hash_prefix: prefix, p_reason: nullableText(null),
     });
     return {
       ok: false,
@@ -142,8 +145,8 @@ export async function redeemCode(
 
   if (new Date(code.expires_at).getTime() < Date.now()) {
     await admin.rpc('log_redeem_attempt', {
-      p_ip: ip, p_user_id: user.id, p_email: email,
-      p_result: 'expired', p_code_hash_prefix: prefix, p_reason: null,
+      p_ip: ip, p_user_id: user.id, p_email: nullableText(email),
+      p_result: 'expired', p_code_hash_prefix: prefix, p_reason: nullableText(null),
     });
     return {
       ok: false,
@@ -155,8 +158,8 @@ export async function redeemCode(
 
   if (code.status === 'issued' && !code.delivered_at) {
     await admin.rpc('log_redeem_attempt', {
-      p_ip: ip, p_user_id: user.id, p_email: email,
-      p_result: 'not_delivered', p_code_hash_prefix: prefix, p_reason: null,
+      p_ip: ip, p_user_id: user.id, p_email: nullableText(email),
+      p_result: 'not_delivered', p_code_hash_prefix: prefix, p_reason: nullableText(null),
     });
     return {
       ok: false,
@@ -170,7 +173,7 @@ export async function redeemCode(
   const { data: owns } = await db.rpc('buyer_owns_code', { p_code_id: code.id });
   if (!owns) {
     await admin.rpc('log_redeem_attempt', {
-      p_ip: ip, p_user_id: user.id, p_email: email,
+      p_ip: ip, p_user_id: user.id, p_email: nullableText(email),
       p_result: 'forbidden', p_code_hash_prefix: prefix, p_reason: 'not_owner',
     });
     return {
@@ -192,7 +195,7 @@ export async function redeemCode(
     const m = key ? ERROR_MESSAGES[key] : { message: 'تعذر تفعيل الكود. حاول مجددًا.', status: 400 };
 
     await admin.rpc('log_redeem_attempt', {
-      p_ip: ip, p_user_id: user.id, p_email: email,
+      p_ip: ip, p_user_id: user.id, p_email: nullableText(email),
       p_result: key ?? 'error', p_code_hash_prefix: prefix, p_reason: raw.slice(0, 200),
     });
 
@@ -201,8 +204,8 @@ export async function redeemCode(
 
   // ── 7. Log success ────────────────────────────────────────
   await admin.rpc('log_redeem_attempt', {
-    p_ip: ip, p_user_id: user.id, p_email: email,
-    p_result: 'success', p_code_hash_prefix: prefix, p_reason: null,
+    p_ip: ip, p_user_id: user.id, p_email: nullableText(email),
+    p_result: 'success', p_code_hash_prefix: prefix, p_reason: nullableText(null),
   });
 
   return { ok: true, sessionId: sessionId as string };

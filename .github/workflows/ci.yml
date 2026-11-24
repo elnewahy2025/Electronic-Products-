@@ -23,6 +23,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Reject placeholder Database type
+        run: pnpm lint:db-types
+
       - name: Typecheck
         run: pnpm exec tsc --noEmit
 
@@ -52,6 +55,7 @@ jobs:
     timeout-minutes: 20
     env:
       SUPABASE_YES: 'true'
+      TRUST_PROXY_HEADERS: '1'
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       TEST_APP_URL: http://localhost:3000
       CSRF_ALLOWED_ORIGINS: http://localhost:3000
@@ -84,12 +88,21 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pin to the version used to generate the committed Database type;
+          # "latest" would make the drift check non-deterministic.
+          version: 3.2.0
 
       - name: Start disposable local Supabase
         run: |
           supabase start
           supabase db reset --yes
+
+      - name: Regenerate DB types and check drift
+        run: |
+          set -euo pipefail
+          pnpm db:types
+          pnpm lint:db-types
+          git diff --exit-code -- src/lib/types/database.ts
 
       - name: Export local Supabase credentials
         run: |
@@ -111,9 +124,24 @@ jobs:
       - name: Run security E2E specs
         run: |
           pnpm exec playwright test \
+            tests/e2e/specs/01-full-journey.spec.ts \
+            tests/e2e/specs/02-attempts-and-compensation.spec.ts \
+            tests/e2e/specs/03-security.spec.ts \
+            tests/e2e/specs/04-security-hardening.spec.ts \
             tests/e2e/specs/05-high-security-fixes.spec.ts \
             tests/e2e/specs/06-medium-security-fixes.spec.ts \
             tests/e2e/specs/07-full-roles-workflow.spec.ts
+
+      - name: Upload Playwright report and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.job }}-${{ github.run_attempt }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: warn
 
   secret-scan:
     name: Secret scan (full history)

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import type { Enums } from '@/lib/types/database';
 import Link from 'next/link';
 
 type BadgeTone = 'green' | 'amber' | 'red' | 'blue' | 'neutral';
@@ -32,7 +33,7 @@ export default async function RequestsPage(props: { searchParams: Promise<{ stat
     searchParams.status &&
     ['created', 'pending', 'approved', 'rejected', 'cancelled', 'completed'].includes(searchParams.status)
   ) {
-    q = q.eq('status', searchParams.status);
+    q = q.eq('status', searchParams.status as Enums<'purchase_request_status_enum'>);
   }
 
   const { data } = await q;

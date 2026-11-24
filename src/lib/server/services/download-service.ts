@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getAttemptState, recordSuccessfulAttempt, AttemptType } from './attempt-service';
 import { createDownloadToken, hashDownloadToken } from '@/lib/crypto/download-token';
 import { logAudit } from '@/lib/audit/logger';
+import { rpcNullable } from '@/lib/types/rpc-nullable';
 
 export type SessionInfo = {
   id: string;
@@ -46,6 +47,14 @@ export async function getSessionWithFiles(sessionId: string): Promise<{
     .single();
 
   if (se || !session) throw new Error('SESSION_NOT_FOUND');
+
+  // Ownership is enforced here, not only by RLS: the staff
+  // `download.session.revoke` permission intentionally grants access to the
+  // session row for moderation, but must not expose the buyer's download UI.
+  // `buyer_owns_session` also covers compensation sessions whose buyer_id is
+  // null but whose code belongs to the caller.
+  const { data: owned } = await db.rpc('buyer_owns_session', { p_session_id: sessionId });
+  if (!owned) throw new Error('FORBIDDEN');
 
   // Auto-expire on read
   const expired = new Date(session.expires_at).getTime() < Date.now();
@@ -106,11 +115,19 @@ export async function initiateDownload(params: {
 
   const { data: session } = await db
     .from('download_sessions')
-    .select('id, order_item_id, product_version_id, status, expires_at')
+    .select('id, order_item_id, product_version_id, buyer_id, status, expires_at')
     .eq('id', params.sessionId)
     .single();
 
   if (!session) throw new Error('SESSION_NOT_FOUND');
+  // A signed download token is content access: only the buyer may obtain one.
+  // RLS also lets `download.session.revoke` holders read the row, so this
+  // explicit check is required to keep moderation and delivery separate.
+  // The helper accepts compensation sessions (buyer_id null, code-owned).
+  const { data: owned } = await db.rpc('buyer_owns_session', {
+    p_session_id: params.sessionId,
+  });
+  if (!owned) throw new Error('FORBIDDEN');
   if (!['active', 'compensation_active'].includes(session.status)) {
     throw new Error('SESSION_NOT_ACTIVE');
   }
@@ -160,7 +177,7 @@ export async function initiateDownload(params: {
     p_session_id: params.sessionId,
     p_token_hash: hashDownloadToken(token),
     p_scope: scope,
-    p_file_version_id: params.fileVersionId ?? null,
+    p_file_version_id: rpcNullable<string>(params.fileVersionId),
     p_expires_at: expiresAt.toISOString(),
   });
   if (ledgerError) throw new Error('TOKEN_LEDGER_FAILED');

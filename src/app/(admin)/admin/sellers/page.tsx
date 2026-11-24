@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import type { Enums } from '@/lib/types/database';
 import Link from 'next/link';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -21,7 +22,7 @@ export default async function SellersListPage(
     .order('created_at', { ascending: false })
     .limit(100);
 
-  if (searchParams.status) q = q.eq('status', searchParams.status);
+  if (searchParams.status) q = q.eq('status', searchParams.status as Enums<'seller_status_enum'>);
 
   const { data } = await q;
 

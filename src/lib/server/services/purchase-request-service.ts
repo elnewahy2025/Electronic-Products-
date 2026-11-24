@@ -1,6 +1,7 @@
 import 'server-only';
 import { createHash, randomBytes } from 'node:crypto';
 import { createClient } from '@/lib/supabase/server';
+import { rpcNullable } from '@/lib/types/rpc-nullable';
 
 function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
@@ -49,11 +50,11 @@ export async function createPurchaseRequest(
     p_product_id: input.productId,
     p_email: input.email.trim().toLowerCase(),
     p_phone: input.phone.trim(),
-    p_full_name: input.fullName?.trim() || null,
-    p_notes: input.notes?.trim() || null,
+    p_full_name: rpcNullable<string>(input.fullName?.trim() || null),
+    p_notes: rpcNullable<string>(input.notes?.trim() || null),
     p_access_token_hash: tokenHash,
-    p_ip: input.ip ?? null,
-    p_user_agent: input.userAgent ?? null,
+    p_ip: rpcNullable<string>(input.ip ?? null),
+    p_user_agent: rpcNullable<string>(input.userAgent ?? null),
   });
 
   if (error) throw new Error(error.message);

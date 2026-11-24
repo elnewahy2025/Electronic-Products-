@@ -1,5 +1,6 @@
 import 'server-only';
 import { createClient } from '@/lib/supabase/server';
+import { rpcNullable } from '@/lib/types/rpc-nullable';
 
 export type SellerOrderStatus = 'pending' | 'active' | 'completed' | 'expired' | 'revoked';
 
@@ -66,10 +67,10 @@ export type ListOrdersResult = {
 export async function listSellerOrders(params: ListOrdersParams = {}): Promise<ListOrdersResult> {
   const db = await createClient();
   const { data, error } = await db.rpc('seller_orders', {
-    p_product_id: params.productId ?? null,
-    p_status: params.status ?? null,
-    p_from: params.from ?? null,
-    p_to: params.to ?? null,
+    p_product_id: rpcNullable<string>(params.productId),
+    p_status: rpcNullable<string>(params.status),
+    p_from: rpcNullable<string>(params.from),
+    p_to: rpcNullable<string>(params.to),
     p_limit: Math.min(params.limit ?? 50, 200),
     p_offset: params.offset ?? 0,
   });
