@@ -111,7 +111,8 @@ jobs:
         run: |
           pnpm exec playwright test \
             tests/e2e/specs/05-high-security-fixes.spec.ts \
-            tests/e2e/specs/06-medium-security-fixes.spec.ts
+            tests/e2e/specs/06-medium-security-fixes.spec.ts \
+            tests/e2e/specs/07-full-roles-workflow.spec.ts
 
   secret-scan:
     name: Secret scan (full history)
