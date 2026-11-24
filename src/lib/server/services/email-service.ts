@@ -10,12 +10,19 @@ type SendInput = {
   html?: string | null;
 };
 
-function wrapRtlHtml(subject: string, textBody: string, platformName: string): string {
-  const escaped = textBody
+function escapeHtml(raw: string): string {
+  return raw
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/\n/g, '<br/>');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function wrapRtlHtml(subject: string, textBody: string, platformName: string): string {
+  const safeSubject = escapeHtml(subject);
+  const safePlatform = escapeHtml(platformName);
+  const escaped = escapeHtml(textBody).replace(/\n/g, '<br/>');
 
   return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -23,14 +30,14 @@ function wrapRtlHtml(subject: string, textBody: string, platformName: string): s
 <body style="margin:0;padding:24px;background:#f8fafc;font-family:Tahoma,Arial,sans-serif;color:#18181b;direction:rtl;text-align:right;">
   <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;">
     <div style="background:#0f766e;color:#ffffff;padding:18px 24px;font-weight:bold;font-size:16px;">
-      ${platformName}
+      ${safePlatform}
     </div>
     <div style="padding:24px;line-height:1.75;font-size:14px;">
-      <h2 style="margin:0 0 12px 0;font-size:18px;color:#18181b;">${subject}</h2>
+      <h2 style="margin:0 0 12px 0;font-size:18px;color:#18181b;">${safeSubject}</h2>
       <p style="margin:0;color:#334155;">${escaped}</p>
     </div>
     <div style="padding:14px 24px;background:#f1f5f9;color:#64748b;font-size:12px;">
-      هذه رسالة آلية من ${platformName}. يُرجى عدم الرد مباشرة على هذا البريد.
+      هذه رسالة آلية من ${safePlatform}. يُرجى عدم الرد مباشرة على هذا البريد.
     </div>
   </div>
 </body>

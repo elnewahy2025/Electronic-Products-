@@ -1,5 +1,9 @@
 import * as Sentry from '@sentry/nextjs';
-import { scrubSentryEvent } from './src/lib/observability/sentry-scrub';
+import {
+  scrubSentryBreadcrumb,
+  scrubSentryEvent,
+  scrubSentryTransaction,
+} from './src/lib/observability/sentry-scrub';
 
 const dsn = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
 
@@ -9,5 +13,7 @@ if (dsn) {
     enabled: Boolean(dsn),
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 0,
     beforeSend: (event) => scrubSentryEvent(event),
+    beforeSendTransaction: (event) => scrubSentryTransaction(event),
+    beforeBreadcrumb: (breadcrumb) => scrubSentryBreadcrumb(breadcrumb),
   });
 }

@@ -20,7 +20,9 @@ const bodySchema = z.object({
 /**
  * Internal-only completion callback. The first-party streaming worker calls
  * this after it has read every byte from Drive and computed SHA-256 locally.
- * A signed-in buyer can no longer self-report a successful download.
+ * M-09: All session, file-set, byte-count, and SHA-256 checks run BEFORE the
+ * single-use ledger token is marked completed, so transient/validation rejections
+ * never permanently burn a legitimate token before delivery is recorded.
  */
 export async function POST(req: NextRequest, props: { params: Promise<{ sessionId: string }> }) {
   const params = await props.params;
@@ -44,12 +46,10 @@ export async function POST(req: NextRequest, props: { params: Promise<{ sessionI
 
   const admin = createAdminClient();
 
-  // A token must have been issued by /init and claimed by /resolve-token
-  // before it can close a delivery. This prevents replayed or invented tokens.
   const tokenHash = hashDownloadToken(parsed.data.token);
   const { data: ledger } = await admin
     .from('download_tokens')
-    .select('session_id, scope, file_version_id, expires_at, used_at')
+    .select('session_id, scope, file_version_id, expires_at, used_at, completed_at')
     .eq('token_hash', tokenHash)
     .maybeSingle();
   if (
@@ -63,27 +63,14 @@ export async function POST(req: NextRequest, props: { params: Promise<{ sessionI
   if (!ledger.used_at) {
     return NextResponse.json({ error: 'TOKEN_NOT_RESOLVED' }, { status: 403 });
   }
+  if (ledger.completed_at) {
+    return NextResponse.json({ error: 'TOKEN_ALREADY_USED' }, { status: 409 });
+  }
   if (new Date(ledger.expires_at).getTime() < Date.now()) {
     return NextResponse.json({ error: 'TOKEN_EXPIRED' }, { status: 401 });
   }
 
-  // Atomically consume the callback. A replayed receipt is rejected even if
-  // the download session is still active (single-file partial deliveries).
-  const { error: completeClaimError } = await admin.rpc(
-    'mark_download_token_completed',
-    { p_token_hash: tokenHash }
-  );
-  if (completeClaimError) {
-    const code = /already_completed/.test(completeClaimError.message)
-      ? 'TOKEN_ALREADY_USED'
-      : 'TOKEN_NOT_RESOLVED';
-    return NextResponse.json(
-      { error: code },
-      { status: code === 'TOKEN_ALREADY_USED' ? 409 : 403 }
-    );
-  }
-
-  // Re-validate server state: tokens outlive sessions by design.
+  // Validate session state + expected file set/sizes/checksums BEFORE consuming the token
   const { data: session } = await admin
     .from('download_sessions')
     .select('id, product_version_id, status, expires_at')
@@ -97,8 +84,6 @@ export async function POST(req: NextRequest, props: { params: Promise<{ sessionI
     return NextResponse.json({ error: 'SESSION_EXPIRED' }, { status: 410 });
   }
 
-  // Only files that belong to this session's version may be recorded, and the
-  // submitted set must exactly match the token scope.
   const { data: fileRows } = await admin
     .from('product_version_files')
     .select('file_version_id, included_in_zip, file_versions!inner(size_bytes, checksum_sha256)')
@@ -142,12 +127,24 @@ export async function POST(req: NextRequest, props: { params: Promise<{ sessionI
     if (file.bytes_sent !== meta.sizeBytes) {
       return NextResponse.json({ error: 'BYTE_COUNT_MISMATCH' }, { status: 400 });
     }
-    // Older rows stored a Drive MD5 in a column named checksum_sha256. Only
-    // compare when it is a real SHA-256 digest; always store the worker's
-    // freshly computed digest as the delivery checksum.
     if (meta.sha256 && file.checksum.toLowerCase() !== meta.sha256) {
       return NextResponse.json({ error: 'CHECKSUM_MISMATCH' }, { status: 400 });
     }
+  }
+
+  // Atomically claim the single-use completion token ONLY after validation succeeds
+  const { error: completeClaimError } = await admin.rpc(
+    'mark_download_token_completed',
+    { p_token_hash: tokenHash }
+  );
+  if (completeClaimError) {
+    const code = /already_completed/.test(completeClaimError.message)
+      ? 'TOKEN_ALREADY_USED'
+      : 'TOKEN_NOT_RESOLVED';
+    return NextResponse.json(
+      { error: code },
+      { status: code === 'TOKEN_ALREADY_USED' ? 409 : 403 }
+    );
   }
 
   try {

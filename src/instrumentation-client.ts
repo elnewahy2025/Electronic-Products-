@@ -1,5 +1,9 @@
 import * as Sentry from '@sentry/nextjs';
-import { scrubSentryEvent } from '@/lib/observability/sentry-scrub';
+import {
+  scrubSentryBreadcrumb,
+  scrubSentryEvent,
+  scrubSentryTransaction,
+} from '@/lib/observability/sentry-scrub';
 
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
@@ -11,6 +15,8 @@ if (dsn) {
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0,
     beforeSend: (event) => scrubSentryEvent(event),
+    beforeSendTransaction: (event) => scrubSentryTransaction(event),
+    beforeBreadcrumb: (breadcrumb) => scrubSentryBreadcrumb(breadcrumb),
   });
 }
 

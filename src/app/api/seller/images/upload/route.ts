@@ -2,7 +2,10 @@ import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
-import { processAndUploadProductImage } from '@/lib/server/services/product-image-service';
+import {
+  MAX_IMAGE_BYTES,
+  processAndUploadProductImage,
+} from '@/lib/server/services/product-image-service';
 import { logAudit } from '@/lib/audit/logger';
 
 export async function POST(req: NextRequest) {
@@ -24,6 +27,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'SELLER_NOT_APPROVED' }, { status: 403 });
     }
 
+    // M-07: reject oversized multipart requests before buffering into memory
+    const contentLength = Number(req.headers.get('content-length') ?? '0');
+    if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES + 256 * 1024) {
+      return NextResponse.json({ error: 'image_too_large' }, { status: 413 });
+    }
+
     const formData = await req.formData().catch(() => null);
     if (!formData) {
       return NextResponse.json({ error: 'invalid_form_data' }, { status: 400 });
@@ -35,6 +44,9 @@ export async function POST(req: NextRequest) {
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: 'file_required' }, { status: 400 });
+    }
+    if (file.size <= 0 || file.size > MAX_IMAGE_BYTES) {
+      return NextResponse.json({ error: 'image_too_large' }, { status: 413 });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());

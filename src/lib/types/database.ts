@@ -2985,7 +2985,7 @@ isOneToOne: false
 { Args: { "p_code_id": string,"p_reason": string }; Returns: string
                            },
 "create_purchase_request":
-{ Args: { "p_access_token_hash": string,"p_email": string,"p_full_name": string,"p_ip": unknown,"p_notes": string,"p_phone": string,"p_product_id": string,"p_user_agent": string }; Returns: Json
+{ Args: { "p_access_token_hash": string,"p_buyer_id"?: string,"p_email": string,"p_full_name": string,"p_ip": unknown,"p_notes": string,"p_phone": string,"p_product_id": string,"p_user_agent": string }; Returns: Json
                            },
 "credit_seller_wallet_for_order_item":
 { Args: { "p_commission": number,"p_currency": string,"p_gross": number,"p_net": number,"p_order_item_id": string,"p_seller_id": string }; Returns: string

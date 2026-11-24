@@ -42,6 +42,7 @@ export const PERMISSIONS = {
   REPORT_READ: 'report.read',
   REPORT_RESOLVE: 'report.resolve',
   SUPPORT_READ: 'support.read',
+  SUPPORT_WRITE: 'support.write',
   // ops
   SECURITY_READ: 'security.read',
   BACKUP_RUN: 'backup.run',

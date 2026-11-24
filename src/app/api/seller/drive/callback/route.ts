@@ -4,8 +4,21 @@ import { requireUser } from '@/lib/auth/session';
 import { exchangeDriveCode, fetchGoogleUserEmail, verifyState } from '@/lib/drive/oauth';
 import { linkDriveAccount } from '@/lib/server/services/drive-account-service';
 
+function resolveAppOrigin(req: NextRequest): string {
+  const configured = process.env.NEXT_PUBLIC_APP_URL;
+  if (configured) {
+    try {
+      return new URL(configured).origin;
+    } catch {
+      // fall through in dev
+    }
+  }
+  return new URL(req.url).origin;
+}
+
 export async function GET(req: NextRequest) {
-  const { searchParams, origin } = new URL(req.url);
+  const { searchParams } = new URL(req.url);
+  const origin = resolveAppOrigin(req);
   const code = searchParams.get('code');
   const state = searchParams.get('state');
   const cookieState = req.cookies.get('drive_oauth_state')?.value;

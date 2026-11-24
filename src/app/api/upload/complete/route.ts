@@ -1,5 +1,5 @@
 import { logServerError, publicError } from '@/lib/api/errors';
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { completeUpload } from '@/lib/server/services/upload-service';
@@ -27,10 +27,15 @@ export async function POST(req: NextRequest) {
       sessionId: parsed.data.session_id,
       driveFileId: parsed.data.drive_file_id,
     });
-    // Kick off real magic-byte scan AND watermarked preview generation immediately (cron remains as fallback)
-    void processPendingScans(3)
-      .then(() => processPendingPreviews(3))
-      .catch((err) => logServerError('api/upload/complete:post-process', err));
+    // M-08: bind background scan/preview kick to Next.js `after()` lifecycle
+    after(async () => {
+      try {
+        await processPendingScans(3);
+        await processPendingPreviews(3);
+      } catch (err) {
+        logServerError('api/upload/complete:post-process', err);
+      }
+    });
     return NextResponse.json(result);
   } catch (e: any) {
     return NextResponse.json(

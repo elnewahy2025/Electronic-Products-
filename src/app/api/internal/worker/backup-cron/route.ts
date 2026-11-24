@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isAuthorizedCron } from '@/lib/auth/cron';
+import { logServerError } from '@/lib/api/errors';
 
 /**
  * Daily backup watchdog cron (Vercel Cron: 0 4 * * *).
- * Checks whether a scheduled backup or restore test is due per backup_settings.
- * Optionally triggers an external runner webhook (e.g. GitHub Actions workflow_dispatch)
- * and alerts admins if a scheduled backup is overdue.
+ * M-13: Fails closed (HTTP 500 + staff alert) if the due-check RPCs fail,
+ * instead of returning `{ ok: true }` silently.
  */
 export async function GET(req: NextRequest) {
   if (!isAuthorizedCron(req.headers)) {
@@ -14,16 +14,35 @@ export async function GET(req: NextRequest) {
   }
 
   const db = createAdminClient();
-  const [{ data: backupDue }, { data: restoreDue }] = await Promise.all([
+  const [backupCheck, restoreCheck] = await Promise.all([
     db.rpc('is_backup_due'),
     db.rpc('is_restore_test_due'),
   ]);
 
+  if (backupCheck.error || restoreCheck.error) {
+    const err = backupCheck.error ?? restoreCheck.error;
+    logServerError('api/internal/worker/backup-cron:due-check', err, { status: 500 });
+    await db
+      .rpc('notify_staff_with_permission', {
+        p_permission: 'backup.read',
+        p_type: 'backup_watchdog_failed',
+        p_category: 'backups',
+        p_title: 'تنبيه: تعذر التحقق من حالة النسخ الاحتياطي',
+        p_body: 'فشل استعلام المراقب اليومي للنسخ الاحتياطي. يرجى مراجعة صفحة النسخ الاحتياطي فوراً.',
+        p_link: '/admin/backups',
+        p_data: { reason: 'DUE_CHECK_FAILED' },
+      })
+      .then(() => undefined, () => undefined);
+    return NextResponse.json({ ok: false, error: 'DUE_CHECK_FAILED' }, { status: 500 });
+  }
+
+  const backupDue = Boolean(backupCheck.data);
+  const restoreDue = Boolean(restoreCheck.data);
+
   let dispatched = false;
   let dispatchError: string | null = null;
 
-  // Optional GitHub Actions workflow_dispatch trigger if configured
-  const ghRepo = process.env.BACKUP_GITHUB_REPO; // e.g. "owner/repo"
+  const ghRepo = process.env.BACKUP_GITHUB_REPO;
   const ghToken = process.env.BACKUP_GITHUB_TOKEN;
   if ((backupDue || restoreDue) && ghRepo && ghToken) {
     try {
@@ -39,8 +58,8 @@ export async function GET(req: NextRequest) {
           body: JSON.stringify({
             ref: 'main',
             inputs: {
-              force_backup: String(Boolean(backupDue)),
-              force_verify: String(Boolean(restoreDue)),
+              force_backup: String(backupDue),
+              force_verify: String(restoreDue),
             },
           }),
         },
@@ -48,18 +67,19 @@ export async function GET(req: NextRequest) {
       if (res.ok) {
         dispatched = true;
       } else {
-        // Keep provider details in server logs only; API/notification consumers
-        // receive a fixed sentinel instead of a raw GitHub response body.
-        console.error('[backup-cron] dispatch failed', { status: res.status, body: (await res.text()).slice(0, 200) });
+        logServerError(
+          'api/internal/worker/backup-cron:dispatch',
+          new Error('GITHUB_DISPATCH_FAILED'),
+          { status: res.status },
+        );
         dispatchError = 'DISPATCH_FAILED';
       }
-    } catch (err: any) {
-      console.error('[backup-cron] dispatch threw', { message: err?.message ?? String(err) });
+    } catch (err) {
+      logServerError('api/internal/worker/backup-cron:dispatch', err, { status: 502 });
       dispatchError = 'DISPATCH_FAILED';
     }
   }
 
-  // If overdue and not dispatched, raise an admin notification so missed backups are never silent
   if (backupDue && !dispatched) {
     await db.rpc('notify_staff_with_permission', {
       p_permission: 'backup.read',
@@ -72,11 +92,14 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  return NextResponse.json({
-    ok: true,
-    backup_due: Boolean(backupDue),
-    restore_test_due: Boolean(restoreDue),
-    dispatched,
-    dispatch_error: dispatchError,
-  });
+  return NextResponse.json(
+    {
+      ok: dispatchError === null,
+      backup_due: backupDue,
+      restore_test_due: restoreDue,
+      dispatched,
+      dispatch_error: dispatchError,
+    },
+    { status: dispatchError ? 502 : 200 },
+  );
 }

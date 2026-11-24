@@ -1,7 +1,8 @@
 import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/auth/session';
+import { enforceSellerThrottle } from '@/lib/security/seller-throttle';
 import { initUpload } from '@/lib/server/services/upload-service';
 
 const SHA256_RE = /^[a-f0-9]{64}$/i;
@@ -15,9 +16,27 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const db = await createClient();
-  const { data: { user } } = await db.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'UNAUTHENTICATED' }, { status: 401 });
+  let user;
+  try {
+    user = await requireUser();
+  } catch (e: any) {
+    const status = e?.message === 'UNAUTHENTICATED' ? 401 : 403;
+    return NextResponse.json({ error: status === 401 ? 'UNAUTHENTICATED' : 'FORBIDDEN' }, { status });
+  }
+  if (user.accountType !== 'seller') {
+    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+  }
+
+  // M-17: throttle Drive folder creation & resumable session init per seller + IP
+  const throttled = await enforceSellerThrottle({
+    req,
+    sellerId: user.id,
+    scope: 'seller:upload:init',
+    sellerLimit: 40,
+    ipLimit: 80,
+    windowSeconds: 3600,
+  });
+  if (throttled) return throttled;
 
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {

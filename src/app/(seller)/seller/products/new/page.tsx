@@ -1,23 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { listCategoriesFlat } from '@/lib/server/services/category-service';
 import { listMyFiles } from '@/lib/server/services/seller-file-service';
-import { processPendingScans } from '@/lib/server/services/scan-service';
-import { processPendingPreviews } from '@/lib/server/services/preview-service';
 import { ProductForm } from '../product-form';
 
 export default async function NewProductPage() {
   const db = await createClient();
-  let [categories, { data: pricing }, files] = await Promise.all([
+  const [categories, { data: pricing }, files] = await Promise.all([
     listCategoriesFlat(),
     db.from('pricing_settings').select('min_product_price, min_product_price_currency').eq('id', 1).single(),
     listMyFiles(),
   ]);
-
-  if (files.some(f => f.scan_status === 'uploaded' || f.scan_status === 'processing')) {
-    await processPendingScans(5).catch(() => {});
-    await processPendingPreviews(5).catch(() => {});
-    files = await listMyFiles();
-  }
 
   return (
     <main className="w-full space-y-6">

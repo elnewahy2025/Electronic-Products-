@@ -1,6 +1,7 @@
 import 'server-only';
 import { createHash, randomBytes } from 'node:crypto';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { rpcNullable } from '@/lib/types/rpc-nullable';
 
 function hashToken(token: string): string {
@@ -34,6 +35,7 @@ export async function createPurchaseRequest(
   input: CreatePurchaseRequestInput
 ): Promise<CreatePurchaseRequestResult> {
   const db = await createClient();
+  const { data: { user } } = await db.auth.getUser();
 
   // Validate email format lightly (server-side)
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) {
@@ -46,7 +48,10 @@ export async function createPurchaseRequest(
   const rawToken = generateToken();
   const tokenHash = hashToken(rawToken);
 
-  const { data, error } = await db.rpc('create_purchase_request', {
+  // M-11: create_purchase_request is service_role-only so browser callers
+  // cannot spoof p_ip or pass a NULL p_access_token_hash via PostgREST.
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc('create_purchase_request', {
     p_product_id: input.productId,
     p_email: input.email.trim().toLowerCase(),
     p_phone: input.phone.trim(),
@@ -55,6 +60,7 @@ export async function createPurchaseRequest(
     p_access_token_hash: tokenHash,
     p_ip: rpcNullable<string>(input.ip ?? null),
     p_user_agent: rpcNullable<string>(input.userAgent ?? null),
+    p_buyer_id: user?.id,
   });
 
   if (error) throw new Error(error.message);

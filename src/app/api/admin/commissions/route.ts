@@ -1,10 +1,42 @@
 import { publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { requirePerm } from '@/lib/auth/admin-guard';
+import { logAudit } from '@/lib/audit/logger';
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const SCOPES = new Set(['global', 'category', 'product_type']);
+const isoDateTime = z
+  .string()
+  .trim()
+  .refine((v) => !Number.isNaN(Date.parse(v)), 'invalid_datetime');
+
+const bodySchema = z
+  .discriminatedUnion('scope', [
+    z.object({
+      seller_id: z.string().uuid(),
+      scope: z.literal('global'),
+      reference_id: z.null().optional(),
+      rate: z.number().finite().min(0).max(1),
+      effective_from: isoDateTime.optional(),
+      effective_to: isoDateTime.nullable().optional(),
+    }),
+    z.object({
+      seller_id: z.string().uuid(),
+      scope: z.literal('category'),
+      reference_id: z.string().uuid(),
+      rate: z.number().finite().min(0).max(1),
+      effective_from: isoDateTime.optional(),
+      effective_to: isoDateTime.nullable().optional(),
+    }),
+  ])
+  .refine(
+    (v) => {
+      if (!v.effective_to) return true;
+      const fromMs = v.effective_from ? Date.parse(v.effective_from) : Date.now();
+      return Date.parse(v.effective_to) > fromMs;
+    },
+    { message: 'effective_to_before_effective_from' },
+  );
 
 export async function GET() {
   try {
@@ -19,52 +51,66 @@ export async function GET() {
       .order('effective_from', { ascending: false })
       .limit(100);
 
-    if (error) return NextResponse.json({ error: publicError(error) }, { status: 400 });
+    if (error) return NextResponse.json({ error: publicError(error, 'REQUEST_FAILED', 'api/admin/commissions:GET') }, { status: 400 });
     return NextResponse.json({ items: data ?? [] });
   } catch (e: any) {
-    return NextResponse.json({ error: publicError(e) }, { status: 403 });
+    return NextResponse.json({ error: publicError(e, 'REQUEST_FAILED', 'api/admin/commissions:GET') }, { status: 403 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
     await requirePerm('commission.seller.override');
-    const body = await req.json().catch(() => null);
-    const sellerId = String(body?.seller_id ?? '');
-    const scope = String(body?.scope ?? 'global');
-    const referenceId = body?.reference_id ? String(body.reference_id) : null;
-    const rate = Number(body?.rate);
-    const effectiveTo = body?.effective_to ? String(body.effective_to) : null;
+    const raw = await req.json().catch(() => null);
+    if (!raw || typeof raw !== 'object') {
+      return NextResponse.json({ error: 'INVALID_BODY' }, { status: 400 });
+    }
 
-    if (!UUID_RE.test(sellerId)) {
-      return NextResponse.json({ error: 'معرّف البائع غير صالح.' }, { status: 400 });
-    }
-    if (!SCOPES.has(scope)) {
-      return NextResponse.json({ error: 'نطاق العمولة غير صالح.' }, { status: 400 });
-    }
-    if (scope === 'category' && (!referenceId || !UUID_RE.test(referenceId))) {
-      return NextResponse.json({ error: 'يرجى اختيار التصنيف لنطاق التصنيف.' }, { status: 400 });
-    }
-    if (Number.isNaN(rate) || rate < 0 || rate > 1) {
-      return NextResponse.json({ error: 'نسبة العمولة يجب أن تكون بين 0 و1 (مثلاً 0.08 لـ 8%).' }, { status: 400 });
+    const normalized = {
+      seller_id: raw.seller_id,
+      scope: raw.scope ?? 'global',
+      reference_id: raw.scope === 'category' ? raw.reference_id : null,
+      rate: typeof raw.rate === 'string' ? Number(raw.rate) : raw.rate,
+      effective_from: raw.effective_from || undefined,
+      effective_to: raw.effective_to || null,
+    };
+
+    const parsed = bodySchema.safeParse(normalized);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'بيانات استثناء العمولة غير صالحة (المسموح: global أو category مع تصنيف صالح ونسبة بين 0 و1).' },
+        { status: 400 },
+      );
     }
 
     const db = await createClient();
+    const insertRow = {
+      seller_id: parsed.data.seller_id,
+      scope: parsed.data.scope,
+      reference_id: parsed.data.scope === 'category' ? parsed.data.reference_id : null,
+      rate: parsed.data.rate,
+      ...(parsed.data.effective_from ? { effective_from: parsed.data.effective_from } : {}),
+      effective_to: parsed.data.effective_to ?? null,
+    };
+
     const { data, error } = await db
       .from('seller_commissions')
-      .insert({
-        seller_id: sellerId,
-        scope: scope as any,
-        reference_id: scope === 'category' ? referenceId : null,
-        rate,
-        effective_to: effectiveTo || null,
-      })
+      .insert(insertRow)
       .select('id')
       .single();
 
-    if (error) return NextResponse.json({ error: publicError(error) }, { status: 400 });
+    if (error) return NextResponse.json({ error: publicError(error, 'REQUEST_FAILED', 'api/admin/commissions:POST') }, { status: 400 });
+
+    await logAudit({
+      action: 'commission.override_created',
+      entityType: 'seller_commissions',
+      entityId: data.id,
+      after: insertRow,
+      required: true,
+    });
+
     return NextResponse.json({ ok: true, id: data.id }, { status: 201 });
   } catch (e: any) {
-    return NextResponse.json({ error: publicError(e) }, { status: 403 });
+    return NextResponse.json({ error: publicError(e, 'REQUEST_FAILED', 'api/admin/commissions:POST') }, { status: 403 });
   }
 }

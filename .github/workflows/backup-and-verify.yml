@@ -17,9 +17,17 @@ on:
         default: false
         type: boolean
 
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-and-verify
+  cancel-in-progress: false
+
 jobs:
   backup-and-verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       verify_postgres:
         image: postgres:17
@@ -39,18 +47,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: pnpm
 
-      - name: Install PostgreSQL client tools
+      - name: Install PostgreSQL 17 client tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-client
+          sudo apt-get install -y postgresql-client-17 || sudo apt-get install -y postgresql-client
+          pg_dump --version
 
-      - name: Install Supabase JS client
-        run: npm install --no-save @supabase/supabase-js
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile --prod
 
       - name: Run backup & restore verification
         env:

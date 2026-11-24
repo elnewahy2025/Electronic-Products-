@@ -29,8 +29,10 @@ export async function GET() {
 }
 
 function csvEscape(v: string): string {
-  if (v.includes(',') || v.includes('"') || v.includes('\n')) {
-    return `"${v.replace(/"/g, '""')}"`;
+  // Neutralize spreadsheet formula injection (=, +, -, @, tab, CR)
+  const safe = /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
+  if (safe.includes(',') || safe.includes('"') || safe.includes('\n') || safe.includes('\r')) {
+    return `"${safe.replace(/"/g, '""')}"`;
   }
-  return v;
+  return safe;
 }

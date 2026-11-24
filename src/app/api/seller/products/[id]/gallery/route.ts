@@ -4,6 +4,7 @@ import { revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { requireUser } from '@/lib/auth/session';
 import {
+  MAX_IMAGE_BYTES,
   processAndUploadProductImage,
   deleteProductImageFromStorage,
 } from '@/lib/server/services/product-image-service';
@@ -34,10 +35,18 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
       return NextResponse.json({ error: 'gallery_limit_reached' }, { status: 409 });
     }
 
+    const contentLength = Number(req.headers.get('content-length') ?? '0');
+    if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES + 256 * 1024) {
+      return NextResponse.json({ error: 'image_too_large' }, { status: 413 });
+    }
+
     const formData = await req.formData().catch(() => null);
     const file = formData?.get('file');
     if (!(file instanceof File)) {
       return NextResponse.json({ error: 'file_required' }, { status: 400 });
+    }
+    if (file.size <= 0 || file.size > MAX_IMAGE_BYTES) {
+      return NextResponse.json({ error: 'image_too_large' }, { status: 413 });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());

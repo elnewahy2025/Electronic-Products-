@@ -338,4 +338,66 @@ test.describe('MEDIUM Security Fixes (#5-#15)', () => {
     });
     expect(error).toBeNull();
   });
+
+  test('070 (M-10 & M-11): support.write separates ticket updates + immutable ticket fields + create_purchase_request PostgREST denial', async () => {
+    const buyer = await createTestUser({ accountType: 'buyer', mfaEnabled: false });
+    const staffReadOnly = await createTestUser({ accountType: 'staff', roleCode: 'staff', mfaEnabled: false });
+    const admin = await createTestUser({ accountType: 'staff', roleCode: 'admin', mfaEnabled: false });
+
+    const { data: ticket } = await adminDb
+      .from('support_tickets')
+      .insert({
+        owner_id: buyer.id,
+        subject: 'Immutable Ticket Subject',
+        status: 'open',
+      })
+      .select('id')
+      .single();
+    expect(ticket?.id).toBeTruthy();
+
+    const buyerJwt = await signInForJwt(buyer.email, buyer.password);
+    const staffJwt = await signInForJwt(staffReadOnly.email, staffReadOnly.password);
+    const adminJwt = await signInForJwt(admin.email, admin.password);
+
+    // 1. Read-only support staff (`support.read` only) cannot close ticket
+    const staffPatch = await restAsJwt(`/rest/v1/support_tickets?id=eq.${ticket!.id}`, staffJwt, {
+      method: 'PATCH',
+      prefer: 'return=representation',
+      body: { status: 'closed' },
+    });
+    expect(Array.isArray(staffPatch.json) ? staffPatch.json.length : 0).toBe(0);
+
+    // 2. Admin (`support.write`) CAN update status, but CANNOT rewrite owner_id or subject
+    const adminClose = await restAsJwt(`/rest/v1/support_tickets?id=eq.${ticket!.id}`, adminJwt, {
+      method: 'PATCH',
+      prefer: 'return=representation',
+      body: { status: 'closed' },
+    });
+    expect(adminClose.status).toBe(200);
+    expect(adminClose.json?.[0]?.status).toBe('closed');
+
+    const adminRewriteSubject = await restAsJwt(`/rest/v1/support_tickets?id=eq.${ticket!.id}`, adminJwt, {
+      method: 'PATCH',
+      prefer: 'return=representation',
+      body: { subject: 'Tampered Subject' },
+    });
+    expect(adminRewriteSubject.status).toBeGreaterThanOrEqual(400);
+    expect(adminRewriteSubject.json?.code).toBe('42501');
+
+    // 3. M-11: Buyer / anon cannot call create_purchase_request directly via PostgREST
+    const directPr = await restAsJwt('/rest/v1/rpc/create_purchase_request', buyerJwt, {
+      method: 'POST',
+      body: {
+        p_product_id: '00000000-0000-0000-0000-000000000000',
+        p_email: buyer.email,
+        p_phone: '+201000000000',
+        p_full_name: 'Spoofer',
+        p_notes: null,
+        p_access_token_hash: null,
+        p_ip: '203.0.113.99',
+        p_user_agent: 'curl',
+      },
+    });
+    expect(directPr.status).toBeGreaterThanOrEqual(400);
+  });
 });

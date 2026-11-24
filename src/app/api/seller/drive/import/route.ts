@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { publicError } from '@/lib/api/errors';
+import { logServerError, publicError } from '@/lib/api/errors';
 import { requireUser } from '@/lib/auth/session';
 import { importDriveFiles } from '@/lib/server/services/upload-service';
 import { processPendingScans } from '@/lib/server/services/scan-service';
@@ -65,10 +65,15 @@ export async function POST(req: NextRequest) {
 
       const importedCount = results.filter(r => r.status === 'imported').length;
       if (importedCount > 0) {
-        // Kick off real magic-byte scan AND preview generation so imported files become ready immediately
-        void processPendingScans(Math.min(importedCount, 5))
-          .then(() => processPendingPreviews(Math.min(importedCount, 5)))
-          .catch(() => {});
+        const batch = Math.min(importedCount, 5);
+        after(async () => {
+          try {
+            await processPendingScans(batch);
+            await processPendingPreviews(batch);
+          } catch (err) {
+            logServerError('api/seller/drive/import:post-process', err);
+          }
+        });
       }
 
       return NextResponse.json({ results });

@@ -80,6 +80,11 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
   const { data: { user } } = await db.auth.getUser();
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
+  // M-10: require explicit `support.write` permission (not `support.read`)
+  if (!(await can('support.write'))) {
+    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+  }
+
   const body = await req.json().catch(() => null);
   const status = String(body?.status ?? '');
   if (!['open', 'pending', 'closed'].includes(status)) {
@@ -91,6 +96,6 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
     .update({ status: status as any })
     .eq('id', params.id);
 
-  if (error) return NextResponse.json({ error: publicError(error) }, { status: 403 });
+  if (error) return NextResponse.json({ error: publicError(error, 'REQUEST_FAILED', 'api/support/tickets/[id]:PATCH') }, { status: 403 });
   return NextResponse.json({ ok: true, status });
 }

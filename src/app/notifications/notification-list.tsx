@@ -77,8 +77,13 @@ export function NotificationList({ initial }: { initial: Notification[] }) {
         const category = CATEGORY_LABEL[n.category] ?? n.category;
         const color = CATEGORY_COLOR[n.category] ?? 'bg-gray-100 text-gray-800';
 
+        const safeLink =
+          typeof n.link === 'string' && n.link.startsWith('/') && !n.link.startsWith('//')
+            ? n.link
+            : null;
+
         const content = (
-          <div className={`p-4 flex items-start gap-3 transition ${unread ? 'bg-primary/5' : ''} ${n.link ? 'hover:bg-muted/40 cursor-pointer' : ''}`}>
+          <div className={`p-4 flex items-start gap-3 transition ${unread ? 'bg-primary/5' : ''} ${safeLink ? 'hover:bg-muted/40 cursor-pointer' : ''}`}>
             <div className="mt-1">
               {unread
                 ? <span className="inline-block w-2 h-2 bg-primary rounded-full" />
@@ -92,12 +97,12 @@ export function NotificationList({ initial }: { initial: Notification[] }) {
               {n.body && <p className="text-sm text-muted-foreground whitespace-pre-wrap">{n.body}</p>}
               <p className="text-xs text-muted-foreground mt-2">{formatRelative(n.created_at)}</p>
             </div>
-            {n.link && <span className="text-muted-foreground text-sm shrink-0">←</span>}
+            {safeLink && <span className="text-muted-foreground text-sm shrink-0">←</span>}
           </div>
         );
 
-        return n.link ? (
-          <Link key={n.id} href={n.link} onClick={() => handleClick(n)} className="block">{content}</Link>
+        return safeLink ? (
+          <Link key={n.id} href={safeLink} onClick={() => handleClick(n)} className="block">{content}</Link>
         ) : (
           <div key={n.id} onClick={() => handleClick(n)}>{content}</div>
         );
