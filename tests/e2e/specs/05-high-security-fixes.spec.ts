@@ -328,7 +328,7 @@ test.describe('HIGH Security Fixes (H1–H4) — Reproducible Verification', () 
     const adminJwt = await signInForJwt(admin.email, admin.password);
     const approveRes = await restAsJwt('/rest/v1/rpc/approve_seller', adminJwt, {
       method: 'POST',
-      body: { p_profile_id: pendingSeller.id },
+      body: { p_seller_id: pendingSeller.id },
     });
     expect(approveRes.status).toBeLessThan(300);
 
