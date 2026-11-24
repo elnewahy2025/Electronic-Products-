@@ -348,4 +348,308 @@ test.describe('HIGH Security Fixes (H1–H4) — Reproducible Verification', () 
     expect(healthJson?.ok).toBe(true);
     expect(healthJson?.db).toBe('up');
   });
+
+  test('064: RLS sweep blocks file_versions/file_previews/upload_sessions/drive_accounts/pvf/product_versions tampering', async () => {
+    const sellerA = await createTestUser({ accountType: 'seller', mfaEnabled: false });
+    const sellerB = await createTestUser({ accountType: 'seller', mfaEnabled: false });
+
+    await adminDb.from('seller_profiles').upsert(
+      [
+        { profile_id: sellerA.id, display_name: 'Seller A 064', status: 'approved' },
+        { profile_id: sellerB.id, display_name: 'Seller B 064', status: 'approved' },
+      ],
+      { onConflict: 'profile_id' },
+    );
+
+    const jwtA = await signInForJwt(sellerA.email, sellerA.password);
+
+    // Seed files & file_versions via adminDb (service_role)
+    const { data: fileA } = await adminDb
+      .from('files')
+      .insert({ seller_id: sellerA.id, original_name: 'a-quarantined.pdf', mime: 'application/pdf', extension: 'pdf' })
+      .select('id')
+      .single();
+    const { data: fvQuarantined } = await adminDb
+      .from('file_versions')
+      .insert({ file_id: fileA!.id, version_number: 1, size_bytes: 1024, scan_status: 'quarantined' })
+      .select('id')
+      .single();
+    const { data: fvReadyA } = await adminDb
+      .from('file_versions')
+      .insert({ file_id: fileA!.id, version_number: 2, size_bytes: 1024, scan_status: 'ready' })
+      .select('id')
+      .single();
+
+    const { data: fileB } = await adminDb
+      .from('files')
+      .insert({ seller_id: sellerB.id, original_name: 'b-secret.pdf', mime: 'application/pdf', extension: 'pdf' })
+      .select('id')
+      .single();
+    const { data: fvReadyB } = await adminDb
+      .from('file_versions')
+      .insert({ file_id: fileB!.id, version_number: 1, size_bytes: 2048, scan_status: 'ready' })
+      .select('id')
+      .single();
+
+    // 1. Negative: Seller A cannot flip quarantined file_version to ready
+    const fvPatch = await restAsJwt(`/rest/v1/file_versions?id=eq.${fvQuarantined!.id}`, jwtA, {
+      method: 'PATCH',
+      body: { scan_status: 'ready' },
+    });
+    expect(fvPatch.status).toBeGreaterThanOrEqual(400);
+
+    // 2. Negative: Seller A cannot forge file_previews, upload_sessions, or seller_drive_accounts
+    const previewIns = await restAsJwt('/rest/v1/file_previews', jwtA, {
+      method: 'POST',
+      body: { file_version_id: fvReadyA!.id, preview_type: 'image', status: 'ready' },
+    });
+    expect(previewIns.status).toBeGreaterThanOrEqual(400);
+
+    const sessionIns = await restAsJwt('/rest/v1/upload_sessions', jwtA, {
+      method: 'POST',
+      body: { seller_id: sellerA.id, provider: 'google_drive', status: 'uploading', total_bytes: 100 },
+    });
+    expect(sessionIns.status).toBeGreaterThanOrEqual(400);
+
+    const driveIns = await restAsJwt('/rest/v1/seller_drive_accounts', jwtA, {
+      method: 'POST',
+      body: { seller_id: sellerA.id, google_account_email: 'fake@example.com' },
+    });
+    expect(driveIns.status).toBeGreaterThanOrEqual(400);
+
+    // Seed a draft product + draft version for Seller A
+    const slugA = `p064-${Date.now()}`;
+    const prodIns = await restAsJwt('/rest/v1/products', jwtA, {
+      method: 'POST',
+      prefer: 'return=representation',
+      body: { seller_id: sellerA.id, title: 'Product 064', slug: slugA, price_amount: 10, price_currency: 'USD' },
+    });
+    expect(prodIns.status).toBe(201);
+    const productId = prodIns.json?.[0]?.id as string;
+
+    // 3. Negative: Seller A cannot insert product_version with status='published'
+    const pvPubIns = await restAsJwt('/rest/v1/product_versions', jwtA, {
+      method: 'POST',
+      body: { product_id: productId, version_number: 1, status: 'published' },
+    });
+    expect(pvPubIns.status).toBeGreaterThanOrEqual(400);
+
+    // Positive: Seller A CAN insert draft product_version
+    const pvDraftIns = await restAsJwt('/rest/v1/product_versions', jwtA, {
+      method: 'POST',
+      prefer: 'return=representation',
+      body: { product_id: productId, version_number: 1, status: 'draft' },
+    });
+    expect(pvDraftIns.status).toBe(201);
+    const versionId = pvDraftIns.json?.[0]?.id as string;
+
+    // Negative: Seller A cannot PATCH product_versions.status='published' directly
+    const pvPatch = await restAsJwt(`/rest/v1/product_versions?id=eq.${versionId}`, jwtA, {
+      method: 'PATCH',
+      body: { status: 'published' },
+    });
+    expect(pvPatch.status).toBeGreaterThanOrEqual(400);
+    expect(pvPatch.json?.code).toBe('42501');
+
+    // 4. Negative: Seller A cannot attach Seller B's file (cross-seller IDOR) or quarantined file
+    const pvfIdor = await restAsJwt('/rest/v1/product_version_files', jwtA, {
+      method: 'POST',
+      body: { product_version_id: versionId, file_version_id: fvReadyB!.id },
+    });
+    expect(pvfIdor.status).toBeGreaterThanOrEqual(400);
+
+    const pvfQuarantined = await restAsJwt('/rest/v1/product_version_files', jwtA, {
+      method: 'POST',
+      body: { product_version_id: versionId, file_version_id: fvQuarantined!.id },
+    });
+    expect(pvfQuarantined.status).toBeGreaterThanOrEqual(400);
+
+    // Positive: Seller A CAN attach their own ready file and update display_name, but cannot swap file_version_id
+    const pvfOk = await restAsJwt('/rest/v1/product_version_files', jwtA, {
+      method: 'POST',
+      prefer: 'return=representation',
+      body: { product_version_id: versionId, file_version_id: fvReadyA!.id, display_name: 'Guide.pdf' },
+    });
+    expect(pvfOk.status).toBe(201);
+    const pvfId = pvfOk.json?.[0]?.id as string;
+
+    const pvfRename = await restAsJwt(`/rest/v1/product_version_files?id=eq.${pvfId}`, jwtA, {
+      method: 'PATCH',
+      prefer: 'return=representation',
+      body: { display_name: 'Guide v2.pdf' },
+    });
+    expect(pvfRename.status).toBe(200);
+    expect(pvfRename.json?.[0]?.display_name).toBe('Guide v2.pdf');
+
+    const pvfSwap = await restAsJwt(`/rest/v1/product_version_files?id=eq.${pvfId}`, jwtA, {
+      method: 'PATCH',
+      body: { file_version_id: fvReadyB!.id },
+    });
+    expect(pvfSwap.status).toBeGreaterThanOrEqual(400);
+    expect(pvfSwap.json?.code).toBe('42501');
+  });
+
+  test('064: products trigger, reopen_product RPC, admin moderation, and suspend_seller protection', async () => {
+    const seller = await createTestUser({ accountType: 'seller', mfaEnabled: false });
+    const admin = await createTestUser({ accountType: 'staff', roleCode: 'super_admin', mfaEnabled: false });
+
+    await adminDb.from('seller_profiles').upsert(
+      { profile_id: seller.id, display_name: 'Mod Seller 064', status: 'approved' },
+      { onConflict: 'profile_id' },
+    );
+
+    const sellerJwt = await signInForJwt(seller.email, seller.password);
+    const adminJwt = await signInForJwt(admin.email, admin.password);
+
+    // 1. Negative: Seller cannot INSERT product with status='published'
+    const badProdIns = await restAsJwt('/rest/v1/products', sellerJwt, {
+      method: 'POST',
+      body: {
+        seller_id: seller.id,
+        title: 'Sneaky Published',
+        slug: `sneaky-${Date.now()}`,
+        price_amount: 10,
+        price_currency: 'USD',
+        status: 'published',
+      },
+    });
+    expect(badProdIns.status).toBeGreaterThanOrEqual(400);
+
+    // 2. Positive: Seller creates draft product, edits title, attaches ready file, publishes, pauses, and reopens
+    const prodIns = await restAsJwt('/rest/v1/products', sellerJwt, {
+      method: 'POST',
+      prefer: 'return=representation',
+      body: {
+        seller_id: seller.id,
+        title: 'Legit Product',
+        slug: `legit-${Date.now()}`,
+        price_amount: 15,
+        price_currency: 'USD',
+      },
+    });
+    expect(prodIns.status).toBe(201);
+    const productId = prodIns.json?.[0]?.id as string;
+
+    const editTitle = await restAsJwt(`/rest/v1/products?id=eq.${productId}`, sellerJwt, {
+      method: 'PATCH',
+      prefer: 'return=representation',
+      body: { title: 'Legit Product Edited' },
+    });
+    expect(editTitle.status).toBe(200);
+    expect(editTitle.json?.[0]?.title).toBe('Legit Product Edited');
+
+    // Negative: Seller cannot directly PATCH status='published'
+    const directPub = await restAsJwt(`/rest/v1/products?id=eq.${productId}`, sellerJwt, {
+      method: 'PATCH',
+      body: { status: 'published' },
+    });
+    expect(directPub.status).toBeGreaterThanOrEqual(400);
+    expect(directPub.json?.code).toBe('42501');
+
+    // Seed ready file + draft version + attach + publish via RPC
+    const { data: f } = await adminDb
+      .from('files')
+      .insert({ seller_id: seller.id, original_name: 'ok.pdf', mime: 'application/pdf', extension: 'pdf' })
+      .select('id')
+      .single();
+    const { data: fv } = await adminDb
+      .from('file_versions')
+      .insert({ file_id: f!.id, version_number: 1, size_bytes: 512, scan_status: 'ready' })
+      .select('id')
+      .single();
+    const pvIns = await restAsJwt('/rest/v1/product_versions', sellerJwt, {
+      method: 'POST',
+      prefer: 'return=representation',
+      body: { product_id: productId, version_number: 1, status: 'draft' },
+    });
+    const versionId = pvIns.json?.[0]?.id as string;
+    await restAsJwt('/rest/v1/product_version_files', sellerJwt, {
+      method: 'POST',
+      body: { product_version_id: versionId, file_version_id: fv!.id },
+    });
+
+    const pubRpc = await restAsJwt('/rest/v1/rpc/publish_product_version', sellerJwt, {
+      method: 'POST',
+      body: { p_version_id: versionId },
+    });
+    expect(pubRpc.status).toBeLessThan(300);
+
+    // Pause via unpublish_product, then reopen via reopen_product -> MUST SUCCEED
+    const pauseRpc = await restAsJwt('/rest/v1/rpc/unpublish_product', sellerJwt, {
+      method: 'POST',
+      body: { p_product_id: productId },
+    });
+    expect(pauseRpc.status).toBeLessThan(300);
+
+    const reopenOk = await restAsJwt('/rest/v1/rpc/reopen_product', sellerJwt, {
+      method: 'POST',
+      body: { p_product_id: productId },
+    });
+    expect(reopenOk.status).toBeLessThan(300);
+
+    const { data: afterReopen } = await adminDb
+      .from('products')
+      .select('status')
+      .eq('id', productId)
+      .single();
+    expect(afterReopen?.status).toBe('published');
+
+    // 3. Positive admin moderation: Admin suspends product -> Seller cannot republish or clear suspension_reason
+    const adminSuspend = await restAsJwt(`/rest/v1/products?id=eq.${productId}`, adminJwt, {
+      method: 'PATCH',
+      prefer: 'return=representation',
+      body: { status: 'suspended', suspension_reason: 'Policy check' },
+    });
+    expect(adminSuspend.status).toBe(200);
+    expect(adminSuspend.json?.[0]?.status).toBe('suspended');
+
+    const sellerRepubAfterSuspend = await restAsJwt('/rest/v1/rpc/publish_product_version', sellerJwt, {
+      method: 'POST',
+      body: { p_version_id: versionId },
+    });
+    expect(sellerRepubAfterSuspend.status).toBeGreaterThanOrEqual(400);
+    expect(sellerRepubAfterSuspend.json?.code).toBe('42501');
+
+    // 4. Positive soft-delete on a separate draft product
+    const draftProd = await restAsJwt('/rest/v1/products', sellerJwt, {
+      method: 'POST',
+      prefer: 'return=representation',
+      body: {
+        seller_id: seller.id,
+        title: 'To Soft Delete',
+        slug: `softdel-${Date.now()}`,
+        price_amount: 12,
+        price_currency: 'USD',
+      },
+    });
+    expect(draftProd.status).toBe(201);
+    const softDelId = draftProd.json?.[0]?.id as string;
+
+    const softDelRes = await restAsJwt(`/rest/v1/products?id=eq.${softDelId}`, sellerJwt, {
+      method: 'PATCH',
+      prefer: 'return=representation',
+      body: { status: 'deleted', deleted_at: new Date().toISOString() },
+    });
+    expect(softDelRes.status).toBe(200);
+    expect(softDelRes.json?.[0]?.status).toBe('deleted');
+
+    // 5. suspend_seller pauses published products with suspension_reason -> seller CANNOT reopen!
+    await adminDb
+      .from('products')
+      .update({ status: 'published', suspension_reason: null })
+      .eq('id', productId);
+
+    const suspendSellerRes = await restAsJwt('/rest/v1/rpc/suspend_seller', adminJwt, {
+      method: 'POST',
+      body: { p_seller_id: seller.id, p_reason: 'Account suspended for review' },
+    });
+    expect(suspendSellerRes.status).toBeLessThan(300);
+
+    const reopenBlocked = await restAsJwt('/rest/v1/rpc/reopen_product', sellerJwt, {
+      method: 'POST',
+      body: { p_product_id: productId },
+    });
+    expect(reopenBlocked.status).toBeGreaterThanOrEqual(400);
+    expect(reopenBlocked.json?.code).toBe('42501');
+  });
 });
