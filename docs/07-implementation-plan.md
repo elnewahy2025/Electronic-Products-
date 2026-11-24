@@ -120,10 +120,10 @@ Related cross-cutting controls already documented: append-only audit events
 
 ## 4. Pre-Deployment Checklist
 
-1. Apply all migrations **up to `062`** in order on staging and then production
+1. Apply all migrations **up to `064`** in order on staging and then production
    (`pnpm db:push` / reviewed migration workflow). Confirm the applied version by checking
-   `supabase_migrations.schema_migrations` (or the Supabase migration dashboard) rather than
-   assuming success.
+   `supabase_migrations.schema_migrations` (or `npx supabase migration list --remote`) rather than
+   assuming success. Manual rollback scripts live in `supabase/rollbacks/`.
 2. Create/verify the Supabase Storage buckets: `previews` per
    `docs/scan-preview-flow.md`, `product-images` per migration
    `034_product_images_storage.sql`, and the private `database-backups` bucket per
@@ -143,13 +143,14 @@ Related cross-cutting controls already documented: append-only audit events
    including MFA roles and the mandatory no-refund checkout statement.
 7. Obtain external legal sign-off on the DRAFT texts in `docs/legal-review-drafts.md` before
    public launch; confirm vendor limits in `docs/plan-limits.md`.
-8. Verify typechecking (`pnpm typecheck`) and all six Playwright suites (`pnpm test:e2e`):
+8. Verify typechecking (`pnpm typecheck`) and all seven Playwright suites (`pnpm test:e2e`):
    - `01-full-journey.spec.ts`
    - `02-attempts-and-compensation.spec.ts`
    - `03-security.spec.ts`
    - `04-security-hardening.spec.ts`
    - `05-high-security-fixes.spec.ts`
    - `06-medium-security-fixes.spec.ts`
+   - `07-full-roles-workflow.spec.ts`
    Also include the review-deletion ticket guards from `docs/06-testing-checklist.md` and the
    Worker tests before opening the soft launch.
 9. Execute the gate in `docs/soft-launch-plan.md` for Phase 0 before inviting sellers.
@@ -169,3 +170,5 @@ Related cross-cutting controls already documented: append-only audit events
 - [x] **Real Email Notifications + Daily Admin Digest**: Completed in migration `035_email_notifications.sql`, `email-service.ts` (`nodemailer` SMTP + Resend API), `email-cron` and `admin-digest` routes, and `docs/email-notifications.md`.
 - [x] **Seller Order Detail Page (`/seller/orders/[orderItemId]`)**: Completed in migration `036_seller_order_detail.sql` and `src/app/(seller)/seller/orders/[orderItemId]/page.tsx`, displaying `code_prefix`, snapshotted commission, and download sessions & deliveries without exposing buyer identity.
 - [x] **Automated Backups & Isolated Restore Verification**: Completed in migration `037_backup_automation.sql`, script `scripts/backup-and-verify.mjs`, GitHub Actions workflow (`.github/workflows/backup-and-verify.yml`), Vercel Cron Watchdog (`/api/internal/worker/backup-cron`), upgraded `/admin/backups`, and `docs/backups.md`.
+- [x] **Security Audit Remediation & RLS Sweep (`057`–`064`)**: Completed across migrations `057`–`064` with manual rollbacks in `supabase/rollbacks/`, covering seller self-approval protection (`063`), owner-writable RLS lockdown + `reopen_product` RPC (`064`), distributed rate limits/locks, payment attestation, atomic upload completion, and full-history `gitleaks` CI scanning.
+- [x] **Production Observability, Uptime & Bot Protection**: Completed with `GET /api/health`, structured `logServerError`, `@sentry/nextjs` with strict PII/header/cookie scrubbing + source map uploads, active Sentry Uptime Monitors (`/`, `/api/health`), Cloudflare Turnstile on auth flows, and full all-roles E2E workflow (`07-full-roles-workflow.spec.ts`) gated in CI.

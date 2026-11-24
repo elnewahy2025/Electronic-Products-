@@ -20,7 +20,8 @@ This file is the authoritative instruction manual for any AI coding agent (Antig
 - **File Storage:** Direct-to-Google-Drive Resumable Uploads (`googleapis`) per seller account (`AES-256-GCM` encrypted tokens) + Supabase Storage buckets (`product-images`, `previews`, `database-backups`)
 - **Media Processing:** `sharp` (WebP optimization, EXIF stripping, SVG watermarking, first-page cover compositing), `pdf-to-img`, `@google/genai` (optional AI cover generation)
 - **Email & Notifications:** Transactional outbox (`email_outbox`) via `nodemailer` (SMTP) or Resend API + real-time in-app `notifications`
-- **Testing:** Playwright E2E (`tests/e2e/specs/01..06`) + Cloudflare Worker Node unit tests (`workers/download`)
+- **Observability & Bot Protection:** Structured JSON `logServerError` (`src/lib/api/errors.ts`), `@sentry/nextjs` (`11.16.0`) with strict cookie/header/body/PII scrubbing (`src/lib/observability/sentry-scrub.ts`) + source maps + Sentry Uptime Monitoring (`/`, `/api/health`), and Cloudflare Turnstile (`src/components/auth/turnstile-widget.tsx`) on auth flows
+- **Testing:** Playwright E2E (`tests/e2e/specs/01..07`) + Cloudflare Worker Node unit tests (`workers/download`)
 
 ```text
 ├── AGENT.md                  # This file — AI agent rules, invariants & skills
@@ -29,7 +30,8 @@ This file is the authoritative instruction manual for any AI coding agent (Antig
 ├── docs/                     # Requirements, ERD, RLS matrix, security, performance, implementation plan
 ├── supabase/
 │   ├── config.toml           # Local Supabase configuration (project_id = "electronic-products")
-│   └── migrations/           # Ordered SQL migrations (001 through 062)
+│   ├── migrations/           # Ordered SQL migrations (001 through 064)
+│   └── rollbacks/            # Manual rollback scripts (outside supabase/migrations/)
 ├── src/
 │   ├── middleware.ts         # Per-request CSP Nonce, HSTS, security headers, route guards
 │   ├── app/
@@ -148,6 +150,7 @@ Before marking any task complete:
    - `04-security-hardening.spec.ts`
    - `05-high-security-fixes.spec.ts`
    - `06-medium-security-fixes.spec.ts`
+   - `07-full-roles-workflow.spec.ts`
 
 ---
 

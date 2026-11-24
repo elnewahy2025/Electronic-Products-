@@ -11,7 +11,8 @@ A high-security Arabic multi-vendor platform for selling and delivering digital 
   - Support for partial sessions (`ExpiredPartial`), administrative compensation sessions (up to a maximum of 3 compensation sessions per product code `code_id`), and attempt exception requests decided exclusively by `Super Admin`.
   - Complete prevention of revoking or canceling codes or sessions after delivery confirmation or download start, even by `Super Admin`.
 - **Financial Management and Multi-Currency Support:** Support for `USD, EGP, SAR, KWD` with exchange rate snapshotting strictly at the moment of purchase, seller wallets, and payout requests (with a default minimum threshold of 100 USD).
-- **Granular Permissions System and Immutable Audit Log (`Append-Only Audit Log`):** Mandatory two-factor authentication (`2FA / TOTP`) for administrative roles, comprehensive `Row-Level Security (RLS)` policies, and an audit log protected against deletion or modification.
+- **Granular Permissions System and Immutable Audit Log (`Append-Only Audit Log`):** Mandatory two-factor authentication (`2FA / TOTP`) for administrative roles, comprehensive `Row-Level Security (RLS)` policies (`001`–`064`) with column-protection triggers, **Cloudflare Turnstile** bot protection on auth flows, and an audit log protected against deletion or modification.
+- **Production Observability & Uptime Monitoring:** Structured JSON server error logging (`logServerError`), **`@sentry/nextjs`** error tracking with strict cookie/header/body/PII scrubbing (`scrubSentryEvent`) and source map uploads, a public `GET /api/health` endpoint, and active **Sentry Uptime Monitors** on `/` and `/api/health`.
 
 ## Reference Documentation (`docs/`)
 | Document | Contents |
@@ -22,7 +23,7 @@ A high-security Arabic multi-vendor platform for selling and delivering digital 
 | [`docs/04-permissions-matrix.md`](docs/04-permissions-matrix.md) | Full permissions matrix (Administration + **Download, Compensation, and Exception Flow Permissions Matrix** + Reviews) |
 | [`docs/05-audit-events.md`](docs/05-audit-events.md) | Audit log (`audit_logs`) event dictionary, protection rules, and archiving |
 | [`docs/06-testing-checklist.md`](docs/06-testing-checklist.md) | Mandatory pre-launch testing checklist |
-| [`docs/07-implementation-plan.md`](docs/07-implementation-plan.md) | Updated phased implementation plan (0–14), migration map (`001`–`062`), and remaining items |
+| [`docs/07-implementation-plan.md`](docs/07-implementation-plan.md) | Updated phased implementation plan (0–14), migration map (`001`–`064`), and remaining items |
 | [`docs/08-rls-matrix.md`](docs/08-rls-matrix.md) | Detailed `RLS` matrix for every table, safe views, triggers, and `SECURITY DEFINER` function hardening |
 | [`docs/drive-upload-flow.md`](docs/drive-upload-flow.md) | Google Drive linking flow, direct resumable upload, and quota management |
 | [`docs/scan-preview-flow.md`](docs/scan-preview-flow.md) | Automated scanning pipeline, quarantine, and watermarked preview generation |
@@ -47,13 +48,14 @@ A high-security Arabic multi-vendor platform for selling and delivering digital 
 ├── docs/                     # Requirements, ERD, permissions & RLS matrices, contracts, security, and performance docs
 ├── supabase/
 │   ├── config.toml           # Local Supabase configuration (PostgreSQL 17)
-│   └── migrations/           # Database migration files (001 to 062)
+│   ├── migrations/           # Database migration files (001 to 064)
+│   └── rollbacks/            # Manual rollback scripts (outside auto-applied migrations/)
 ├── src/
 │   ├── app/                  # Next.js App Router pages, layouts, and API Routes
-│   ├── components/           # UI components (Storefront, Buyer, Seller, Admin)
-│   └── lib/                  # Server services, authentication, encryption, and Google Drive integration
+│   ├── components/           # UI components (Storefront, Buyer, Seller, Admin, Auth/Turnstile)
+│   └── lib/                  # Server services, auth, encryption, Sentry PII scrubbing, Google Drive
 ├── workers/download/         # Independent Cloudflare Download Streaming Worker + unit tests
-└── tests/e2e/                # End-to-end Playwright tests (01 to 06)
+└── tests/e2e/                # End-to-end Playwright tests (01 to 07)
 ```
 
 ## Local Setup & Running

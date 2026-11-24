@@ -1,7 +1,7 @@
 # Security Fix Plan — Remediation Status
 
-**Repository:** `elnewahy2025/Electronic-Products-` (`main`, migrations `001`–`062`)  
-**Last Verified:** 2026-11-24 (`CI #45284742683` all 3 jobs green; `Backup & Restore Drill #45284743344` green; branch protection active on `main`)
+**Repository:** `elnewahy2025/Electronic-Products-` (`main`, migrations `001`–`064`)  
+**Last Verified:** 2026-11-24 (`CI #45397975248` all 3 jobs green including 13 E2E specs; `Backup & Restore Drill #45380769505` green; branch protection active on `main`; Sentry + Turnstile + Uptime Monitors live on production)
 
 ---
 
@@ -46,4 +46,17 @@
 | **21** | Worker CORS reflects arbitrary origins | **FIXED** | `workers/download/src/headers.ts` & `index.ts` restrict `Access-Control-Allow-Origin` to canonical `APP_INTERNAL_URL` origin and emit `Referrer-Policy: no-referrer` (deployed & verified live). |
 | **22** | Duplicate purchase-request prevention race-prone | **FIXED** | Migration `062_low_security_fixes.sql` adds `pg_advisory_xact_lock` per `(email, product_id)` inside `create_purchase_request`. |
 | **23** | CI omissions and stale tooling configuration | **FIXED** | Added Worker unit tests (`7/7` passing) to CI `verify`, removed ignored legacy `pnpm` block from `package.json`, and enabled branch protection on `main` requiring all 3 CI jobs. |
-| **24** | Backup storage/provider isolation unverified | **DEFERRED (OPS)** | Private Supabase Storage `database-backups` + live restore drill `#45284743344` are active and verified; independent Cloudflare R2 off-site mirror deferred by owner until card activation. |
+| **24** | Backup storage/provider isolation unverified | **DEFERRED (OPS)** | Private Supabase Storage `database-backups` + live restore drill `#45380769505` are active and verified; independent Cloudflare R2 off-site mirror deferred by owner until card activation. |
+
+---
+
+## Post-Audit Production Readiness Hardening (`063`–`064`, Observability & Bot Protection)
+
+| Item | Status | Implementation & Verification |
+|---|---|---|
+| **Seller Self-Approval Lock (`063`)** | **FIXED & APPLIED** | `supabase/migrations/063_protect_seller_profile_fields.sql` (+ rollback `supabase/rollbacks/063_protect_seller_profile_fields.down.sql`) adds `BEFORE UPDATE` trigger (`42501`) blocking privileged field tampering and tightens `seller_profiles_insert_self` to `status = 'pending'`. Admin guards enforce `status === 'active'`; all Drive routes enforce `accountType === 'seller'`; `getTrustedClientIp()` wired everywhere including `admin/files/[id]/delete`. |
+| **Full Owner-Writable RLS Sweep (`064`)** | **FIXED & APPLIED** | `supabase/migrations/064_rls_sweep_hardening.sql` (+ rollback `supabase/rollbacks/064_rls_sweep_hardening.down.sql`) revokes client writes on `file_versions`, `file_previews`, `upload_sessions`, and `seller_drive_accounts` (`INSERT`); blocks cross-seller IDOR and quarantined attachments on `product_version_files`; protects `product_versions` and `products` moderation/status columns; hardens `publish_product_version()`; and adds `SECURITY DEFINER` `reopen_product()` RPC preventing suspended sellers from reopening paused products. Applied to production (`001`–`064` synced) after pre-migration backup drill `#45380769505`. |
+| **Structured Error Logging + Sentry** | **LIVE & VERIFIED** | `logServerError(scope, error, meta?)` in `src/lib/api/errors.ts` emits privacy-safe JSON logs and forwards to `@sentry/nextjs` (`11.16.0`, `store-org/electronic-products`) with `scrubSentryEvent` stripping cookies, auth/secret headers, bodies, sensitive query params, and PII. `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_AUTH_TOKEN` set on Vercel Production; end-to-end error capture and source map release upload verified. |
+| **Health & Uptime Monitoring** | **LIVE & ACTIVE** | `GET /api/health` (`200 {"ok":true,"db":"up"}`, `no-store`) + 2 active Sentry Uptime Monitors (`2741453` for `/api/health`, `2741454` for `/`) polling every 5 minutes. |
+| **Cloudflare Turnstile + Supabase Auth** | **LIVE & VERIFIED** | Cloudflare Turnstile widget (`electronic-products-auth`, `managed`) wired into `/login`, `/register`, `/forgot-password`, `/api/auth/login`, `/api/auth/forgot-password`, and CSP (`src/middleware.ts`), paired with Supabase Attack Protection and live login verified. |
+| **Full All-Roles E2E Workflow in CI** | **GREEN IN CI** | `tests/e2e/specs/07-full-roles-workflow.spec.ts` added to `.github/workflows/ci.yml` — verifies Super Admin UI login + TOTP MFA → Seller approval → Seller UI login + product publish → Buyer UI login + purchase request → Admin attestation approval + code issuance → Buyer code redeem + download completion → verified review (`CI #45397975248`). |
