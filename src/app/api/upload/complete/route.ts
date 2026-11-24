@@ -1,4 +1,4 @@
-import { publicError } from '@/lib/api/errors';
+import { logServerError, publicError } from '@/lib/api/errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
@@ -30,9 +30,12 @@ export async function POST(req: NextRequest) {
     // Kick off real magic-byte scan AND watermarked preview generation immediately (cron remains as fallback)
     void processPendingScans(3)
       .then(() => processPendingPreviews(3))
-      .catch(() => {});
+      .catch((err) => logServerError('api/upload/complete:post-process', err));
     return NextResponse.json(result);
   } catch (e: any) {
-    return NextResponse.json({ error: publicError(e) }, { status: 400 });
+    return NextResponse.json(
+      { error: publicError(e, 'REQUEST_FAILED', 'api/upload/complete') },
+      { status: 400 },
+    );
   }
 }

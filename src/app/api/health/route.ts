@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { logServerError } from '@/lib/api/errors';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,7 @@ export async function GET() {
       .maybeSingle();
 
     if (error) {
+      logServerError('api/health', error, { status: 503 });
       return NextResponse.json(
         { ok: false, db: 'down', timestamp: new Date().toISOString() },
         { status: 503, headers: { 'Cache-Control': 'no-store, max-age=0' } },
@@ -27,7 +29,8 @@ export async function GET() {
       { ok: true, db: 'up', timestamp: new Date().toISOString() },
       { status: 200, headers: { 'Cache-Control': 'no-store, max-age=0' } },
     );
-  } catch {
+  } catch (e) {
+    logServerError('api/health', e, { status: 503 });
     return NextResponse.json(
       { ok: false, db: 'down', timestamp: new Date().toISOString() },
       { status: 503, headers: { 'Cache-Control': 'no-store, max-age=0' } },

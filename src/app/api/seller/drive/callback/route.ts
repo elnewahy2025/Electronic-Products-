@@ -43,7 +43,9 @@ export async function GET(req: NextRequest) {
     return res;
   } catch (e: any) {
     // Never reflect provider/PostgREST error text into a redirect URL.
-    const reason = encodeURIComponent(publicError(e, 'DRIVE_LINK_FAILED'));
+    const reason = encodeURIComponent(
+      publicError(e, 'DRIVE_LINK_FAILED', 'api/seller/drive/callback'),
+    );
     return NextResponse.redirect(`${origin}/seller/drive-accounts?error=${reason}`);
   }
 }

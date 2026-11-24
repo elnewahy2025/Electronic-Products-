@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { logServerError } from '@/lib/api/errors';
 import { hashDownloadToken, verifyDownloadToken } from '@/lib/crypto/download-token';
 import { constantTimeEqual } from '@/lib/crypto/constant-time';
 import { recordCompletion } from '@/lib/server/services/download-service';
@@ -167,6 +168,9 @@ export async function POST(req: NextRequest, props: { params: Promise<{ sessionI
     const status = code === 'SESSION_NOT_FOUND' ? 404
       : code === 'ATTEMPTS_EXHAUSTED' ? 409
       : 400;
+    if (code === 'COMPLETION_FAILED') {
+      logServerError('api/download/[sessionId]/complete', e, { status });
+    }
     return NextResponse.json({ error: code }, { status });
   }
 }

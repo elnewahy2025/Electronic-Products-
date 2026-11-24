@@ -59,6 +59,9 @@ export async function POST(req: NextRequest) {
     const status = e.message === 'duplicate_request' ? 409
                  : e.message?.startsWith('rate_limit') ? 429
                  : 400;
-    return NextResponse.json({ error: message, code: publicError(e) }, { status });
+    return NextResponse.json(
+      { error: message, code: publicError(e, 'REQUEST_FAILED', 'api/purchase-requests') },
+      { status },
+    );
   }
 }

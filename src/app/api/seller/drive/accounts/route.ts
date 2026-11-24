@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logServerError } from '@/lib/api/errors';
 import { requireUser } from '@/lib/auth/session';
 import { listDriveAccounts } from '@/lib/server/services/drive-account-service';
 
@@ -12,6 +13,9 @@ export async function GET() {
     return NextResponse.json({ accounts });
   } catch (e: any) {
     const status = e?.message === 'UNAUTHENTICATED' ? 401 : 403;
+    if (e?.message !== 'UNAUTHENTICATED' && e?.message !== 'FORBIDDEN') {
+      logServerError('api/seller/drive/accounts', e, { status });
+    }
     return NextResponse.json({ error: status === 401 ? 'UNAUTHENTICATED' : 'FORBIDDEN' }, { status });
   }
 }

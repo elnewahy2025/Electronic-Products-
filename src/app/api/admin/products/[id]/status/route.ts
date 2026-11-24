@@ -49,7 +49,12 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
       .update(patch)
       .eq('id', params.id);
 
-    if (error) return NextResponse.json({ error: publicError(error) }, { status: 400 });
+    if (error) {
+      return NextResponse.json(
+        { error: publicError(error, 'REQUEST_FAILED', 'api/admin/products/[id]/status') },
+        { status: 400 },
+      );
+    }
 
     await logAudit({
       action: status === 'suspended' ? 'product.suspended' : status === 'rejected' ? 'product.rejected' : 'product.published',
@@ -65,6 +70,9 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     const code = e.message === 'FORBIDDEN' ? 403 : e.message === 'UNAUTHENTICATED' ? 401 : 400;
-    return NextResponse.json({ error: publicError(e) }, { status: code });
+    return NextResponse.json(
+      { error: publicError(e, 'REQUEST_FAILED', 'api/admin/products/[id]/status') },
+      { status: code },
+    );
   }
 }

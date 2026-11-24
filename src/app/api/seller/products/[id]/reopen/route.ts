@@ -15,12 +15,18 @@ export async function POST(_req: NextRequest, props: { params: Promise<{ id: str
     const { error } = await db.rpc('reopen_product', { p_product_id: params.id });
     if (error) {
       const status = error.code === '42501' ? 403 : 400;
-      return NextResponse.json({ error: publicError(error) }, { status });
+      return NextResponse.json(
+        { error: publicError(error, 'REQUEST_FAILED', 'api/seller/products/[id]/reopen') },
+        { status },
+      );
     }
     revalidateTag('storefront-products');
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     const status = e.message === 'UNAUTHENTICATED' ? 401 : e.message === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ error: publicError(e) }, { status });
+    return NextResponse.json(
+      { error: publicError(e, 'REQUEST_FAILED', 'api/seller/products/[id]/reopen') },
+      { status },
+    );
   }
 }

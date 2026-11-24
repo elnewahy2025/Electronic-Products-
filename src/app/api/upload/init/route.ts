@@ -42,6 +42,9 @@ export async function POST(req: NextRequest) {
                 : e.message === 'DRIVE_QUOTA_EXCEEDED' ? 507
                 : e.message === 'NO_DRIVE_ACCOUNT' || e.message === 'no_drive_account_available' ? 409
                 : 400;
-    return NextResponse.json({ error: publicError(e) }, { status });
+    return NextResponse.json(
+      { error: publicError(e, 'REQUEST_FAILED', 'api/upload/init') },
+      { status },
+    );
   }
 }
