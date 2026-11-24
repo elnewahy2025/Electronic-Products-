@@ -3,12 +3,16 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { TurnstileWidget, isTurnstileEnabled } from '@/components/auth/turnstile-widget';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const turnstileEnabled = isTurnstileEnabled();
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawNext = searchParams.get('next') ?? '/';
@@ -25,12 +29,14 @@ export default function LoginPage() {
       body: JSON.stringify({
         email: email.trim(),
         password,
+        ...(captchaToken ? { captchaToken } : {}),
       }),
     }).catch(() => null);
 
     const payload = res ? await res.json().catch(() => null) : null;
     if (!res || !res.ok) {
       setBusy(false);
+      setCaptchaReset((n) => n + 1);
       setError(payload?.error ?? 'بيانات الدخول غير صحيحة.');
       return;
     }
@@ -116,11 +122,13 @@ export default function LoginPage() {
           />
         </div>
 
+        <TurnstileWidget action="login" onToken={setCaptchaToken} resetKey={captchaReset} />
+
         {error && <p className="text-red-600 text-sm">{error}</p>}
 
         <button
           type="submit"
-          disabled={busy}
+          disabled={busy || (turnstileEnabled && !captchaToken)}
           className="w-full bg-primary text-primary-foreground rounded p-2.5 font-medium disabled:opacity-50"
         >
           {busy ? 'جارٍ الدخول...' : 'دخول'}

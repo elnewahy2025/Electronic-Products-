@@ -36,10 +36,11 @@ function sentryOrigin(): string | null {
   }
 }
 
-function appendConnectSrc(csp: string, origin: string): string {
-  return csp.replace(/connect-src ([^;]*)/, (_match: string, sources: string) => {
-    if (sources.split(/\s+/).includes(origin)) return `connect-src ${sources}`;
-    return `connect-src ${sources} ${origin}`;
+function appendDirectiveSrc(csp: string, directive: string, origin: string): string {
+  const re = new RegExp(`${directive} ([^;]*)`);
+  return csp.replace(re, (_match: string, sources: string) => {
+    if (sources.split(/\s+/).includes(origin)) return `${directive} ${sources}`;
+    return `${directive} ${sources} ${origin}`;
   });
 }
 
@@ -55,7 +56,12 @@ export async function middleware(request: NextRequest) {
   }
   const sentry = sentryOrigin();
   if (sentry) {
-    patched = appendConnectSrc(patched, sentry);
+    patched = appendDirectiveSrc(patched, 'connect-src', sentry);
+  }
+  if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
+    patched = appendDirectiveSrc(patched, 'script-src', 'https://challenges.cloudflare.com');
+    patched = appendDirectiveSrc(patched, 'frame-src', 'https://challenges.cloudflare.com');
+    patched = appendDirectiveSrc(patched, 'connect-src', 'https://challenges.cloudflare.com');
   }
 
   if (patched !== csp) response.headers.set('content-security-policy', patched);

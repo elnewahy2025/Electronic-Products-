@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { TurnstileWidget, isTurnstileEnabled } from '@/components/auth/turnstile-widget';
 
 export default function RegisterPage() {
   const searchParams = useSearchParams();
@@ -13,9 +14,12 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [asSeller, setAsSeller] = useState(defaultAsSeller);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const turnstileEnabled = isTurnstileEnabled();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,6 +30,7 @@ export default function RegisterPage() {
       email: email.trim(),
       password,
       options: {
+        ...(captchaToken ? { captchaToken } : {}),
         data: {
           full_name: fullName.trim(),
           phone: phone.trim(),
@@ -36,6 +41,7 @@ export default function RegisterPage() {
     setBusy(false);
 
     if (signUpError) {
+      setCaptchaReset((n) => n + 1);
       setError(signUpError.message);
       return;
     }
@@ -130,11 +136,13 @@ export default function RegisterPage() {
           <span>التسجيل كبائع (يتطلب اعتماد الإدارة وربط Google Drive)</span>
         </label>
 
+        <TurnstileWidget action="signup" onToken={setCaptchaToken} resetKey={captchaReset} />
+
         {error && <p className="text-red-600 text-sm">{error}</p>}
 
         <button
           type="submit"
-          disabled={busy}
+          disabled={busy || (turnstileEnabled && !captchaToken)}
           className="w-full bg-primary text-primary-foreground rounded p-2.5 font-medium disabled:opacity-50"
         >
           {busy ? 'جارٍ الإنشاء...' : 'إنشاء الحساب'}

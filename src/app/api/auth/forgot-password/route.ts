@@ -12,6 +12,7 @@ import {
 
 const bodySchema = z.object({
   email: z.string().trim().email().max(320),
+  captchaToken: z.string().min(1).max(2048).optional(),
 });
 
 function hashIdentifier(value: string): string {
@@ -87,6 +88,7 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${appOrigin}/auth/callback?next=/reset-password`,
+    ...(parsed.data.captchaToken ? { captchaToken: parsed.data.captchaToken } : {}),
   });
 
   if (resetErr) {

@@ -2,12 +2,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { TurnstileWidget, isTurnstileEnabled } from '@/components/auth/turnstile-widget';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const turnstileEnabled = isTurnstileEnabled();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -16,11 +20,15 @@ export default function ForgotPasswordPage() {
     const res = await fetch('/api/auth/forgot-password', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: email.trim() }),
+      body: JSON.stringify({
+        email: email.trim(),
+        ...(captchaToken ? { captchaToken } : {}),
+      }),
     }).catch(() => null);
     const payload = res ? await res.json().catch(() => null) : null;
     setBusy(false);
     if (!res || !res.ok) {
+      setCaptchaReset((n) => n + 1);
       setError(payload?.error ?? 'تعذّر إرسال رابط الاستعادة حالياً. يرجى المحاولة لاحقاً.');
       return;
     }
@@ -72,11 +80,13 @@ export default function ForgotPasswordPage() {
             />
           </div>
 
+          <TurnstileWidget action="forgot_password" onToken={setCaptchaToken} resetKey={captchaReset} />
+
           {error && <p className="text-xs text-destructive">{error}</p>}
 
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || (turnstileEnabled && !captchaToken)}
             className="w-full rounded-lg bg-primary text-primary-foreground py-2.5 text-sm font-medium hover:bg-primary/90 active:scale-[0.98] transition disabled:opacity-50"
           >
             {busy ? 'جارٍ الإرسال...' : 'إرسال رابط الاستعادة'}

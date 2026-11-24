@@ -15,6 +15,7 @@ import { MFA_COOKIE, clearMfaCookieOptions } from '@/lib/auth/mfa-session';
 const bodySchema = z.object({
   email: z.string().trim().email().max(320),
   password: z.string().min(1).max(256),
+  captchaToken: z.string().min(1).max(2048).optional(),
 });
 
 function hashIdentifier(value: string): string {
@@ -89,6 +90,7 @@ export async function POST(req: NextRequest) {
   const { data, error: signInError } = await supabase.auth.signInWithPassword({
     email,
     password: parsed.data.password,
+    ...(parsed.data.captchaToken ? { options: { captchaToken: parsed.data.captchaToken } } : {}),
   });
 
   if (signInError || !data.user) {
