@@ -100,7 +100,7 @@ jobs:
       - name: Regenerate DB types and check drift
         run: |
           set -euo pipefail
-          pnpm db:types
+          supabase gen types typescript --local > src/lib/types/database.ts
           pnpm lint:db-types
           git diff --exit-code -- src/lib/types/database.ts
 
