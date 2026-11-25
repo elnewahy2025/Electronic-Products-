@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -20,6 +20,22 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const turnstileEnabled = isTurnstileEnabled();
+
+  useEffect(() => {
+    if (!defaultAsSeller) return;
+    let active = true;
+    createClient()
+      .auth.getUser()
+      .then(({ data: { user } }) => {
+        if (active && user) {
+          router.replace('/seller/apply');
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [defaultAsSeller, router]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -1,14 +1,28 @@
 import Link from 'next/link';
 import { getBuyerStats, listBuyerSessions, listBuyerOrders } from '@/lib/server/services/buyer-service';
+import { getCurrentUser } from '@/lib/auth/session';
+import { createClient } from '@/lib/supabase/server';
 import { StatusBadge } from '@/components/buyer/status-badge';
 import { Countdown } from '@/components/buyer/countdown';
 
 export default async function AccountHome() {
-  const [stats, sessions, orders] = await Promise.all([
+  const [stats, sessions, orders, user] = await Promise.all([
     getBuyerStats(),
     listBuyerSessions('active'),
     listBuyerOrders(),
+    getCurrentUser(),
   ]);
+
+  let sellerStatus: string | null = null;
+  if (user && user.accountType !== 'staff') {
+    const db = await createClient();
+    const { data: sp } = await db
+      .from('seller_profiles')
+      .select('status')
+      .eq('profile_id', user.id)
+      .maybeSingle();
+    sellerStatus = sp?.status ?? null;
+  }
 
   const recent = orders.slice(0, 5);
   const nextSession = sessions[0] ?? null;
@@ -61,6 +75,29 @@ export default async function AccountHome() {
             className="rounded-[9px] bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-95 transition whitespace-nowrap"
           >
             نزّل ملفاتك الآن
+          </Link>
+        </section>
+      )}
+
+      {user && user.accountType !== 'staff' && sellerStatus !== 'approved' && (
+        <section className="ui-box p-4 sm:p-5 flex items-center justify-between gap-4 flex-wrap">
+          <div className="min-w-0 space-y-0.5">
+            <p className="font-bold text-sm text-foreground">
+              {sellerStatus === 'pending'
+                ? 'طلب انضمامك كبائع قيد المراجعة'
+                : 'هل لديك منتجات رقمية تود بيعها؟'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {sellerStatus === 'pending'
+                ? 'سيراجع فريق الإدارة طلبك ويصلك إشعار فور الاعتماد.'
+                : 'قدّم طلب الانضمام كبائع من نفس حسابك دون إنشاء حساب جديد.'}
+            </p>
+          </div>
+          <Link
+            href={sellerStatus ? '/seller/pending' : '/seller/apply'}
+            className="rounded-[9px] border border-primary text-primary px-4 py-2 text-sm font-semibold hover:bg-primary/5 transition whitespace-nowrap"
+          >
+            {sellerStatus ? 'متابعة حالة الطلب' : 'التقديم كبائع'}
           </Link>
         </section>
       )}

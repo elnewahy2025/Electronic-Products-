@@ -37,7 +37,7 @@ export default async function SellerDetailPage(props: { params: Promise<{ id: st
       <div>
         <h1 className="text-2xl font-bold">{seller.display_name}</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          {seller.profiles.email} — {seller.profiles.phone ?? 'لا يوجد هاتف'}
+          {seller.profiles?.email ?? '—'} — {seller.profiles?.phone ?? 'لا يوجد هاتف'}
         </p>
         <p className="mt-2">
           الحالة: <b>{STATUS_LABELS[seller.status]}</b>

@@ -266,7 +266,11 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    if (isSellerRoute && !pathname.startsWith('/seller/pending')) {
+    if (
+      isSellerRoute &&
+      !pathname.startsWith('/seller/pending') &&
+      !pathname.startsWith('/seller/apply')
+    ) {
       const { data: seller } = await supabase
         .from('seller_profiles')
         .select('status')
@@ -275,7 +279,7 @@ export async function middleware(request: NextRequest) {
 
       if (!seller || seller.status !== 'approved') {
         const url = request.nextUrl.clone();
-        url.pathname = seller ? '/seller/pending' : '/';
+        url.pathname = seller ? '/seller/pending' : '/seller/apply';
         return redirectWithCsp(url, csp);
       }
     }

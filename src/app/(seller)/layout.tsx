@@ -20,7 +20,7 @@ export default async function SellerLayout({ children }: { children: React.React
     .eq('profile_id', user.id)
     .maybeSingle();
 
-  if (!seller) redirect('/register?as=seller');
+  if (!seller) redirect('/seller/apply');
   if (seller.status !== 'approved') redirect('/seller/pending');
 
   return (

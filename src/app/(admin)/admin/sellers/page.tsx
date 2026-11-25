@@ -24,7 +24,7 @@ export default async function SellersListPage(
 
   if (searchParams.status) q = q.eq('status', searchParams.status as Enums<'seller_status_enum'>);
 
-  const { data } = await q;
+  const { data, error } = await q;
 
   return (
     <main className="p-6">
@@ -44,6 +44,12 @@ export default async function SellersListPage(
         </div>
       </div>
 
+      {error && (
+        <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          تعذر تحميل قائمة البائعين. تحقق من الصلاحيات وحاول مجدداً.
+        </div>
+      )}
+
       <div className="border rounded overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted">
@@ -60,8 +66,8 @@ export default async function SellersListPage(
             {(data ?? []).map((row: any) => (
               <tr key={row.profile_id} className="border-t">
                 <td className="p-3">{row.display_name}</td>
-                <td className="p-3">{row.profiles.email}</td>
-                <td className="p-3">{row.profiles.phone ?? '—'}</td>
+                <td className="p-3">{row.profiles?.email ?? '—'}</td>
+                <td className="p-3">{row.profiles?.phone ?? '—'}</td>
                 <td className="p-3">
                   <span className={`text-xs px-2 py-0.5 rounded ${
                     row.status === 'approved' ? 'bg-green-100 text-green-800'

@@ -14,7 +14,7 @@ export default async function PendingSellerPage() {
     .eq('profile_id', user.id)
     .maybeSingle();
 
-  if (!seller) redirect('/register?as=seller');
+  if (!seller) redirect('/seller/apply');
   if (seller.status === 'approved') redirect('/seller');
 
   return (
