@@ -2900,6 +2900,9 @@ isOneToOne: false
 "buyer_owns_session":
 { Args: { "p_session_id": string }; Returns: boolean
                            },
+"buyer_purchased_product":
+{ Args: { "p_product_id": string }; Returns: boolean
+                           },
 "can_current_user_review":
 { Args: { "p_product_id": string }; Returns: {
               "can_review": boolean,"order_item_id": string,"reason": string
@@ -3065,7 +3068,7 @@ isOneToOne: false
 { Args: { "p_original_code_id": string,"p_pepper": string,"p_reason": string }; Returns: string
                            },
 "log_audit":
-{ Args: { "p_action": string,"p_after"?: Json,"p_before"?: Json,"p_entity_id"?: string,"p_entity_type"?: string,"p_ip"?: unknown,"p_reason"?: string,"p_request_id"?: string,"p_user_agent"?: string }; Returns: undefined
+{ Args: { "p_action": string,"p_actor_id"?: string,"p_after"?: Json,"p_before"?: Json,"p_entity_id"?: string,"p_entity_type"?: string,"p_ip"?: unknown,"p_reason"?: string,"p_request_id"?: string,"p_user_agent"?: string }; Returns: undefined
                            },
 "log_redeem_attempt":
 { Args: { "p_code_hash_prefix"?: string,"p_email": string,"p_ip": unknown,"p_reason"?: string,"p_result": string,"p_user_id": string }; Returns: undefined
@@ -3214,12 +3217,6 @@ isOneToOne: false
                            },
 "set_category_parent":
 { Args: { "p_category_id": string,"p_parent_id": string }; Returns: undefined
-                           },
-"show_limit":
-{ Args: Record<PropertyKey, never>; Returns: number
-                           },
-"show_trgm":
-{ Args: { "": string }; Returns: (string)[]
                            },
 "staff_has":
 { Args: { "perm": string }; Returns: boolean

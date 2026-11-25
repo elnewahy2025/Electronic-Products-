@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { adminDb, anonDb, createTestUser, cleanupTestData } from '../helpers/db';
+import {
+  adminDb,
+  anonDb,
+  createTestUser,
+  createSeller,
+  createCategory,
+  seedProductWithFiles,
+  cleanupTestData,
+} from '../helpers/db';
 
 const SUPABASE_URL = process.env.TEST_SUPABASE_URL!;
 const ANON_KEY = process.env.TEST_SUPABASE_ANON_KEY!;
@@ -399,5 +407,157 @@ test.describe('MEDIUM Security Fixes (#5-#15)', () => {
       },
     });
     expect(directPr.status).toBeGreaterThanOrEqual(400);
+  });
+
+  test('071: security_invoker views + internal SECURITY DEFINER RPC lockdown + bucket listing block', async () => {
+    const buyerA = await createTestUser({ accountType: 'buyer', mfaEnabled: false });
+    const buyerB = await createTestUser({ accountType: 'buyer', mfaEnabled: false });
+    const seller = await createSeller();
+    const category = await createCategory();
+    const product = await seedProductWithFiles({
+      sellerId: seller.sellerId,
+      categoryId: category.id,
+    });
+
+    // Seed a guest order matching buyerA's verified email (buyer_id = NULL)
+    const { data: guestPr } = await adminDb
+      .from('purchase_requests')
+      .insert({
+        buyer_id: null,
+        status: 'approved',
+        total_amount: 45,
+        currency: 'USD',
+        amount_in_usd: 45,
+        exchange_rate_at_purchase: 1,
+        customer_email: buyerA.email,
+        customer_phone: '+201000000000',
+      })
+      .select('id')
+      .single();
+    expect(guestPr?.id).toBeTruthy();
+
+    const { data: guestOrder } = await adminDb
+      .from('orders')
+      .insert({
+        purchase_request_id: guestPr!.id,
+        buyer_id: null,
+        status: 'created',
+        total_amount: 45,
+        currency: 'USD',
+        amount_in_usd: 45,
+        exchange_rate_at_purchase: 1,
+      })
+      .select('id')
+      .single();
+    expect(guestOrder?.id).toBeTruthy();
+
+    await adminDb.from('order_items').insert({
+      order_id: guestOrder!.id,
+      product_id: product.id,
+      product_version_id: product.versionId,
+      price: 45,
+      currency: 'USD',
+      commission_rate_at_sale: 0.1,
+      commission_amount: 4.5,
+      net_seller_amount: 40.5,
+    });
+
+    const buyerAJwt = await signInForJwt(buyerA.email, buyerA.password);
+    const buyerBJwt = await signInForJwt(buyerB.email, buyerB.password);
+    const anonKey = process.env.TEST_SUPABASE_ANON_KEY!;
+    const supaUrl = process.env.TEST_SUPABASE_URL!;
+
+    // 1. `anon` cannot query private `buyer_orders_view`, while `storefront_products` works
+    const anonBuyerView = await fetch(`${supaUrl}/rest/v1/buyer_orders_view?select=*`, {
+      headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+    });
+    expect(anonBuyerView.status).toBeGreaterThanOrEqual(400);
+
+    const anonStorefront = await fetch(`${supaUrl}/rest/v1/storefront_products?select=id&limit=1`, {
+      headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+    });
+    expect(anonStorefront.status).toBe(200);
+
+    // 2. Under `security_invoker = true`, Buyer A sees their verified-email guest order + joined `order_id`; Buyer B sees 0 rows
+    const aOrders = await restAsJwt(`/rest/v1/buyer_orders_view?purchase_request_id=eq.${guestPr!.id}`, buyerAJwt);
+    expect(aOrders.status).toBe(200);
+    expect(aOrders.json?.length).toBe(1);
+    expect(aOrders.json?.[0]?.order_id).toBe(guestOrder!.id);
+
+    const bOrders = await restAsJwt(`/rest/v1/buyer_orders_view?purchase_request_id=eq.${guestPr!.id}`, buyerBJwt);
+    expect(bOrders.status).toBe(200);
+    expect(bOrders.json?.length).toBe(0);
+
+    // 3. Internal / service_role RPCs reject both `anon` and `authenticated` callers
+    const lockedRpcs: Array<{ name: string; body: Record<string, unknown> }> = [
+      {
+        name: 'credit_seller_wallet_for_order_item',
+        body: {
+          p_order_item_id: '00000000-0000-0000-0000-000000000000',
+          p_seller_id: seller.sellerId,
+          p_gross: 1000,
+          p_commission: 0,
+          p_net: 1000,
+          p_currency: 'USD',
+        },
+      },
+      { name: 'claim_email_outbox', body: { p_limit: 5 } },
+      {
+        name: 'enqueue_email',
+        body: { p_to_email: 'victim@test.local', p_subject: 'spoof', p_text_body: 'spoof' },
+      },
+      { name: 'consume_plaintext_handoff', body: { p_code_id: '00000000-0000-0000-0000-000000000000' } },
+      { name: 'log_audit', body: { p_action: 'spoofed.audit' } },
+      {
+        name: 'update_drive_quota',
+        body: { p_account_id: '00000000-0000-0000-0000-000000000000', p_total: 100, p_used: 99 },
+      },
+      { name: 'claim_download_token', body: { p_token_hash: '0'.repeat(64) } },
+    ];
+
+    for (const rpc of lockedRpcs) {
+      const asBuyer = await restAsJwt(`/rest/v1/rpc/${rpc.name}`, buyerAJwt, {
+        method: 'POST',
+        body: rpc.body,
+      });
+      expect(asBuyer.status, `authenticated should be denied ${rpc.name}`).toBeGreaterThanOrEqual(400);
+
+      const asAnon = await fetch(`${supaUrl}/rest/v1/rpc/${rpc.name}`, {
+        method: 'POST',
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(rpc.body),
+      });
+      expect(asAnon.status, `anon should be denied ${rpc.name}`).toBeGreaterThanOrEqual(400);
+    }
+
+    // 4. `product-images` public URL fetch works while anonymous bucket listing returns 0 items
+    const testPath = `e2e-check/${Date.now()}.webp`;
+    await adminDb.storage
+      .from('product-images')
+      .upload(testPath, Buffer.from('RIFF\x1a\x00\x00\x00WEBPVP8 \x0e\x00\x00\x000\x01\x00\x9d\x01*\x01\x00\x01\x00\x02\x004%\xa4\x00\x03p\x00\xfe\xfb\x94\x00\x00', 'binary'), {
+        contentType: 'image/webp',
+        upsert: true,
+      });
+
+    const pubUrlRes = await fetch(`${supaUrl}/storage/v1/object/public/product-images/${testPath}`);
+    expect(pubUrlRes.status).toBe(200);
+
+    const listRes = await fetch(`${supaUrl}/storage/v1/object/list/product-images`, {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prefix: 'e2e-check', limit: 100 }),
+    });
+    const listJson = await listRes.json().catch(() => []);
+    expect(Array.isArray(listJson) ? listJson.length : 0).toBe(0);
+
+    await adminDb.storage.from('product-images').remove([testPath]);
   });
 });
